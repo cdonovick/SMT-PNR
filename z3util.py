@@ -197,7 +197,7 @@ class Mask:
             raise IndexError()
         if value in Mask._zero_vals:
             self.value &= ~(1 << (self.size-idx-1))
-        elif value in Maske._one_vals:
+        elif value in Mask._one_vals:
             self.value |= 1 << (self.size-idx-1)
         else:
             raise ValueError()
