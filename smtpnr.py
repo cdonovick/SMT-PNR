@@ -136,10 +136,13 @@ def place_constraints(comps, fab_dims, wire_lengths):
             for wl in wire_lengths:
                 #should probably be comp.pos & (shifted adj.pos) != 0,
                 #so that components can have variable size
-                c.append(z3.Or(comp.pos == adj.pos << wl,
-                        comp.pos == adj.pos >> wl,
-                        comp.pos == adj.pos >> wl*mcols,
-                        comp.pos == adj.pos << wl*mcols,))
+                c.append(z3.Or(
+                        comp.pos == z3.LShR(adj.pos, wl),
+                        comp.pos == adj.pos << wl,
+                        comp.pos == z3.LShR(adj.pos, wl*mcols),
+                        comp.pos == adj.pos << wl*mcols,
+                        ))
+
             constraints.append(z3.Or(c))
 
         constraints.append(zu.hamming(comp.pos) == __COMP_SIZE)
@@ -150,6 +153,102 @@ def place_constraints(comps, fab_dims, wire_lengths):
 
     u = ft.reduce(lambda x,y: x|y, [c.pos for c in comps])
     constraints.append(zu.hamming(u) == nnode)
+
+    return z3.And(constraints)
+
+def place_constraints_2d(comps, fab_dims, wire_lengths, use_hamming=True):
+    '''
+        place_constraints :: {Component} -> (int, int) -> [int] -> z3.z3.BoolRef
+    '''
+    nnode = len(comps)
+
+    frows, fcols = fab_dims
+
+    def _get_x(bv):
+        return z3.Extract(frows+fcols-1, frows, bv)
+
+    def _get_y(bv):
+        return z3.Extract(frows-1, 0, bv)
+
+    for comp in comps:
+        comp.pos = z3.BitVec(comp.name, frows+fcols)
+
+    constraints = []
+    for comp in comps:
+        for adj in comp.inputs:
+            #should dispatch to fabric to get the rules
+            c = []
+            for wl in wire_lengths:
+                #should probably be comp.pos & (shifted adj.pos) != 0,
+                #so that components can have variable size
+                c.append(z3.Or(
+                        _get_x(comp.pos) == z3.LShR(_get_x(adj.pos), wl),
+                        _get_x(comp.pos) == _get_x(adj.pos) << wl,
+                        _get_y(comp.pos) == z3.LShR(_get_y(adj.pos), wl),
+                        _get_y(comp.pos) == _get_y(adj.pos) << wl,
+                        ))
+
+            constraints.append(z3.Or(c))
+
+        constraints.append(zu.hamming(comp.pos) == __COMP_SIZE)
+        #The following is insufficient to achieve the previous
+        #constraints.append(comp.pos != 0)
+
+    if use_hamming:
+        d = {c:z3.BitVec(c.name + 'flat', frows*fcols) for c in comps}
+        constraints.append(z3.And(
+            *(p == _get_x(c.pos) + _get_y(c.pos) * fcols for c,p in d.items())
+            ))
+        u = ft.reduce(lambda x,y: x|y, d.values())
+        constraints.append(zu.hamming(u) == nnode)
+    else:
+        constraints.append(z3.Distinct(*(c.pos for c in comps)))
+
+    return z3.And(constraints)
+
+def place_constraints_2x(comps, fab_dims, wire_lengths):
+    '''
+        place_constraints :: {Component} -> (int, int) -> [int] -> z3.z3.BoolRef
+    '''
+    nnode = len(comps)
+
+    frows, fcols = fab_dims
+
+    for comp in comps:
+        comp.pos = (z3.BitVec(comp.name + '_x', frows), z3.BitVec(comp.name + '_y', fcols))
+
+
+    constraints = []
+    for comp in comps:
+        for adj in comp.inputs:
+            #should dispatch to fabric to get the rules
+            c = []
+            for wl in wire_lengths:
+                #should probably be comp.pos & (shifted adj.pos) != 0,
+                #so that components can have variable size
+                c.append(z3.Or(
+                        z3.And(comp.pos[0] == adj.pos[0], comp.pos[1] == (adj.pos[1] << wl)),
+                        z3.And(comp.pos[0] == adj.pos[0], comp.pos[1] == z3.LShR(adj.pos[1], wl)),
+                        z3.And(comp.pos[1] == adj.pos[1], comp.pos[0] == (adj.pos[0] << wl)),
+                        z3.And(comp.pos[1] == adj.pos[1], comp.pos[0] == z3.LShR(adj.pos[0], wl)),
+                        ))
+
+            constraints.append(z3.Or(c))
+
+        constraints.append(zu.hamming(comp.pos[0]) * zu.hamming(comp.pos[1]) == __COMP_SIZE)
+        #The following is insufficient to achieve the previous
+        #constraints.append(comp.pos != 0)
+
+    #constraints.append(z3.Distinct(*(z3.Concat(c.pos[0], c.pos[1]) for c in comps)))
+    d = {c:z3.BitVec(c.name + '_flat', frows*fcols) for c in comps}
+    ex = frows*fcols - fcols
+    ey = frows*fcols - frows
+    for c in comps:
+        constraints.append(d[c] == z3.ZeroExt(ex, c.pos[0]) + z3.ZeroExt(ey, c.pos[1]) * fcols)
+
+    u = ft.reduce(lambda x,y: x|y, d.values())
+    constraints.append(zu.hamming(u) == nnode)
+
 
     return z3.And(constraints)
 
@@ -258,11 +357,66 @@ def print_model(model, comps, fab_dims, wire_lengths):
     s = ''.join(s)
     print(s)
 
+def print_model_2d(model, comps, fab_dims, wire_lengths):
+    frows, fcols = fab_dims
 
-def run_test(adj, fab_dims, wire_lengths, debug_prints):
+    def _get_x(bv):
+        return z3.Extract(frows+fcols-1, frows, bv)
+
+    def _get_y(bv):
+        return z3.Extract(frows-1, 0, bv)
+
+    ps = [(_get_x(c.pos), _get_y(c.pos), str(c.name).strip("'")) for c in comps]
+    print(ps)
+    p2n = {(model.eval(x).as_long(), model.eval(y).as_long()) : n for x,y,n in ps}
+    print(p2n)
+    print()
+
+    width = 2 + max(len(x) for x in p2n.values())
+
+    s = []
+    for y in range(frows):
+        for x in range(fcols):
+            if (x,y) in p2n:
+                s.append('{c: ^{w}}'.format(c=p2n[(x,y)], w=width))
+            else:
+                s.append('{c: ^{w}}'.format(c='-', w=width))
+        s.append('\n')
+
+    s = ''.join(s)
+    print(s)
+
+def print_model_2x(model, comps, fab_dims, wire_lengths):
+    frows, fcols = fab_dims
+
+    ps = [(c.pos[0], c.pos[1], str(c.name).strip("'")) for c in comps]
+    print(ps)
+    p2n = {(model.eval(x).as_long(), model.eval(y).as_long()) : n for x,y,n in ps}
+    print(p2n)
+    print()
+
+    width = 2 + max(len(x) for x in p2n.values())
+
+    s = []
+    for y in range(frows):
+        for x in range(fcols):
+            if (2**x,2**y) in p2n:
+                s.append('{c: ^{w}}'.format(c=p2n[(2**x,2**y)], w=width))
+            else:
+                s.append('{c: ^{w}}'.format(c='-', w=width))
+        s.append('\n')
+
+    s = ''.join(s)
+    print(s)
+
+def run_test(adj, fab_dims, wire_lengths, debug_prints, 
+        constraints_gen=place_constraints,
+        model_checker=check_model, 
+        model_printer=print_model
+        ):
 
     comps = build_graph(adj)
-    constraints = place_constraints(comps, fab_dims, wire_lengths)
+    constraints = constraints_gen(comps, fab_dims, wire_lengths)
     s = z3.Solver()
     s.add(constraints)
     if s.check() != z3.sat:
@@ -273,12 +427,12 @@ def run_test(adj, fab_dims, wire_lengths, debug_prints):
     if debug_prints:
         print('test is sat')
 
-    if debug_prints and all(check_model(s.model(), comps, fab_dims, wire_lengths)):
-        print_model(s.model(), comps, fab_dims, wire_lengths)
+    if debug_prints and all(model_checker(s.model(), comps, fab_dims, wire_lengths)):
+        model_printer(s.model(), comps, fab_dims, wire_lengths)
         return (True, s)
     elif debug_prints:
         return (False, s)
-    elif all(check_model(s.model(), comps, fab_dims, wire_lengths, printer=lambda *x: None)):
+    elif all(model_checker(s.model(), comps, fab_dims, wire_lengths, printer=lambda *x: None)):
         return (True, s)
     else:
         return (False, s)
