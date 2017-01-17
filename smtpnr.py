@@ -41,7 +41,11 @@ class Component:
     def __repr__(self):
         return 'name: {}, inputs: {}, outputs: {}'.format(self.name, {x.name for x in self.inputs}, {x.name for x in self.outputs})
 
-__COMP_SIZE = 1        
+        
+__COMP_X    = 1
+__COMP_Y    = 1
+__COMP_AREA = __COMP_X * __COMP_Y
+
 
 def build_graph(adj_dict): 
     '''
@@ -105,7 +109,6 @@ def _build_standard_mask(fab_dims, wire_lengths):
     return mask, mrows, mcols, mwl 
 
 
-
 def place_constraints(comps, fab_dims, wire_lengths):
     '''
         place_constraints :: {Component} -> (int, int) -> [int] -> z3.z3.BoolRef
@@ -146,7 +149,7 @@ def place_constraints(comps, fab_dims, wire_lengths):
 
             constraints.append(z3.Or(c))
 
-        constraints.append(zu.hamming(comp.pos) == __COMP_SIZE)
+        constraints.append(zu.hamming(comp.pos) == __COMP_AREA)
         #The following is insufficient to achieve the previous
         #constraints.append(comp.pos != 0)
 
@@ -157,69 +160,27 @@ def place_constraints(comps, fab_dims, wire_lengths):
 
     return z3.And(constraints)
 
-def place_constraints_2d(comps, fab_dims, wire_lengths, use_hamming=True):
+def place_constraints_2d(comps, fab_dims, wire_lengths, pack=True):
     '''
-        place_constraints :: {Component} -> (int, int) -> [int] -> z3.z3.BoolRef
+        place_constraints :: {Component} -> (int, int) -> [int] -> Bool? -> z3.z3.BoolRef
     '''
     nnode = len(comps)
 
     frows, fcols = fab_dims
 
-    def _get_x(bv):
-        return z3.Extract(frows+fcols-1, frows, bv)
-
-    def _get_y(bv):
-        return z3.Extract(frows-1, 0, bv)
-
-    for comp in comps:
-        comp.pos = z3.BitVec(comp.name, frows+fcols)
-
     constraints = []
-    for comp in comps:
-        for adj in comp.inputs:
-            #should dispatch to fabric to get the rules
-            c = []
-            for wl in wire_lengths:
-                #should probably be comp.pos & (shifted adj.pos) != 0,
-                #so that components can have variable size
-                c.append(z3.Or(
-                        _get_x(comp.pos) == z3.LShR(_get_x(adj.pos), wl),
-                        _get_x(comp.pos) == _get_x(adj.pos) << wl,
-                        _get_y(comp.pos) == z3.LShR(_get_y(adj.pos), wl),
-                        _get_y(comp.pos) == _get_y(adj.pos) << wl,
-                        ))
-
-            constraints.append(z3.Or(c))
-
-        constraints.append(zu.hamming(comp.pos) == __COMP_SIZE)
-        #The following is insufficient to achieve the previous
-        #constraints.append(comp.pos != 0)
-
-    if use_hamming:
-        d = {c:z3.BitVec(c.name + 'flat', frows*fcols) for c in comps}
-        constraints.append(z3.And(
-            *(p == _get_x(c.pos) + _get_y(c.pos) * fcols for c,p in d.items())
-            ))
-        u = ft.reduce(lambda x,y: x|y, d.values())
-        constraints.append(zu.hamming(u) == nnode)
-    else:
+    if pack:
+        def _get_x(bv): return z3.Extract(frows+fcols-1, frows, bv)
+        def _get_y(bv): return z3.Extract(frows-1, 0, bv)
+        for comp in comps: comp.pos = z3.BitVec(comp.name, frows+fcols)
         constraints.append(z3.Distinct(*(c.pos for c in comps)))
 
-    return z3.And(constraints)
+    else:
+        def _get_x(bv): return bv[0]
+        def _get_y(bv): return bv[1]
+        for comp in comps: comp.pos = (z3.BitVec(comp.name + '_x', frows), z3.BitVec(comp.name + '_y', fcols))
+        constraints.append(z3.Distinct(*(z3.Concat(c.pos[0], c.pos[1]) for c in comps)))
 
-def place_constraints_2x(comps, fab_dims, wire_lengths):
-    '''
-        place_constraints :: {Component} -> (int, int) -> [int] -> z3.z3.BoolRef
-    '''
-    nnode = len(comps)
-
-    frows, fcols = fab_dims
-
-    for comp in comps:
-        comp.pos = (z3.BitVec(comp.name + '_x', frows), z3.BitVec(comp.name + '_y', fcols))
-
-
-    constraints = []
     for comp in comps:
         for adj in comp.inputs:
             #should dispatch to fabric to get the rules
@@ -228,32 +189,19 @@ def place_constraints_2x(comps, fab_dims, wire_lengths):
                 #should probably be comp.pos & (shifted adj.pos) != 0,
                 #so that components can have variable size
                 c.append(z3.Or(
-                        z3.And(comp.pos[0] == adj.pos[0], comp.pos[1] == (adj.pos[1] << wl)),
-                        z3.And(comp.pos[0] == adj.pos[0], comp.pos[1] == z3.LShR(adj.pos[1], wl)),
-                        z3.And(comp.pos[1] == adj.pos[1], comp.pos[0] == (adj.pos[0] << wl)),
-                        z3.And(comp.pos[1] == adj.pos[1], comp.pos[0] == z3.LShR(adj.pos[0], wl)),
+                        z3.And(_get_x(comp.pos) == z3.LShR(_get_x(adj.pos), wl) , _get_y(comp.pos) == _get_y(adj.pos)),
+                        z3.And(_get_x(comp.pos) == _get_x(adj.pos) << wl        , _get_y(comp.pos) == _get_y(adj.pos)),
+                        z3.And(_get_y(comp.pos) == z3.LShR(_get_y(adj.pos), wl) , _get_x(comp.pos) == _get_x(adj.pos)), 
+                        z3.And(_get_y(comp.pos) == _get_y(adj.pos) << wl        , _get_x(comp.pos) == _get_x(adj.pos)),
                         ))
 
             constraints.append(z3.Or(c))
 
-        constraints.append(zu.hamming(comp.pos[0]) * zu.hamming(comp.pos[1]) == __COMP_SIZE)
-        #The following is insufficient to achieve the previous
-        #constraints.append(comp.pos != 0)
-
-    #constraints.append(z3.Distinct(*(z3.Concat(c.pos[0], c.pos[1]) for c in comps)))
-    d = {c:z3.BitVec(c.name + '_flat', frows*fcols) for c in comps}
-    ex = frows*fcols - fcols
-    ey = frows*fcols - frows
-    for c in comps:
-        constraints.append(d[c] == z3.ZeroExt(ex, c.pos[0]) + z3.ZeroExt(ey, c.pos[1]) * fcols)
-
-    u = ft.reduce(lambda x,y: x|y, d.values())
-    constraints.append(zu.hamming(u) == nnode)
+        constraints.append(zu.hamming(_get_x(comp.pos)) == __COMP_X)
+        constraints.append(zu.hamming(_get_y(comp.pos)) == __COMP_Y)
 
 
     return z3.And(constraints)
-
-
 
 def find_shift(x, y, rows, cols):
     '''
@@ -301,7 +249,7 @@ def place_constraints_opt(comps, fab_dims, distinct_flag=True):
             #one hot representation -- temporary var
             temp_1h = z3.BitVec(comp.name, rows*cols)
             onehot_list.append(temp_1h)
-            constraints.append(zu.hamming(temp_1h) == __COMP_SIZE)
+            constraints.append(zu.hamming(temp_1h) == __COMP_AREA)
             constraints.append(z3.Extract(0,0,z3.LShR(temp_1h,find_shift(comp.pos[0],comp.pos[1],rows,cols))) == 1)
 
         u = ft.reduce(lambda x,y: x|y, [bv for bv in onehot_list])
@@ -325,92 +273,6 @@ def place_constraints_opt(comps, fab_dims, distinct_flag=True):
             manhattan_dist += abs_diff(comp.pos[0], adj.pos[0], fab_dims) + abs_diff(comp.pos[1], adj.pos[1], fab_dims)
 
     return z3.And(constraints), manhattan_dist
-
-
-
-def check_model(model, comps, fab_dims, wire_lengths, printer=print, *pargs, **kwargs):
-    correct = [True, True, True]
-
-    mask, mrows, mcols, mwl = _build_standard_mask(fab_dims, wire_lengths)
-
-
-    #mask formatting functions
-    def row_formatter(size, value, idx, v):
-        if idx % mcols == mcols - 1:
-            return '\n'
-        else:
-            return ''
-    
-    spacing = max(len(x.name) for x in comps) + 1
-
-    def choose_between(masks, overlap_c, none_c, w=spacing):
-        def elem_f(size, value, idx, v):
-            for m,n in masks:
-                if m[idx] and not any(other[idx] for other,_ in masks if other is not m):
-                    return '{n: ^{w}}'.format(n=n, w=w)
-                elif m[idx]:
-                    return '{n: ^{w}}'.format(n=overlap_c, w=w)
-            return '{n: ^{w}}'.format(n=none_c, w=w)
-        return elem_f
-
-    #check correctness of placement
-    printer("Checking validity of placement...", *pargs, **kwargs)
-    for comp in comps:
-        p = zu.Mask(model.evaluate(comp.pos).as_long(), size=mask.size)
-        if p.hamming != __COMP_SIZE:
-            correct[0] = False
-            printer('{} has incorrect size, expected {} has {}'.format(comp.name, __COMP_SIZE, p.hamming), *pargs, **kwargs)
-            printer(p.to_formatted_string(post_f=row_formatter), *pargs, **kwargs)   
-
-        if p & ~mask != 0:
-            correct[0] = False
-            printer('{} was placed in the masked region'.format(comp.name, p), *pargs, **kwargs)
-            elem_f=choose_between([(p,'X'), (mask,'1')], overlap_c='C', none_c = '0')
-            printer(p.to_formatted_string(elem_f=elem_f, post_f=row_formatter), *pargs, **kwargs)
-
-    if correct[0]:
-        printer("Pass", *pargs, **kwargs)
-
-    #check adjacency is satisfied
-    printer("Checking adjacency rules are satisfied...", *pargs, **kwargs)
-    for comp in comps:
-        p = zu.Mask(model.evaluate(comp.pos).as_long(), size=mask.size)
-        for adj in comp.inputs:
-            adj_p = zu.Mask(model.evaluate(adj.pos).as_long(), size=mask.size)
-            c = []
-            for wl in wire_lengths:
-                c.extend([p == adj_p << wl,
-                    p == adj_p >> wl,
-                    p == adj_p << wl*mcols,
-                    p == adj_p >> wl*mcols,])
-
-            if not any(c):
-                correct[1] = False
-                printer('{} and {} are not adjacent'.format(comp.name, adj.name), *pargs, **kwargs)
-                elem_f=choose_between([(p,comp.name), (adj_p,adj.name)], overlap_c='X', none_c = '-')
-                printer(p.to_formatted_string(elem_f=elem_f, post_f=row_formatter), *pargs, **kwargs)
-
-    if correct[1]:
-        printer("Pass", *pargs, **kwargs)
-
-    #check uniqueness of placement
-    printer("Checking uniqueness of placement...", *pargs, **kwargs)
-    unmarked = set(c for c in comps)
-    for comp in comps:
-        unmarked.remove(comp)
-        p = zu.Mask(model.evaluate(comp.pos).as_long(), size=mask.size)
-        for other in unmarked:
-            other_p = zu.Mask(model.evaluate(other.pos).as_long(), size=mask.size)
-            if p & other_p != 0:
-                correct[2] = False
-                printer('{} and {} overlap'.format(comp.name, other.name), *pargs, **kwargs)
-                elem_f=choose_between([(p,comp.name), (other_p,other.name)], overlap_c='X', none_c = '-')
-                printer(p.to_formatted_string(elem_f=elem_f, post_f=row_formatter), *pargs, **kwargs)
-
-    if correct[2]:
-        printer("Pass", *pargs, **kwargs)
-    
-    return correct
 
 def print_model(model, comps, fab_dims, wire_lengths):
     p2n = {model.evaluate(x.pos).as_long() : str(x.name).strip("'") for x in comps}
@@ -453,8 +315,9 @@ def print_model_2d(model, comps, fab_dims, wire_lengths):
     s = []
     for y in range(frows):
         for x in range(fcols):
-            if (x,y) in p2n:
-                s.append('{c: ^{w}}'.format(c=p2n[(x,y)], w=width))
+            print(2**x,2**y)
+            if (2**x,2**y) in p2n:
+                s.append('{c: ^{w}}'.format(c=p2n[(2**x,2**y)], w=width))
             else:
                 s.append('{c: ^{w}}'.format(c='-', w=width))
         s.append('\n')
@@ -579,3 +442,87 @@ def small_test(dims=(8,8), debug_prints=True):
 def unsat_test(debug_prints=True):
     adj = {'n1' : {'n2','n3','n4','n5','n6'}}
     run_test(adj, (4,4), {1}, debug_prints)
+
+def check_model(model, comps, fab_dims, wire_lengths, printer=print, *pargs, **kwargs):
+    correct = [True, True, True]
+
+    mask, mrows, mcols, mwl = _build_standard_mask(fab_dims, wire_lengths)
+
+
+    #mask formatting functions
+    def row_formatter(size, value, idx, v):
+        if idx % mcols == mcols - 1:
+            return '\n'
+        else:
+            return ''
+    
+    spacing = max(len(x.name) for x in comps) + 1
+
+    def choose_between(masks, overlap_c, none_c, w=spacing):
+        def elem_f(size, value, idx, v):
+            for m,n in masks:
+                if m[idx] and not any(other[idx] for other,_ in masks if other is not m):
+                    return '{n: ^{w}}'.format(n=n, w=w)
+                elif m[idx]:
+                    return '{n: ^{w}}'.format(n=overlap_c, w=w)
+            return '{n: ^{w}}'.format(n=none_c, w=w)
+        return elem_f
+
+    #check correctness of placement
+    printer("Checking validity of placement...", *pargs, **kwargs)
+    for comp in comps:
+        p = zu.Mask(model.evaluate(comp.pos).as_long(), size=mask.size)
+        if p.hamming != __COMP_AREA:
+            correct[0] = False
+            printer('{} has incorrect size, expected {} has {}'.format(comp.name, __COMP_AREA, p.hamming), *pargs, **kwargs)
+            printer(p.to_formatted_string(post_f=row_formatter), *pargs, **kwargs)   
+
+        if p & ~mask != 0:
+            correct[0] = False
+            printer('{} was placed in the masked region'.format(comp.name, p), *pargs, **kwargs)
+            elem_f=choose_between([(p,'X'), (mask,'1')], overlap_c='C', none_c = '0')
+            printer(p.to_formatted_string(elem_f=elem_f, post_f=row_formatter), *pargs, **kwargs)
+
+    if correct[0]:
+        printer("Pass", *pargs, **kwargs)
+
+    #check adjacency is satisfied
+    printer("Checking adjacency rules are satisfied...", *pargs, **kwargs)
+    for comp in comps:
+        p = zu.Mask(model.evaluate(comp.pos).as_long(), size=mask.size)
+        for adj in comp.inputs:
+            adj_p = zu.Mask(model.evaluate(adj.pos).as_long(), size=mask.size)
+            c = []
+            for wl in wire_lengths:
+                c.extend([p == adj_p << wl,
+                    p == adj_p >> wl,
+                    p == adj_p << wl*mcols,
+                    p == adj_p >> wl*mcols,])
+
+            if not any(c):
+                correct[1] = False
+                printer('{} and {} are not adjacent'.format(comp.name, adj.name), *pargs, **kwargs)
+                elem_f=choose_between([(p,comp.name), (adj_p,adj.name)], overlap_c='X', none_c = '-')
+                printer(p.to_formatted_string(elem_f=elem_f, post_f=row_formatter), *pargs, **kwargs)
+
+    if correct[1]:
+        printer("Pass", *pargs, **kwargs)
+
+    #check uniqueness of placement
+    printer("Checking uniqueness of placement...", *pargs, **kwargs)
+    unmarked = set(c for c in comps)
+    for comp in comps:
+        unmarked.remove(comp)
+        p = zu.Mask(model.evaluate(comp.pos).as_long(), size=mask.size)
+        for other in unmarked:
+            other_p = zu.Mask(model.evaluate(other.pos).as_long(), size=mask.size)
+            if p & other_p != 0:
+                correct[2] = False
+                printer('{} and {} overlap'.format(comp.name, other.name), *pargs, **kwargs)
+                elem_f=choose_between([(p,comp.name), (other_p,other.name)], overlap_c='X', none_c = '-')
+                printer(p.to_formatted_string(elem_f=elem_f, post_f=row_formatter), *pargs, **kwargs)
+
+    if correct[2]:
+        printer("Pass", *pargs, **kwargs)
+    
+    return correct
