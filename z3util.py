@@ -45,9 +45,9 @@ def hamming_d(bv):
         x = (x + z3.LShR(x, i[0])) & i[1]
         if i[0] > b_point:
             break
-
-    for i in mvals[idx+3:]:
-        x += z3.LShR(x, i[0])
+    if idx:
+        for i in mvals[idx+3:]:
+            x += z3.LShR(x, i[0])
 
     return x & (2**b_point - 1)    
 
