@@ -372,7 +372,7 @@ def print_model_opt(model, comps, fab_dims):
 
 def run_test(adj, fab_dims, wire_lengths={}, debug_prints=True, 
         constraints_gen=place_constraints,
-        model_checker=check_model, 
+        model_checker=None, 
         model_printer=print_model
         ):
 
