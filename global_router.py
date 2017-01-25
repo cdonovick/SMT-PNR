@@ -63,7 +63,7 @@ def populate_CLBs(fab, placed_comps, g):
         add placed components to the fabric
     '''
     for pc in placed_comps:
-        fab.CLBs[(pc.pos[0], pc.pos[1])] = g.addNode('CLB({},{})'.format(pc.pos[0],pc.pos[1])) 
+        fab.CLBs[(pc.pos[0], pc.pos[1])] = g.addNode('{}({},{})'.format(pc.name,pc.pos[0],pc.pos[1])) 
 
 
 def comp_dist(pc, adj):
@@ -98,7 +98,7 @@ def route(fab_dims, placed_comps):
     return 
 
 
-def excl_constraints(src, dst, placed_comps, fab, g):
+def excl_constraints(src, dest, placed_comps, fab, g):
     '''
         generate the constraints that components other than the source and destination cannot be used in routing
     '''
