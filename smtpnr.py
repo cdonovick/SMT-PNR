@@ -305,17 +305,17 @@ def print_model_2d(model, comps, fab_dims, wire_lengths):
         return z3.Extract(frows-1, 0, bv)
 
     ps = [(_get_x(c.pos), _get_y(c.pos), str(c.name).strip("'")) for c in comps]
-    print(ps)
+    #print(ps)
     p2n = {(model.eval(x).as_long(), model.eval(y).as_long()) : n for x,y,n in ps}
-    print(p2n)
-    print()
+    #print(p2n)
+    #print()
 
     width = 2 + max(len(x) for x in p2n.values())
 
     s = []
     for y in range(frows):
         for x in range(fcols):
-            print(2**x,2**y)
+            #print(2**x,2**y)
             if (2**x,2**y) in p2n:
                 s.append('{c: ^{w}}'.format(c=p2n[(2**x,2**y)], w=width))
             else:
@@ -371,9 +371,9 @@ def print_model_opt(model, comps, fab_dims):
 
 
 def run_test(adj, fab_dims, wire_lengths={}, debug_prints=True, 
-        constraints_gen=place_constraints,
+        constraints_gen=place_constraints_2d,
         model_checker=None, 
-        model_printer=print_model
+        model_printer=print_model_2d
         ):
 
     comps = build_graph(adj)
@@ -382,11 +382,22 @@ def run_test(adj, fab_dims, wire_lengths={}, debug_prints=True,
         print('Finding satisfying model with given wire lenths')
         constraints = constraints_gen(comps, fab_dims, wire_lengths)
         s = z3.Solver()
+        z3.set_param(timeout=120000) #not working
         s.add(constraints)
-        if s.check() != z3.sat:
-            if debug_prints:
-                print('test is unsat')
-            return s
+        
+        limit = 5 #don't let it try forever
+        counter = 0
+        while s.check() != z3.sat and counter < limit:
+            print('test is unsat')
+            s.reset()
+            wire_lengths.update({max(wire_lengths)+1, max(wire_lengths)+2})
+            print('Resetting with wire_lengths = ', wire_lengths)
+            s.add(constraints_gen(comps, fab_dims, wire_lengths))
+            counter += 1
+
+        if counter < limit: 
+            model_printer(s.model(), comps, fab_dims, wire_lengths)
+            return (comps, s.model())
 
         if debug_prints:
             print('test is sat')
