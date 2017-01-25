@@ -2,10 +2,6 @@
     Classes for represtenting designs and various constructors
 '''
 
-""" TODO:
-        constraint_generators needs some sort of map from the function to the generated contraints
-"""
-
 import itertools as it
 from collections import Iterable
 import z3
@@ -29,10 +25,19 @@ class IDObject:
     def __hash__(self):
         return hash(self._id)
 
+
     @property
     def id(self):
         return self._id
     
+class NamedIDObject(IDObject):
+    def __init__(self, name):
+        super().__init__()
+        self._name = '{}_{}'.format(name, self.id)
+
+    @property
+    def name(self):
+        return self._name
 
 class Fabric:
     def __init__(self, dims, wire_lengths={1}, W=None, Fc=None, Fs=None, node_masks=None):
@@ -41,7 +46,7 @@ class Fabric:
             wire_lengths := the length of wires between switch boxes
             All other operands are unimplemented 
         '''
-
+        super().__init__()
         if not isinstance(dims, Iterable):
             raise TypeError('dims must be iterable, recieved type {}'.format(type(dims)))
         dims = tuple(dims)
@@ -84,16 +89,14 @@ class Fabric:
         raise NotImplementedError('This feature is not supported')
 
 
-class Component(IDObject):
+class Component(NamedIDObject):
     def __init__(self, name, inputs=(), outputs=(), pos=None):
+        super().__init__(name)
         self._name = name
         self._pos = pos
         self._inputs = set(inputs)
         self._outputs = set(outputs)
         
-    @property
-    def name(self):
-        return self._name
 
     @property
     def inputs(self):
@@ -128,6 +131,7 @@ class Component(IDObject):
 
 class Wire(IDObject):
     def __init__(self, src, dst, width=1):
+        super().__init__()
         self._src = src
         self._dst = dst
         src._add_output(self)
@@ -144,8 +148,8 @@ class Wire(IDObject):
     def __repr__(self):
         return '{} -[{}]-> {}'.format(self.src.name, self.width, self.dst.name)
 
-class Design(IDObject):
-    def __init__(self, adj_dict, fabric, position_type, constraint_generators=None, optimizer=None):
+class Design(NamedIDObject):
+    def __init__(self, adj_dict, fabric, position_type, name='', constraint_generators=(), optimizers=()):
         '''
         adj_dict :: {str : [(str, int)]} 
         adj_dict[x] := out edges of x with the their width
@@ -153,13 +157,15 @@ class Design(IDObject):
         position_type ::  str -> Frabric -> PositionBase
 
         constraints_gen :: [([Component] -> [Wire] -> fabric -> z3.Bool)]
-        constraint_generators := an iterable of functions that generate hard constraints
+        constraint_generators := an iterable of functions that generate hard
+        constraints
 
-        constraints_opt :: [Component] -> [Wire] -> fabric -> (z3.Bool, z3.Object)
-        constraints_opt(components, wires) := (constraint, paramterer to be optimized)
+        constraints_opt :: [([Component] -> [Wire] -> fabric -> (z3.Bool, z3.Object))]
+        constraints_opt(components, wires) := an Iterable of functions that
+        generate hard constraint / optimizing parameters pairs
         '''
 
-        self._name = name
+        super().__init__(name)
         self._fabric = fabric
         self._position_type = position_type
 
@@ -171,7 +177,8 @@ class Design(IDObject):
         for f in constraint_generators:
             self._cg[f] = None
 
-        self._opt = optimizer
+        for f in optimers:
+            self._opt[f] = None
         
         #build graph
         self._gen_graph()
@@ -222,8 +229,8 @@ class Design(IDObject):
 
 
     def _reset_o_constraints(self):
-        self._o_constraints = None
-        self._opt_parameter = None
+        for f in self.optmizers:
+            self._opt[f] = None 
 
     @property
     def components(self):
@@ -257,7 +264,7 @@ class Design(IDObject):
     
     @property
     def constraint_generators(self):
-        return frozenset(self._cg)
+        return set(self._cg)
 
     def add_constraint_generator(self, f):
         self._cg[f] = None
@@ -267,15 +274,14 @@ class Design(IDObject):
 
         
     @property
-    def optimizer(self):
-        return self._opt
+    def optimizers(self):
+        return set(self._opt)
 
-    @optimizer.setter
-    def optimizer(self, optimizer):
-        if optimizer != self.optimizer:
-            self._o_constraints = None
-            self._opt_parameter = None
-            self._opt = optimizer
+    def add_constraint_generator(self, f):
+        self._opt[f] = None
+
+    def remove_optimizer(self, f):
+        del self._opt[f]
 
     @property
     def p_constraints(self):
@@ -294,28 +300,34 @@ class Design(IDObject):
         for f,c in self._cg.items():
             if c is None: 
                 self._cg[f] = f(self.components, self.wires, self.fabric)
-            cl += self._cg[f]
+            cl.append(self._cg[f])
 
         return z3.And(*cl)
 
     @property 
     def o_constraints(self):
-        if self.optimizer is None:
+        if not self.optimizer:
             raise AttributeError('Design does not have an assoicated optimizer')
 
-        if self._o_constraints is None:
-            self._o_constraints, self._opt_parameter = self.optimizer(self.components, self.wires, self.fabric)
-        
-        return self._o_constraints
+        op = []
+        for f,c in self._opt.items():
+            if c is None:
+                self._opt[f] = f(self.components, self.wires, self.fabric)
+            op.append(self._opt[f][0])
+
+        return z3.And(*op)
 
 
     @property
-    def opt_parameter(self):
-        if self.optimizer is None:
+    def opt_parameters(self):
+        if not self.optimizer:
             raise AttributeError('Design does not have an assoicated optimizer')
-
-        if self._o_constraints is None:
-            self._o_constraints, self._opt_parameter = self.optimizer(self.components, self.wires, self.fabric)
         
-        return self._o_constraints
+        op = []
+        for f,c in self._opt.items():
+            if c is None:
+                self._opt[f] = f(self.components, self.wires, self.fabric)
+            op.append(self._opt[f][1])
+
+        return op
 
