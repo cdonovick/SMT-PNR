@@ -28,32 +28,45 @@ def build_mgraph(fab, placed_comps):
         Build a MonoSAT graph. Includes every connection box and switch box but only placed components
         Note: For now, there are connection boxes below and to the right of every CLB and a switch box for each CB
               This is not representative of the true fabric -- will be updated later
+
+        Example of coordinate system and naming scheme:
+
+                        CLB(i,j)---CB(i,j)r
+                           |          |
+                        CB(i,j)b---SB(i,j)
+
+                        r = right
+                        b = bottom
+                        (i,j) = zero-indexed (x,y) coordinates with origin in top left of fabric
     '''
     g = Graph()
-    CB = [[0 for x in range(fab.cols)] for y in range(fab.rows)] 
-    SB = [[0 for x in range(fab.cols)] for y in range(fab.rows)] 
-    #add all the components to the graph
+    #add all the placed components to the graph
     populate_CLBs(fab, placed_comps, g)
+    #add all internal connection boxes and switch boxes on fabric
+    CBr = [[g.addNode('CB({},{})_r'.format(x,y)) for y in range(fab.rows)] for x in range(fab.cols - 1)]
+    CBb = [[g.addNode('CB({},{})_b'.format(x,y)) for y in range(fab.rows - 1)] for x in range(fab.cols)]
+    SB = [[g.addNode('SB({},{})'.format(x,y)) for y in range(fab.rows-1)] for x in range(fab.cols-1)]
+    #add edges
     for y in range(fab.rows):
         for x in range(fab.cols):
-            #make top and right connection boxes
-            CB[x][y] = (g.addNode('CB({},{})_b'.format(x,y)), g.addNode('CB({},{})_r'.format(x,y))) #(bottom, right)
-            #make switch box
-            SB[x][y] = g.addNode('SB({},{})'.format(x,y))
-            g.addUndirectedEdge(CB[x][y][0], SB[x][y])
-            g.addUndirectedEdge(CB[x][y][1], SB[x][y])
+            #TODO make less checks (or set up outside of loop)
+            #connect connection boxes and switch boxes
+            if x < fab.cols-1 and y < fab.rows-1:
+                g.addUndirectedEdge(CBr[x][y], SB[x][y])
+                g.addUndirectedEdge(CBb[x][y], SB[x][y])
             if (x,y) in fab.CLBs:
-                g.addUndirectedEdge(fab.CLBs[(x,y)], CB[x][y][0])
-                g.addUndirectedEdge(fab.CLBs[(x,y)], CB[x][y][1])
+                if x < fab.cols - 1:
+                    g.addUndirectedEdge(fab.CLBs[(x,y)], CBr[x][y])
+                if y < fab.rows - 1:
+                    g.addUndirectedEdge(fab.CLBs[(x,y)], CBb[x][y])
                 if x > 0:
-                    g.addUndirectedEdge(CB[x-1][y][0], fab.CLBs[(x,y)])
+                    g.addUndirectedEdge(CBr[x-1][y], fab.CLBs[(x,y)])
                 if y > 0:
-                    g.addUndirectedEdge(CB[x][y-1][1], fab.CLBs[(x,y)])
-            #TODO only loop through non starting
-            if x > 0:
-                g.addUndirectedEdge(SB[x-1][y], CB[x][y][1])
-            if y > 0:
-                g.addUndirectedEdge(SB[x][y-1], CB[x][y][0])
+                    g.addUndirectedEdge(CBb[x][y-1], fab.CLBs[(x,y)])
+            if x > 0 and x < fab.cols - 1 and y < fab.rows - 1:
+                g.addUndirectedEdge(SB[x-1][y], CBb[x][y])
+            if y > 0 and x < fab.cols - 1 and y < fab.rows - 1:
+                g.addUndirectedEdge(SB[x][y-1], CBr[x][y])
                 
     return g
 
@@ -121,7 +134,6 @@ def test(filepath, fab_dims=(16,16)):
 
     adj = dot2smt.from_file(filepath)
     placed_comps, model = smtpnr.run_test(adj, fab_dims, {1}, True)
-    #placed_comps, model = smtpnr.tiny_test()
     for comp in placed_comps:
         comp.pos = (int(math.log(model.eval(_get_x(comp.pos)).as_long(),2)), int(math.log(model.eval(_get_y(comp.pos)).as_long(),2)))
 
