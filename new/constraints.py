@@ -7,7 +7,10 @@ import z3util as zu
 
 def nearest_neighbor(components, wires, fabric):
     constraints = []
-    for src,dst in wires:
+    for w in wires:
+        src = s.src
+        dst = s.dst
+
         cx, delta_x = src.pos.delta_x(dst.pos)
         cy, delta_y = src.pos.delta_y(dst.pos)
         
