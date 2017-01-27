@@ -5,16 +5,13 @@
 import itertools as it
 from collections import Iterable
 import z3
+import traceback
 
-COMP_X    = 1
-COMP_Y    = 1
-COMP_AREA = __COMP_X * __COMP_Y
-
-__object_id = it.count().next
+_object_id = it.count().__next__
 
 class IDObject:
     def __init__(self):
-        self._id = __object_id()
+        self._id = _object_id()
 
     def __eq__(self, other):
         return isinstance(other, type(self)) and self._id == other._id
@@ -55,7 +52,7 @@ class Fabric:
             raise ValueError('dims must be of length 2, received object of length {}'.format(len(dims)))
 
         self._dims = dims
-        welf._wire_lengths = frozenset(wire_lengths)
+        self._wire_lengths = frozenset(wire_lengths)
         self._W = W
         self._Fc = Fc
         self._Fs = Fs
@@ -92,7 +89,6 @@ class Fabric:
 class Component(NamedIDObject):
     def __init__(self, name, inputs=(), outputs=(), pos=None):
         super().__init__(name)
-        self._name = name
         self._pos = pos
         self._inputs = set(inputs)
         self._outputs = set(outputs)
@@ -148,6 +144,37 @@ class Wire(IDObject):
     def __repr__(self):
         return '{} -[{}]-> {}'.format(self.src.name, self.width, self.dst.name)
 
+class _valid_container:
+    '''wrapper class that allows data to marked invalid '''
+    __slots__ = '_data', '_valid'
+
+    def __init__(self):
+        self.mark_invalid()
+
+    def mark_invalid(self):
+        self._valid = False
+
+    @property
+    def valid(self):
+        return self._valid 
+
+    @property
+    def data(self):
+        if not self.valid:
+            raise AttributeError('Data is invalid')
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._valid = True
+        self._data = data
+
+    def __repr__(self):
+        if self.valid:
+            return repr(data)
+        else:
+            return 'Invalid'
+
 class Design(NamedIDObject):
     def __init__(self, adj_dict, fabric, position_type, name='', constraint_generators=(), optimizers=()):
         '''
@@ -158,11 +185,14 @@ class Design(NamedIDObject):
 
         constraints_gen :: [([Component] -> [Wire] -> fabric -> z3.Bool)]
         constraint_generators := an iterable of functions that generate hard
-        constraints
+            constraints
 
-        constraints_opt :: [([Component] -> [Wire] -> fabric -> (z3.Bool, z3.Object))]
-        constraints_opt(components, wires) := an Iterable of functions that
-        generate hard constraint / optimizing parameters pairs
+        optimizers :: [([Component] -> [Wire] -> fabric -> (z3.Bool, z3.Object), bool)]
+        optimizers := [f, b] 
+            where 
+                f(components, wires) := an Iterable of functions that
+                    generate hard constraint / optimizing parameters pairs, 
+                b := a bool which indicating whether Optimizing parameter is minimized or maximized
         '''
 
         super().__init__(name)
@@ -173,13 +203,17 @@ class Design(NamedIDObject):
 
         self._comps = dict()
         self._wires = dict()
+        
+        self._p_constraints = _valid_container()
+        self._cg = dict()
+        self._opt = dict()
 
         for f in constraint_generators:
-            self._cg[f] = None
+            self.add_constraint_generator(f)
 
-        for f in optimers:
-            self._opt[f] = None
-        
+        for f,b in optimizers:
+            self.add_optimizer(f,b)
+
         #build graph
         self._gen_graph()
 
@@ -192,16 +226,18 @@ class Design(NamedIDObject):
 
         for src_name, adj_list in self._adj_dict.items():
             if not isinstance(src_name, str):
-                raise TypeError('component_graph must be a dictionary of str to str')
+                raise TypeError('component_graph must be a dictionary of str to [(str, int)]')
 
             if src_name not in self._comps:
                 self._comps[src_name] = Component(src_name)
             src = self._comps[src_name]
 
 
-            for dst_name, width in adj_list:
+            for pair in adj_list:
+                dst_name = pair[0]
+                width = pair[1]
                 if not isinstance(dst_name, str):
-                    raise TypeError('component_graph must be a dictionary of str to str')
+                    raise TypeError('component_graph must be a dictionary of str to [(str, int)]')
                 
                 if dst_name not in self._comps:
                     self._comps[dst_name] = Component(dst_name)
@@ -214,23 +250,10 @@ class Design(NamedIDObject):
 
     def _gen_pos(self):
         #reset position constraints
-        self._p_constraints(self)
-
+        self._reset_p_constraints()
         for c in self.components:
             c.pos = self._position_type(c.name, self.fabric)
 
-
-    def _reset_p_constraints(self):
-        self._p_constraints = None
-
-    def _reset_g_constraints(self):
-        for f in self.constraint_gerators:
-            self._cg[f] = None 
-
-
-    def _reset_o_constraints(self):
-        for f in self.optmizers:
-            self._opt[f] = None 
 
     @property
     def components(self):
@@ -252,6 +275,18 @@ class Design(NamedIDObject):
             self._gen_pos()
 
     @property
+    def constraints(self):
+        '''returns all hard constraints'''
+        return z3.And(self.p_constraints, self.g_constraints, self.o_constraints)
+
+
+    '''
+        -----------------------------------------------------------------------
+        Position Related Stuff
+        -----------------------------------------------------------------------
+    '''
+
+    @property
     def position_type(self):
         return self._position_type
 
@@ -261,73 +296,86 @@ class Design(NamedIDObject):
             self._position_type = position_type
             #regenerate positions for each node
             self._gen_pos()
-    
+
+    @property
+    def p_constraints(self): 
+        if not self._p_constraints.valid:
+            cl = []
+            for c in self.components:
+                cl.append(c.pos.invariants)
+            self._p_constraints.data = z3.And(*cl)
+
+        return self._p_constraints.data
+
+
+    def _reset_p_constraints(self):
+        self._p_constraints.mark_invalid()
+    '''
+        -----------------------------------------------------------------------
+        General constraints related stuff
+        -----------------------------------------------------------------------
+    '''
     @property
     def constraint_generators(self):
         return set(self._cg)
 
     def add_constraint_generator(self, f):
-        self._cg[f] = None
+        self._cg[f] = _valid_container()
 
     def remove_constraint_generator(self, f):
         del self._cg[f]
 
+    @property
+    def g_constraints(self):
+        cl = []
+        for f,c in self._cg.items():
+            if not c.valid: 
+                c.data = f(self.components, self.wires, self.fabric)
+            cl.append(c.data)
+        return z3.And(*cl)
+
+    def _reset_g_constraints(self):
+        for f in self.constraint_generators:
+            self._cg[f].mark_invalid()
+
+    '''
+        -----------------------------------------------------------------------
+        Optimization Related Stuff
+        -----------------------------------------------------------------------
+    '''
         
     @property
     def optimizers(self):
         return set(self._opt)
 
-    def add_constraint_generator(self, f):
-        self._opt[f] = None
+    def add_optimizer(self, f, minimize):
+        self._opt[f] = (_valid_container(), minimize)
 
     def remove_optimizer(self, f):
         del self._opt[f]
 
-    @property
-    def p_constraints(self):
-        #constraints are not generated
-        if self._p_constraints is None:
-            self._p_constraints = z3.And(*(c.pos.invariants for c in self.components))
-
-        return self._p_constraints
-    
-    @property
-    def g_constraints(self):
-        if not self.constraints_gen:
-            raise AttributeError('Design does not have any assoicated constraint_generators')
-
-        cl = []
-        for f,c in self._cg.items():
-            if c is None: 
-                self._cg[f] = f(self.components, self.wires, self.fabric)
-            cl.append(self._cg[f])
-
-        return z3.And(*cl)
-
     @property 
     def o_constraints(self):
-        if not self.optimizer:
-            raise AttributeError('Design does not have an assoicated optimizer')
-
-        op = []
+        cl = []
         for f,c in self._opt.items():
-            if c is None:
-                self._opt[f] = f(self.components, self.wires, self.fabric)
-            op.append(self._opt[f][0])
-
-        return z3.And(*op)
-
+            # c[0] := _valid_container(constraints, parameter)
+            # c[1] := minimize flag
+            if not c[0].valid:
+                c[0].data = f(self.components, self.wires, self.fabric)
+            cl.append(c[0].data[0]) 
+        return z3.And(*cl)
 
     @property
-    def opt_parameters(self):
-        if not self.optimizer:
-            raise AttributeError('Design does not have an assoicated optimizer')
-        
-        op = []
+    def opt_parameters(self): 
+        cl = []
         for f,c in self._opt.items():
-            if c is None:
-                self._opt[f] = f(self.components, self.wires, self.fabric)
-            op.append(self._opt[f][1])
+            # c[0] := _valid_container(constraints, parameter)
+            # c[1] := minimize flag
+            if not c[0].valid:
+                c[0].data = f(self.components, self.wires, self.fabric)
+            cl.append((c[0].data[1], c[1]))
+        return cl
 
-        return op
-
+    def _reset_o_constraints(self):
+        for f in self.optimizers:
+            self._opt[f][0].mark_invalid()

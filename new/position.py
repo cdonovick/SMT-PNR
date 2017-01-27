@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from math import log2
 import z3util as zu
 import z3
 
@@ -65,9 +66,9 @@ class PositionBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_coardinates(self, model):
+    def get_coordinates(self, model):
         '''
-        get_coardinates :: z3.ModelRef -> (int, int)
+        get_coordinates :: z3.ModelRef -> (int, int)
 
         evaluates the model at self and returns 0 indexed x,y coardinates
         '''
@@ -97,8 +98,8 @@ class Base2H(PositionBase):
     def invariants(self):
         return z3.And(zu.hamming(self.x) == 1, zu.hamming(self.y) == 1)
 
-    def get_coardinates(self, model):
-        return (log2(model.eval(self.x)), log2(model.eval(self.y)))
+    def get_coordinates(self, model):
+        return (int(log2(model.eval(self.x).as_long())), int(log2(model.eval(self.y).as_long())))
 
 
 class Packed2H(Base2H):
