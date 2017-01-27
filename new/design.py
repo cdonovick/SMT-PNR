@@ -218,11 +218,8 @@ class Design(NamedIDObject):
         self._gen_graph()
 
     def _gen_graph(self):
-        #all constraints depend on the graph
-        self._reset_p_constraints()
-        self._reset_g_constraints()
-        self._reset_o_constraints()
-
+        #reset constraints
+        self._reset_constraints()
 
         for src_name, adj_list in self._adj_dict.items():
             if not isinstance(src_name, str):
@@ -249,8 +246,8 @@ class Design(NamedIDObject):
         self._gen_pos()
 
     def _gen_pos(self):
-        #reset position constraints
-        self._reset_p_constraints()
+        #reset constraints
+        self._reset_constraints()
         for c in self.components:
             c.pos = self._position_type(c.name, self.fabric)
 
@@ -279,6 +276,11 @@ class Design(NamedIDObject):
         '''returns all hard constraints'''
         return z3.And(self.p_constraints, self.g_constraints, self.o_constraints)
 
+    
+    def _reset_constraints(self):
+        self._reset_p_constraints()
+        self._reset_g_constraints()
+        self._reset_o_constraints()
 
     '''
         -----------------------------------------------------------------------
@@ -306,7 +308,6 @@ class Design(NamedIDObject):
             self._p_constraints.data = z3.And(*cl)
 
         return self._p_constraints.data
-
 
     def _reset_p_constraints(self):
         self._p_constraints.mark_invalid()
