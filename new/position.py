@@ -57,6 +57,23 @@ class PositionBase(metaclass=ABCMeta):
         '''
         pass
 
+    @abstractmethod
+    def delta_x_fun(self, other):
+        '''
+        delta_x :: PositionBase -> (int -> z3.Bool)
+        builds a function f such that f(c) => delta_x == c
+        '''
+        pass
+
+    @abstractmethod
+    def delta_y_fun(self, other):
+        '''
+        delta_y :: PositionBase -> (int -> z3.Bool)
+        builds a function f such that f(c) => delta_y == c
+        '''
+        pass
+        
+
     @property
     @abstractmethod
     def invariants(self):
@@ -93,6 +110,22 @@ class Base2H(PositionBase):
         delta_y = z3.BitVec(self.name+'-'+other.name+'_delta_y', self.fabric.rows)
         constraint = z3.Or(self.y == other.y << delta_y, other.y == self.y << delta_y)
         return constraint, delta_y
+
+    def delta_x_fun(self, other):
+        def delta_fun(constant):
+            if constant == 0:
+                return z3.Or(self.x == other.x)
+            else:
+                return z3.Or(self.x == other.x << constant, other.x == self.x << constant)
+        return delta_fun 
+
+    def delta_y_fun(self, other):
+        def delta_fun(constant):
+            if constant == 0:
+                return z3.Or(self.y == other.y)
+            else:
+                return z3.Or(self.y == other.y << constant, other.y == self.y << constant)
+        return delta_fun
 
     @property
     def invariants(self):
@@ -142,5 +175,8 @@ class Unpacked2H(Base2H):
     @property
     def y(self):
         return self._y
+
+
+
 
 
