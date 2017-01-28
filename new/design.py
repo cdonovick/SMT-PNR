@@ -52,10 +52,14 @@ class Fabric:
             raise ValueError('dims must be of length 2, received object of length {}'.format(len(dims)))
 
         self._dims = dims
-        self._wire_lengths = frozenset(wire_lengths)
+        self._wire_lengths = set(wire_lengths)
         self._W = W
         self._Fc = Fc
         self._Fs = Fs
+
+    def update_wire_lengths(self, n=2):
+        for i in range(n):
+            self._wire_lengths.add(max(self._wire_lengths) + 1)
 
     @property
     def dims(self): 
@@ -278,7 +282,7 @@ class Design(NamedIDObject):
     def constraints(self):
         '''returns all hard constraints'''
         return z3.And(self.p_constraints, self.g_constraints, self.o_constraints)
-
+        #return z3.And(self.p_constraints, self.g_constraints)
 
     '''
         -----------------------------------------------------------------------
