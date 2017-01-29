@@ -26,7 +26,7 @@ class Placer:
     def place(self, adj, limit=5):
         print('Creating design...')
         d = design.Design(adj, self.fabric, position.Packed2H, 'Design1')
-        d.add_constraint_generator(constraints.nearest_neighbor)
+        d.add_constraint_generator(constraints.nearest_neighbor_fast)
         d.add_constraint_generator(constraints.distinct)
         print('Initializing solver and adding constraints...')
         solver = z3.Solver()
@@ -37,7 +37,10 @@ class Placer:
         while result != z3.sat and counter < limit:
             print('Placement with wire_lengths = {} is unsat.'.format(self.fabric.wire_lengths))
             self.fabric.update_wire_lengths()
-            print('Trying with wire_lengths = {}'.format(self.fabric.wire_lengths))
+            print('Resetting and trying with wire_lengths = {}'.format(self.fabric.wire_lengths))
+            solver.reset()
+            d._reset_g_constraints()
+            solver.add(d.constraints)
             counter += 1
             result = solver.check()
 
