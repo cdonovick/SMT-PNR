@@ -233,13 +233,15 @@ class Design(NamedIDObject):
                 self._comps[src_name] = Component(src_name)
             src = self._comps[src_name]
 
-
             for pair in adj_list:
+                if not isinstance(pair, tuple) or len(pair) != 2:
+                    raise TypeError('component_graph must be a dictionary of str to [(str, int)]')
+
                 dst_name = pair[0]
                 width = pair[1]
-                if not isinstance(dst_name, str):
+                if not isinstance(dst_name, str) or not isinstance(width, int):
                     raise TypeError('component_graph must be a dictionary of str to [(str, int)]')
-                
+
                 if dst_name not in self._comps:
                     self._comps[dst_name] = Component(dst_name)
                 dst = self._comps[dst_name]
