@@ -46,8 +46,9 @@ def unsat_test(debug_prints=True):
 def run_test(design, debug_prints):
     if debug_prints: print('running test')
     
-    s = z3.Solver()
+    s = z3.Optimize()
     s.add(design.constraints)
+
     if debug_prints:
         if s.check() != z3.sat:
             print('test is unsat')
@@ -58,6 +59,29 @@ def run_test(design, debug_prints):
         s.check()
 
     return s
+
+def run_opt_test(design, debug_prints):
+    if debug_prints: print('running test')
+    
+    s = z3.Solver()
+    s.add(design.constraints)
+    for param, min in design.opt_parameters:
+        if min:
+            s.minimize(param)
+        else:
+            s.maximize(param)
+
+    if debug_prints:
+        if s.check() != z3.sat:
+            print('test is unsat')
+        else:
+            print('test is sat')
+            model_printer(s.model(), design)
+    else:
+        s.check()
+
+    return s
+
         
 
 def model_printer(model, design):
