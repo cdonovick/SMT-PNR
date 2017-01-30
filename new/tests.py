@@ -13,10 +13,25 @@ def tiny_test(dims=(3,3), debug_prints=True):
     fab = Fabric(dims, wire_lengths={1})
 
     des = Design(adj, fab, position.Unpacked2H)
-    des.add_constraint_generator(constraints.nearest_neighbor)
+    des.add_constraint_generator(constraints.nearest_neighbor_fast)
     des.add_constraint_generator(constraints.distinct)
 
     sol = run_test(des, debug_prints)
+    return des, fab, sol
+
+
+def tiny_opt_test(dims=(4,4), debug_prints=True):
+    ''' 
+        place 4 nodes on a 3x3 fabric [with length 1 wires] 
+    '''
+    adj = {'n1' : [('n2', 1),('n3',1)], 'n2' : [('n4',1)], 'n3' : [('n4',1)], 'n4' : {}}
+    fab = Fabric(dims, wire_lengths={1})
+
+    des = Design(adj, fab, position.BVXY)
+    des.add_optimizer(constraints.min_L1, True)
+    des.add_constraint_generator(constraints.opt_distinct)
+
+    sol = run_opt_test(des, debug_prints)
     return des, fab, sol
 
 
@@ -63,11 +78,12 @@ def run_test(design, debug_prints):
 def run_opt_test(design, debug_prints):
     if debug_prints: print('running test')
     
-
     s = z3.Optimize()
     s.add(design.constraints)
     for param, min in design.opt_parameters:
         if min:
+            print(param)
+            print(type(param))
             s.minimize(param)
         else:
             s.maximize(param)
