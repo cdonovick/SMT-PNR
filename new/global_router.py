@@ -1,4 +1,4 @@
-from monosat import *
+import monosat as ms
 import design
 import placer
 import z3
@@ -51,7 +51,7 @@ def build_mgraph(fab, placed_comps):
                         b = bottom
                         (i,j) = zero-indexed (x,y) coordinates with origin in top left of fabric
     '''
-    g = Graph()
+    g = ms.Graph()
     #add all the placed components to the graph
     fab.populate_CLBs(fab, placed_comps, g)
     #add all internal connection boxes and switch boxes on fabric
@@ -104,7 +104,7 @@ def route(fab_dims, des, model):
             c = excl_constraints(wire.src, wire.dst, des.components, fab, g)
             c.append(reaches)
             c.append(dist)
-            result = Solve(And(c))
+            result = ms.Solve(ms.And(c))
             print(result)
 
             if result:
