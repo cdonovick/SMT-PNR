@@ -25,9 +25,9 @@ def small_test(dims=(8,8), debug_prints=True):
         place a depth 5 binary tree on a 8 by 8 with wire lengths of 1 or 2 
     ''' 
     adj = {'n{}'.format(i) : frozenset((('n{}'.format(2*i), 1), ('n{}'.format(2*i+1), 1))) for i in range(1,2**4)}
-    fab = Fabric(dims, wire_lengths={1,2,3})
+    fab = Fabric(dims, wire_lengths={1,2})
     des = Design(adj, fab, position.Packed2H) 
-    des.add_constraint_generator(constraints.nearest_neighbor_var)
+    des.add_constraint_generator(constraints.in_neighborhood(2))
     des.add_constraint_generator(constraints.distinct)
     sol = run_test(des, debug_prints)
     return des, fab, sol
