@@ -27,19 +27,24 @@ class Placer:
         print('Creating design...')
         d = design.Design(adj, self.fabric, position.Packed2H, 'Design1')
         d.add_constraint_generator(constraints.nearest_neighbor_fast)
+        neighborhood = 1
+        d.add_constraint_generator(constraints.in_neighborhood(neighborhood))
         d.add_constraint_generator(constraints.distinct)
         print('Initializing solver and adding constraints...')
         solver = z3.Solver()
         solver.add(d.constraints)
         counter = 0
-        print('Finding satisfying model with wire_lengths = {}'.format(self.fabric.wire_lengths))
+        print('Finding satisfying model with neighborhood = {}'.format(neighborhood))
         result = solver.check()
         while result != z3.sat and counter < limit:
-            print('Placement with wire_lengths = {} is unsat.'.format(self.fabric.wire_lengths))
+            print('Placement with neighborhood = {} is unsat.'.format(neighborhood))
             self.fabric.update_wire_lengths()
-            print('Resetting and trying with wire_lengths = {}'.format(self.fabric.wire_lengths))
+            print('Resetting and trying with neighborhood = {}'.format(neighborhood+1))
             solver.reset()
-            d._reset_g_constraints()
+            #d._reset_g_constraints()
+            d.remove_constraint_generator(constraints.in_neighborhood(neighborhood))
+            neighborhood += 1
+            d.add_constraint_generator(constraints.in_neighborhood(neighborhood))
             solver.add(d.constraints)
             counter += 1
             result = solver.check()

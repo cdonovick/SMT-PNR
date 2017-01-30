@@ -20,6 +20,21 @@ def tiny_test(dims=(3,3), debug_prints=True):
     return des, fab, sol
 
 
+def tiny_opt_test(dims=(4,4), debug_prints=True):
+    ''' 
+        place 4 nodes on a 3x3 fabric [with length 1 wires] 
+    '''
+    adj = {'n1' : [('n2', 1),('n3',1)], 'n2' : [('n4',1)], 'n3' : [('n4',1)], 'n4' : {}}
+    fab = Fabric(dims, wire_lengths={1})
+
+    des = Design(adj, fab, position.BVXY)
+    des.add_optimizer(constraints.min_L1, True)
+    des.add_constraint_generator(constraints.opt_distinct)
+
+    sol = run_opt_test(des, debug_prints)
+    return des, fab, sol
+
+
 def small_test(dims=(8,8), debug_prints=True):
     '''
         place a depth 5 binary tree on a 8 by 8 with wire lengths of 1 or 2 
@@ -63,11 +78,12 @@ def run_test(design, debug_prints):
 def run_opt_test(design, debug_prints):
     if debug_prints: print('running test')
     
-
     s = z3.Optimize()
     s.add(design.constraints)
     for param, min in design.opt_parameters:
         if min:
+            print(param)
+            print(type(param))
             s.minimize(param)
         else:
             s.maximize(param)
