@@ -82,8 +82,6 @@ def run_opt_test(design, debug_prints):
     s.add(design.constraints)
     for param, min in design.opt_parameters:
         if min:
-            print(param)
-            print(type(param))
             s.minimize(param)
         else:
             s.maximize(param)
