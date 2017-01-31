@@ -81,6 +81,10 @@ def min_L1(components, wires, fabric):
 
 
 def in_neighborhood(num_hops):
+    '''
+    in_neighborhood(1) should equal nearest_neighbor_fast
+    '''
+
     if num_hops < 1:
         raise ValueError('num_hops must be >= 1, recieved {}'.format(num_hops))
 

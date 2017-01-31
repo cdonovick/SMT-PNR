@@ -13,8 +13,8 @@ def tiny_test(dims=(3,3), debug_prints=True):
     fab = Fabric(dims, wire_lengths={1})
 
     des = Design(adj, fab, position.Unpacked2H)
-    des.add_constraint_generator(constraints.nearest_neighbor_fast)
-    des.add_constraint_generator(constraints.distinct)
+    des.add_constraint_generator('nearest_neighbor', constraints.nearest_neighbor_fast)
+    des.add_constraint_generator('distinct', constraints.distinct)
 
     sol = run_test(des, debug_prints)
     return des, fab, sol
@@ -28,8 +28,8 @@ def tiny_opt_test(dims=(4,4), debug_prints=True):
     fab = Fabric(dims, wire_lengths={1})
 
     des = Design(adj, fab, position.BVXY)
-    des.add_optimizer(constraints.min_L1, True)
-    des.add_constraint_generator(constraints.opt_distinct)
+    des.add_optimizer('min_L1', constraints.min_L1, True)
+    des.add_constraint_generator('distinct', constraints.opt_distinct)
 
     sol = run_opt_test(des, debug_prints)
     return des, fab, sol
@@ -42,8 +42,8 @@ def small_test(dims=(8,8), debug_prints=True):
     adj = {'n{}'.format(i) : frozenset((('n{}'.format(2*i), 1), ('n{}'.format(2*i+1), 1))) for i in range(1,2**4)}
     fab = Fabric(dims, wire_lengths={1,2})
     des = Design(adj, fab, position.Packed2H) 
-    des.add_constraint_generator(constraints.in_neighborhood(2))
-    des.add_constraint_generator(constraints.distinct)
+    des.add_constraint_generator('neighborhood', constraints.in_neighborhood(2))
+    des.add_constraint_generator('distinct', constraints.distinct)
     sol = run_test(des, debug_prints)
     return des, fab, sol
 
@@ -52,8 +52,8 @@ def unsat_test(debug_prints=True):
 
     fab = Fabric((3,3), wire_lengths={1})
     des = Design(adj, fab, position.Packed2H)  
-    des.add_constraint_generator(constraints.nearest_neighbor_fast)
-    des.add_constraint_generator(constraints.distinct)
+    des.add_constraint_generator('nearest_neighbor', constraints.nearest_neighbor_var)
+    des.add_constraint_generator('distinct', constraints.distinct)
     sol = run_test(des, debug_prints)
     return des, fab, sol
 

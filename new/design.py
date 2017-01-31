@@ -188,12 +188,13 @@ class Design(NamedIDObject):
         position_type ::  str -> Frabric -> PositionBase
 
         constraints_gen :: [([Component] -> [Wire] -> fabric -> z3.Bool)]
-        constraint_generators := an iterable of functions that generate hard
+        constraint_generators := an iterable of keys, functions that generate hard
             constraints
 
         optimizers :: [([Component] -> [Wire] -> fabric -> (z3.Bool, z3.Object), bool)]
-        optimizers := [f, b] 
+        optimizers := [k, f, b] 
             where 
+                k is the key
                 f(components, wires) := an Iterable of functions that
                     generate hard constraint / optimizing parameters pairs, 
                 b := a bool which indicating whether Optimizing parameter is minimized or maximized
@@ -212,11 +213,11 @@ class Design(NamedIDObject):
         self._cg = dict()
         self._opt = dict()
 
-        for f in constraint_generators:
-            self.add_constraint_generator(f)
+        for k,f in constraint_generators:
+            self.add_constraint_generator(k,f)
 
-        for f,b in optimizers:
-            self.add_optimizer(f,b)
+        for k,f,b in optimizers:
+            self.add_optimizer(k,f,b)
 
         #build graph
         self._gen_graph()
@@ -324,26 +325,26 @@ class Design(NamedIDObject):
     '''
     @property
     def constraint_generators(self):
-        return set(self._cg)
+        return set((k, f) for k,(f,_) in self._cg.items()) 
 
-    def add_constraint_generator(self, f):
-        self._cg[f] = _valid_container()
+    def add_constraint_generator(self, k, f):
+        self._cg[k] = (f, _valid_container())
 
-    def remove_constraint_generator(self, f):
-        del self._cg[f]
+    def remove_constraint_generator(self, k):
+        del self._cg[k]
 
     @property
     def g_constraints(self):
         cl = []
-        for f,c in self._cg.items():
+        for k,(f, c) in self._cg.items():
             if not c.valid: 
                 c.data = f(self.components, self.wires, self.fabric)
             cl.append(c.data)
-        return z3.And(*cl)
+        return z3.And(cl)
 
     def _reset_g_constraints(self):
-        for f in self.constraint_generators:
-            self._cg[f].mark_invalid()
+        for _,c in self._cg.values():
+            c.mark_invalid()
 
     '''
         -----------------------------------------------------------------------
@@ -353,36 +354,38 @@ class Design(NamedIDObject):
         
     @property
     def optimizers(self):
-        return set(self._opt)
+        return set((k, f, b) for k,(f,_,b) in self._cg.items())
 
-    def add_optimizer(self, f, minimize):
-        self._opt[f] = (_valid_container(), minimize)
+    def add_optimizer(self, k, f, minimize):
+        self._opt[k] = (f, _valid_container(), minimize)
 
-    def remove_optimizer(self, f):
-        del self._opt[f]
+    def remove_optimizer(self, k):
+        del self._opt[k]
 
     @property 
     def o_constraints(self):
         cl = []
-        for f,c in self._opt.items():
-            # c[0] := _valid_container(constraints, parameter)
-            # c[1] := minimize flag
-            if not c[0].valid:
-                c[0].data = f(self.components, self.wires, self.fabric)
-            cl.append(c[0].data[0]) 
-        return z3.And(*cl)
+        for f,c,m in self._opt.values():
+            # f := functiom
+            # c := _valid_container(constraints, parameter)
+            # m := minimize flag
+            if not c.valid:
+                c.data = f(self.components, self.wires, self.fabric)
+            cl.append(c.data[0]) 
+        return z3.And(cl)
 
     @property
     def opt_parameters(self): 
         cl = []
-        for f,c in self._opt.items():
-            # c[0] := _valid_container(constraints, parameter)
-            # c[1] := minimize flag
-            if not c[0].valid:
-                c[0].data = f(self.components, self.wires, self.fabric)
-            cl.append((c[0].data[1], c[1]))
+        for f,c,m in self._opt.values():
+            # f := functiom
+            # c := _valid_container(constraints, parameter)
+            # m := minimize flag
+            if not c.valid:
+                c.data = f(self.components, self.wires, self.fabric)
+            cl.append((c.data[1], m))
         return cl
 
     def _reset_o_constraints(self):
-        for f in self.optimizers:
-            self._opt[f][0].mark_invalid()
+        for _,c,_ in self._opt.values():
+            c.mark_invalid()

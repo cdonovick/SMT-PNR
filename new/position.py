@@ -114,7 +114,7 @@ class Base2H(PositionBase):
     def delta_x_fun(self, other):
         def delta_fun(constant):
             if constant == 0:
-                return z3.Or(self.x == other.x)
+                return self.x == other.x
             else:
                 return z3.Or(self.x == other.x << constant, other.x == self.x << constant)
         return delta_fun 
@@ -122,7 +122,7 @@ class Base2H(PositionBase):
     def delta_y_fun(self, other):
         def delta_fun(constant):
             if constant == 0:
-                return z3.Or(self.y == other.y)
+                return self.y == other.y
             else:
                 return z3.Or(self.y == other.y << constant, other.y == self.y << constant)
         return delta_fun
@@ -190,10 +190,14 @@ class BVXY(PositionBase):
         return [], zu.absolute_value(self.y - other.y)
 
     def delta_x_fun(self, other):
-        raise ValueError('position.BVXY meant to be used for optimization -- no need for delta_x_fun')
+        def delta_fun(constant):
+            return self.delta_x(other) == constant
+        return delta_fun
 
     def delta_y_fun(self, other):
-        raise ValueError('position.BVXY meant to be used for optimization -- no need for delta_y_fun')
+        def delta_fun(constant):
+            return self.delta_y(other) == constant
+        return delta_fun
 
     @property 
     def flat(self):
@@ -219,8 +223,3 @@ class BVXY(PositionBase):
     def get_coordinates(self, model):
         return (model.eval(self.x).as_long(), model.eval(self.y).as_long())
         
-
-
-
-
-
