@@ -75,9 +75,9 @@ def build_mgraph(fab, placed_comps):
                     g.addUndirectedEdge(CBr[x-1][y], fab.CLBs[(x,y)])
                 if y > 0:
                     g.addUndirectedEdge(CBb[x][y-1], fab.CLBs[(x,y)])
-            if x > 0 and x < fab.cols - 1 and y < fab.rows - 1:
+            if x > 0 and x <= fab.cols - 1 and y < fab.rows - 1:
                 g.addUndirectedEdge(SB[x-1][y], CBb[x][y])
-            if y > 0 and x < fab.cols - 1 and y < fab.rows - 1:
+            if y > 0 and x < fab.cols - 1 and y <= fab.rows - 1:
                 g.addUndirectedEdge(SB[x][y-1], CBr[x][y])
     return g
 
@@ -113,6 +113,9 @@ def route(fab_dims, des, model):
                 for node in g.getPath(reaches):
                     path_node_names.append(g.names[node])
                 print("Satisfying path (as a list of nodes): " + str(path_node_names))
+            else:
+                print(g.names[fab.getNode(wire.src)])
+                print(g.names[fab.getNode(wire.dst)])
     return 
 
 
@@ -134,5 +137,5 @@ def test(filepath, fab_dims=(16,16)):
     frows, fcols = fab_dims
     fab = design.Fabric(fab_dims)
     p = placer.Placer(fab)
-    d, model = p.place(p.parse_file(filepath))
+    model, d = p.place(p.parse_file(filepath))
     route(fab_dims, d, model)
