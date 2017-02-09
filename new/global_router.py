@@ -147,19 +147,27 @@ def route(fab_dims, des, model, W, verbose = False):
             c.append(dist_constraint)
             result = ms.Solve(ms.And(c))
 
+            #performance suffered a lot with small relaxations -- for now trying complete relaxation
             #relax distance constraints if false
             #TODO: come up with better upper bound on distance
-            variable_dist_factor = __dist_factor+1
-            while not result and dist < fab.rows*fab.cols:
+            #variable_dist_factor = 2*__dist_factor
+            #while not result and dist < fab.rows*fab.cols:
+            #    if verbose:
+            #        print('Not routable with given distance constraint, relaxing distance and trying again')
+            #    del c[-1]
+            #    dist = variable_dist_factor*comp_dist(wire.src, wire.dst, model) + __dist_freedom
+            #    dist_constraint = g.distance_leq(fab.getNode(wire.src),fab.getNode(wire.dst), dist)
+            #    c.append(dist_constraint)
+            #    result = ms.Solve(ms.And(c))
+            #    variable_dist_factor = 2*variable_dist_factor
+
+            #do a complete relaxation if not routed
+            if not result:
                 if verbose:
                     print('Not routable with given distance constraint, relaxing distance and trying again')
                 del c[-1]
-                dist = variable_dist_factor*comp_dist(wire.src, wire.dst, model) + __dist_freedom
-                dist_constraint = g.distance_leq(fab.getNode(wire.src),fab.getNode(wire.dst), dist)
-                c.append(dist_constraint)
                 result = ms.Solve(ms.And(c))
-                variable_dist_factor += 1
-
+            
             if result:
             #If the result is SAT, you can find the nodes that make up a satisfying path:
                 path_node_names = []
@@ -174,6 +182,7 @@ def route(fab_dims, des, model, W, verbose = False):
                     fab.incrementEdge(edge)
             else:
                 heuristic_routable = False
+                #TODO: if fail to route, need to reorder and possibly re-place
                 if verbose:
                     print('Failed to route')
                     print(g.names[fab.getNode(wire.src)])
@@ -204,4 +213,4 @@ def test(filepath, fab_dims=(16,16)):
     fab = design.Fabric(fab_dims)
     p = placer.Placer(fab)
     model, d = p.place(p.parse_file(filepath))
-    route(fab_dims, d, model, 2)
+    route(fab_dims, d, model, 2, True)

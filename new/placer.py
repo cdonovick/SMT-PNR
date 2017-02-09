@@ -27,7 +27,8 @@ class Placer:
     def place(self, adj, limit=5):
         print('Creating design...')
         d = design.Design(adj, self.fabric, position.Packed2H, 'Design1')
-        neighborhood = 1
+        neighborhood = int(math.ceil(d.max_degree/4))
+        print('Design has max degree = {}'.format(d.max_degree))
         d.add_constraint_generator('neighborhood', constraints.in_neighborhood(neighborhood))
         d.add_constraint_generator('distinct', constraints.distinct)
         print('Initializing solver and adding constraints...')

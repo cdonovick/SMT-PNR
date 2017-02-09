@@ -213,6 +213,8 @@ class Design(NamedIDObject):
         self._cg = dict()
         self._opt = dict()
 
+        self._max_degree = 0
+
         for k,f in constraint_generators:
             self.add_constraint_generator(k,f)
 
@@ -257,6 +259,11 @@ class Design(NamedIDObject):
         self._reset_constraints()
         for c in self.components:
             c.pos = self._position_type(c.name, self.fabric)
+            # also find maximum (in or out) degree
+            if self._max_degree < len(c._inputs):
+                self._max_degree = len(c._inputs)
+            if self._max_degree < len(c._outputs):
+                self._max_degree = len(c._outputs)
 
 
     @property
@@ -283,6 +290,9 @@ class Design(NamedIDObject):
         '''returns all hard constraints'''
         return z3.And(self.p_constraints, self.g_constraints, self.o_constraints)
 
+    @property
+    def max_degree(self):
+        return self._max_degree
     
     def _reset_constraints(self):
         self._reset_p_constraints()
