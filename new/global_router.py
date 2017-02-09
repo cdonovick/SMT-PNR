@@ -15,18 +15,8 @@ class MFabric:
     def getNode(self, pc):
         return self.CLBs[pc.pos.get_coordinates( self.model)] #return the monosat node associated with that component
 
-    def addUndirectedEdge(self, msgraph, n1, n2):
-        #deprecated because need to keep track of both directed edges (that represent one undirected edge)
-        #add an edge connecting node n1 and node n2
-        #initialize the edge count as 0 (it's been used 0 times)
-        e = msgraph.addUndirectedEdge(n1, n2)
-        if e in self._edge_dict.keys():
-            print('Edge not unique')
-        else:
-            self._edge_dict[e] = 0
-
     def populate_edge_dict(self, edges):
-        #monosat returns edges as tuples of size 4, with the third (index 2) as the literal
+        #add all the edges to the edge dictionary (an undirected edge is represented by two directed edges)
         for e in edges:
             self._edge_dict[e.lit] = (0, e)
 
@@ -129,11 +119,10 @@ def comp_dist(pc, adj, model):
     return abs(pcpos[0] - adjpos[0]) + abs(pcpos[1] - adjpos[1])
 
 
-def route(fab_dims, des, model, W, verbose = False):
+def route(fab, des, model, W, verbose = False):
     '''
         attempt to globally (doesn't consider track widths and allows sharing wires) route all of the placed components
     '''
-    fab = MFabric(fab_dims, model, W)
     g = build_mgraph(fab, des.components)
     #if made false, still not necessarily unroutable, just unroutable for the given netlist ordering
     heuristic_routable = True
@@ -213,4 +202,5 @@ def test(filepath, fab_dims=(16,16)):
     fab = design.Fabric(fab_dims)
     p = placer.Placer(fab)
     model, d = p.place(p.parse_file(filepath))
-    route(fab_dims, d, model, 2, True)
+    fab.setModel(model)
+    route(fab, d, model, 2, True)

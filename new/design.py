@@ -37,7 +37,7 @@ class NamedIDObject(IDObject):
         return self._name
 
 class Fabric:
-    def __init__(self, dims, wire_lengths={1}, W=None, Fc=None, Fs=None, node_masks=None):
+    def __init__(self, dims, wire_lengths={1}, W=2, Fc=None, Fs=None, node_masks=None, model = None):
         '''
             dims := The dimensions of the fabric
             wire_lengths := the length of wires between switch boxes
@@ -56,10 +56,58 @@ class Fabric:
         self._W = W
         self._Fc = Fc
         self._Fs = Fs
+        self._model = model
+        self.CLBs = {}
+        self._edge_dict = {}
+        
 
     def update_wire_lengths(self, n=2):
         for i in range(n):
             self._wire_lengths.add(max(self._wire_lengths) + 1)
+
+    #START: Methods for routing in MonoSAT
+    def setModel(self, model):
+        self._model = model
+
+    def getNode(self, pc):
+        return self.CLBs[pc.pos.get_coordinates( self._model)] #return the monosat node associated with that component
+
+    def populate_edge_dict(self, edges):
+        #add all the edges to the edge dictionary (an undirected edge is represented by two directed edges)
+        for e in edges:
+            self._edge_dict[e.lit] = (0, e)
+
+    def incrementEdge(self, e):
+        #increments edge count
+        if e.lit in self._edge_dict:
+            t = self._edge_dict[e.lit]
+            self._edge_dict[e.lit] = (t[0]+1, t[1])
+        else:
+            raise ValueError('Edge {} does not yet exist in the graph'.format(e))
+
+    def getEdgeCount(self, e):
+        return self._edge_dict[e.lit][0]
+
+    def getMaxEdges(self):
+        #returns a list of the edges which are at capacity
+        #TODO maybe implement a heap-type structure eventually -- but accessing by edges is also convenient...
+        max_edges = []
+        for e_lit, t in self._edge_dict.items():
+            count = t[0]
+            edge = t[1]
+            if count >= self.W:
+                max_edges.append(edge)
+        return max_edges
+    
+    def populate_CLBs(self, fab, placed_comps, g):
+        '''
+        add placed components to the fabric
+        '''
+        for pc in placed_comps:
+            pcpos = pc.pos.get_coordinates(self._model)
+            fab.CLBs[pcpos] = g.addNode('{}({},{})'.format(pc.name,pcpos[0],pcpos[1]))
+
+    #END: Methods for routing in MonoSAT
 
     @property
     def dims(self): 
@@ -79,7 +127,7 @@ class Fabric:
 
     @property
     def W(self): 
-        raise NotImplementedError('This feature is not supported')
+        return self._W
 
     @property
     def Fc(self): 
