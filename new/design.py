@@ -444,7 +444,9 @@ class Design(NamedIDObject):
             # m := minimize flag
             if not c.valid:
                 c.data = f(self.components, self.wires, self.fabric)
-            cl.append(c.data[0]) 
+            if c.data[0]:
+                #check that list nonempty to avoid appending an empty list
+                cl.append(c.data[0]) 
         return z3.And(cl)
 
     @property
