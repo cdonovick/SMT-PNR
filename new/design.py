@@ -144,6 +144,8 @@ class Component(NamedIDObject):
         self._pos = pos
         self._inputs = set(inputs)
         self._outputs = set(outputs)
+        self._in_degree = 0
+        self._out_degree = 0
         
 
     @property
@@ -164,15 +166,25 @@ class Component(NamedIDObject):
     def pos(self):
         return self._pos
 
+    @property
+    def in_degree(self):
+        return self._in_degree
+
+    @property
+    def out_degree(self):
+        return self._out_degree
+
     @pos.setter
     def pos(self, p):
         self._pos = p
     
     def _add_input(self, src):
         self._inputs.add(src)
+        self._in_degree += 1
 
     def _add_output(self, dst):
         self._outputs.add(dst)
+        self._out_degree += 1
 
     def __repr__(self):
         return 'name: {}, inputs: {}, outputs: {}'.format(self.name, {x.src.name for x in self.inputs}, {x.dst.name for x in self.outputs})
@@ -308,11 +320,14 @@ class Design(NamedIDObject):
         for c in self.components:
             c.pos = self._position_type(c.name, self.fabric)
             # also find maximum (in or out) degree
-            if self._max_degree < len(c._inputs):
-                self._max_degree = len(c._inputs)
-            if self._max_degree < len(c._outputs):
-                self._max_degree = len(c._outputs)
+            if self._max_degree < c.in_degree:
+                self._max_degree = c.in_degree
+            if self._max_degree < c.out_degree:
+                self._max_degree = c.out_degree
 
+    def get_sorted_components(self, out, descend):
+        '''returns components sorted by their degree (out_degree if out = True, in_degree if out = False) in descending order if descend = True'''
+        return sorted(list(self._comps.values()), key = lambda c: c.out_degree, reverse=descend)
 
     @property
     def components(self):

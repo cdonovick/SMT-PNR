@@ -126,7 +126,7 @@ def route(fab, des, model, W, verbose = False):
     g = build_mgraph(fab, des.components)
     #if made false, still not necessarily unroutable, just unroutable for the given netlist ordering
     heuristic_routable = True
-    for pc in des.components:
+    for pc in des.get_sorted_components(True, True):
         for wire in pc.outputs:
             reaches = g.reaches(fab.getNode(wire.src),fab.getNode(wire.dst))
             dist = __dist_factor*comp_dist(wire.src, wire.dst, model) + __dist_freedom
