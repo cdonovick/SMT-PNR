@@ -180,8 +180,20 @@ class Unpacked2H(Base2H):
 class BVXY(PositionBase):
     def __init__(self, name, fabric):
         super().__init__(name, fabric)
-        self._x = z3.BitVec(self.name + '_x', int(ceil(log2(self.fabric.cols))))
-        self._y = z3.BitVec(self.name + '_y', int(ceil(log2(self.fabric.rows))))
+        if self.fabric.cols%2 == 0:
+            #adding extra bit to avoid overflow adjacency
+            self._x = z3.BitVec(self.name + '_x', 1+int(log2(self.fabric.cols)))
+            self.__is_x_pow2 = True
+        else:
+            self._x = z3.BitVec(self.name + '_x', int(ceil(log2(self.fabric.cols))))
+            self.__is_x_pow2 = False
+        if self.fabric.rows%2 == 0:
+            #adding extra bit to avoid overflow adjacency
+            self._y = z3.BitVec(self.name + '_y', 1+int(log2(self.fabric.rows)))
+            self.__is_y_pow2 = True
+        else:
+            self._y = z3.BitVec(self.name + '_y', int(ceil(log2(self.fabric.rows))))
+            self.__is_y_pow2 = False
 
     def delta_x(self, other):
         return [], zu.absolute_value(self.x - other.x)
@@ -214,9 +226,15 @@ class BVXY(PositionBase):
     @property
     def invariants(self):
         constraint = []
-        if not log2(self.fabric.cols).is_integer():
+        if self.__is_x_pow2:
+            ix = int(log2(self.fabric.cols))
+            constraint.append(z3.Extract(ix, ix, self.x) == 0)
+        else:
             constraint.append(z3.ULT(self.x, self.fabric.cols))
-        if not log2(self.fabric.rows).is_integer():
+        if self.__is_y_pow2:
+            iy = int(log2(self.fabric.rows))
+            constraint.append(z3.Extract(iy, iy, self.y) == 0)
+        else:
             constraint.append(z3.ULT(self.y, self.fabric.rows))
         return z3.And(constraint)
 
