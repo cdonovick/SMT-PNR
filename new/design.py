@@ -2,7 +2,6 @@
     Classes for represtenting designs and various constructors
 '''
 
-import itertools as it
 from collections import Iterable
 import z3
 import traceback
@@ -116,6 +115,9 @@ class Component(NamedIDObject):
         self._pos = pos
         self._inputs = set(inputs)
         self._outputs = set(outputs)
+        #outputs as list allows multiple edges between two components
+        #used for routing
+        self._outputs_list = list(outputs)
         self._in_degree = 0
         self._out_degree = 0
         
@@ -133,6 +135,13 @@ class Component(NamedIDObject):
             returns a iterator over Wires
         '''
         return iter(self._outputs)
+
+    @property
+    def outputs_list(self):
+        '''
+           returns a list of Wires
+        '''
+        return self._outputs_list
     
     @property
     def pos(self):
@@ -156,6 +165,7 @@ class Component(NamedIDObject):
 
     def _add_output(self, dst):
         self._outputs.add(dst)
+        self._outputs_list.append(dst)
         self._out_degree += 1
 
     def __repr__(self):

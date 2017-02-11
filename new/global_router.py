@@ -84,7 +84,7 @@ def route(fab, des, model, W, verbose = False):
         #to allow fanout, only increments edges once for each component
         #TODO: verify electrical correctness
         used_edges = set()
-        for wire in pc.outputs:
+        for wire in pc.outputs_list:
             reaches = g.reaches(fab.getNode(wire.src),fab.getNode(wire.dst))
             dist = __dist_factor*comp_dist(wire.src, wire.dst, model) + __dist_freedom
             dist_constraint = g.distance_leq(fab.getNode(wire.src),fab.getNode(wire.dst), dist)

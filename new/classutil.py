@@ -1,3 +1,5 @@
+import itertools as it
+
 _object_id = it.count().__next__
 
 class IDObject:
