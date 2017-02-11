@@ -6,35 +6,7 @@ import itertools as it
 from collections import Iterable
 import z3
 import traceback
-
-_object_id = it.count().__next__
-
-class IDObject:
-    def __init__(self):
-        self._id = _object_id()
-
-    def __eq__(self, other):
-        return isinstance(other, type(self)) and self._id == other._id
-
-    def __ne__(self, other):
-        return not isinstance(other, type(self)) or not self._id == other._id
- 
-    def __hash__(self):
-        return hash(self._id)
-
-
-    @property
-    def id(self):
-        return self._id
-    
-class NamedIDObject(IDObject):
-    def __init__(self, name):
-        super().__init__()
-        self._name = '{}_{}'.format(name, self.id)
-
-    @property
-    def name(self):
-        return self._name
+from classutil import IDObject, NamedIDObject, ValidContainer
 
 class Fabric:
     def __init__(self, dims, wire_lengths={1}, W=2, Fc=None, Fs=None, node_masks=None, model = None):
@@ -208,37 +180,6 @@ class Wire(IDObject):
     def __repr__(self):
         return '{} -[{}]-> {}'.format(self.src.name, self.width, self.dst.name)
 
-class _valid_container:
-    '''wrapper class that allows data to marked invalid '''
-    __slots__ = '_data', '_valid'
-
-    def __init__(self):
-        self.mark_invalid()
-
-    def mark_invalid(self):
-        self._valid = False
-
-    @property
-    def valid(self):
-        return self._valid 
-
-    @property
-    def data(self):
-        if not self.valid:
-            raise AttributeError('Data is invalid')
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._valid = True
-        self._data = data
-
-    def __repr__(self):
-        if self.valid:
-            return repr(data)
-        else:
-            return 'Invalid'
-
 class Design(NamedIDObject):
     def __init__(self, adj_dict, fabric, position_type, name='', constraint_generators=(), optimizers=()):
         '''
@@ -269,7 +210,7 @@ class Design(NamedIDObject):
         self._comps = dict()
         self._wires = dict()
         
-        self._p_constraints = _valid_container()
+        self._p_constraints = ValidContainer()
         self._cg = dict()
         self._opt = dict()
 
@@ -401,7 +342,7 @@ class Design(NamedIDObject):
         return set((k, f) for k,(f,_) in self._cg.items()) 
 
     def add_constraint_generator(self, k, f):
-        self._cg[k] = (f, _valid_container())
+        self._cg[k] = (f, ValidContainer())
 
     def remove_constraint_generator(self, k):
         del self._cg[k]
@@ -430,7 +371,7 @@ class Design(NamedIDObject):
         return set((k, f, b) for k,(f,_,b) in self._cg.items())
 
     def add_optimizer(self, k, f, minimize):
-        self._opt[k] = (f, _valid_container(), minimize)
+        self._opt[k] = (f, ValidContainer(), minimize)
 
     def remove_optimizer(self, k):
         del self._opt[k]
@@ -440,7 +381,7 @@ class Design(NamedIDObject):
         cl = []
         for f,c,m in self._opt.values():
             # f := functiom
-            # c := _valid_container(constraints, parameter)
+            # c := ValidContainer(constraints, parameter)
             # m := minimize flag
             if not c.valid:
                 c.data = f(self.components, self.wires, self.fabric)
@@ -454,7 +395,7 @@ class Design(NamedIDObject):
         cl = []
         for f,c,m in self._opt.values():
             # f := functiom
-            # c := _valid_container(constraints, parameter)
+            # c := ValidContainer(constraints, parameter)
             # m := minimize flag
             if not c.valid:
                 c.data = f(self.components, self.wires, self.fabric)
