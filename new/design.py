@@ -105,7 +105,7 @@ class Fabric:
         '''
         for pc in placed_comps:
             pcpos = pc.pos.get_coordinates(self._model)
-            fab.CLBs[pcpos] = g.addNode('{}({},{})'.format(pc.name,pcpos[0],pcpos[1]))
+            fab.CLBs[pcpos] = g.addNode('({},{}){}'.format(pcpos[0],pcpos[1], pc.name))
 
     #END: Methods for routing in MonoSAT
 

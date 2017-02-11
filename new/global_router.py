@@ -1,55 +1,7 @@
 import monosat as ms
 import design
 import placer
-
-class MFabric:
-    def __init__(self, fab_dims, model, W):
-        #For now, W is universal number of tracks (assumed same for every edge)
-        self.rows = fab_dims[0]
-        self.cols = fab_dims[1]
-        self.CLBs = {}
-        self._edge_dict = {}
-        self.model = model
-        self.W = W
-        
-    def getNode(self, pc):
-        return self.CLBs[pc.pos.get_coordinates( self.model)] #return the monosat node associated with that component
-
-    def populate_edge_dict(self, edges):
-        #add all the edges to the edge dictionary (an undirected edge is represented by two directed edges)
-        for e in edges:
-            self._edge_dict[e.lit] = (0, e)
-
-    def incrementEdge(self, e):
-        #increments edge count
-        if e.lit in self._edge_dict:
-            t = self._edge_dict[e.lit]
-            self._edge_dict[e.lit] = (t[0]+1, t[1])
-        else:
-            raise ValueError('Edge {} does not yet exist in the graph'.format(e))
-
-    def getEdgeCount(self, e):
-        return self._edge_dict[e.lit][0]
-
-    def getMaxEdges(self):
-        #returns a list of the edges which are at capacity
-        #TODO maybe implement a heap-type structure eventually -- but accessing by edges is also convenient...
-        max_edges = []
-        for e_lit, t in self._edge_dict.items():
-            count = t[0]
-            edge = t[1]
-            if count >= self.W:
-                max_edges.append(edge)
-        return max_edges
-    
-    def populate_CLBs(self, fab, placed_comps, g):
-        '''
-        add placed components to the fabric
-        '''
-        for pc in placed_comps:
-            pcpos = pc.pos.get_coordinates(self.model)
-            fab.CLBs[pcpos] = g.addNode('{}({},{})'.format(pc.name,pcpos[0],pcpos[1])) 
-    
+import pnr2dot
 
 class PlacedComp:
     def __init__(self, pos, adj=()):
@@ -71,9 +23,9 @@ def build_mgraph(fab, placed_comps):
 
         Example of coordinate system and naming scheme:
 
-                        CLB(i,j)---CB(i,j)r
+                        (i,j)CLB---(i,j)CBr
                            |          |
-                        CB(i,j)b---SB(i,j)
+                        (i,j)CBb---(i,j)SB
 
                         r = right
                         b = bottom
@@ -83,9 +35,9 @@ def build_mgraph(fab, placed_comps):
     #add all the placed components to the graph
     fab.populate_CLBs(fab, placed_comps, g)
     #add all internal connection boxes and switch boxes on fabric
-    CBr = [[g.addNode('CB({},{})_r'.format(x,y)) for y in range(fab.rows)] for x in range(fab.cols - 1)]
-    CBb = [[g.addNode('CB({},{})_b'.format(x,y)) for y in range(fab.rows - 1)] for x in range(fab.cols)]
-    SB = [[g.addNode('SB({},{})'.format(x,y)) for y in range(fab.rows-1)] for x in range(fab.cols-1)]
+    CBr = [[g.addNode('({},{})CB_r'.format(x,y)) for y in range(fab.rows)] for x in range(fab.cols - 1)]
+    CBb = [[g.addNode('({},{})CB_b'.format(x,y)) for y in range(fab.rows - 1)] for x in range(fab.cols)]
+    SB = [[g.addNode('({},{})SB'.format(x,y)) for y in range(fab.rows-1)] for x in range(fab.cols-1)]
     #add edges
     for y in range(fab.rows):
         for x in range(fab.cols):
@@ -107,7 +59,7 @@ def build_mgraph(fab, placed_comps):
             if y > 0 and x < fab.cols - 1 and y <= fab.rows - 1:
                 g.addUndirectedEdge(SB[x][y-1], CBr[x][y])
     fab.populate_edge_dict(g.getEdgeVars())
-    return g
+    return g, CBr, CBb, SB
 
 
 def comp_dist(pc, adj, model):
@@ -123,10 +75,15 @@ def route(fab, des, model, W, verbose = False):
     '''
         attempt to globally (doesn't consider track widths and allows sharing wires) route all of the placed components
     '''
-    g = build_mgraph(fab, des.components)
+    g, CBr, CBb, SB = build_mgraph(fab, des.components)
     #if made false, still not necessarily unroutable, just unroutable for the given netlist ordering
+    successful_routes = []
     heuristic_routable = True
     for pc in des.get_sorted_components(True, True):
+        #keeps track of edges used by this component
+        #to allow fanout, only increments edges once for each component
+        #TODO: verify electrical correctness
+        used_edges = set()
         for wire in pc.outputs:
             reaches = g.reaches(fab.getNode(wire.src),fab.getNode(wire.dst))
             dist = __dist_factor*comp_dist(wire.src, wire.dst, model) + __dist_freedom
@@ -168,7 +125,10 @@ def route(fab, des, model, W, verbose = False):
 
                 #increment edge counts
                 for edge in g.getPath(reaches, return_edge_lits=True):
-                    fab.incrementEdge(edge)
+                    used_edges.add(edge)
+
+                #save path
+                successful_routes.append(path_node_names)
             else:
                 heuristic_routable = False
                 #TODO: if fail to route, need to reorder and possibly re-place
@@ -176,7 +136,25 @@ def route(fab, des, model, W, verbose = False):
                     print('Failed to route')
                     print(g.names[fab.getNode(wire.src)])
                     print(g.names[fab.getNode(wire.dst)])
-    return heuristic_routable
+        #increment the edge counts
+        for edge in used_edges:
+            fab.incrementEdge(edge)
+
+        #generate names
+        CBrnames = set()
+        for row in CBr:
+            for col in row:
+                CBrnames.add(g.names[col])
+        CBbnames = set()
+        for row in CBb:
+            for col in row:
+                CBbnames.add(g.names[col])
+        SBnames = set()
+        for row in SB:
+            for col in row:
+                SBnames.add(g.names[col])
+            
+    return heuristic_routable, successful_routes, CBrnames, CBbnames, SBnames
 
 
 def excl_constraints(src, dest, placed_comps, fab, g):
@@ -203,4 +181,13 @@ def test(filepath, fab_dims=(16,16)):
     p = placer.Placer(fab)
     model, d = p.place(p.parse_file(filepath))
     fab.setModel(model)
-    route(fab, d, model, 2, True)
+    h, routes_nodes, CBr, CBb, SB = route(fab, d, model, 2, True)
+    #get all used CLBs
+    CLBs = {}
+    for comp in d.components:
+        pcpos = comp.pos.get_coordinates(model)
+        CLBs[pcpos] = '({},{})'.format(pcpos[0], pcpos[1]) + comp.name
+    if h:
+        pnr2dot.generate_dot((fab.rows, fab.cols), CLBs, CBr, CBb, SB, routes_nodes, 'display.dot')
+    else:
+        print('At least one route failed.')    
