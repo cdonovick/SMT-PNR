@@ -1,4 +1,5 @@
 import pygraphviz as pgv
+import re
 
 #Need to treat differently based on type of nodes
 # maybe pass in different lists or just handle in parse_name...
@@ -65,4 +66,5 @@ def create_all_CLBs(fab_dims, CLBs, G):
             n.attr['pos'] = '{},{}!'.format(__scale_factor*i,__scale_factor*j)
 
 def parse_name(node, bias):
-    return (int(node[1]) + bias[0], int(node[3]) + bias[1]), node
+    p = re.findall('\d+', node)
+    return (int(p[0]) + bias[0], int(p[1]) + bias[1]), node
