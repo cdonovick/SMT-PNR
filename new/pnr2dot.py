@@ -1,8 +1,9 @@
 import pygraphviz as pgv
 import re
 
-#Need to treat differently based on type of nodes
-# maybe pass in different lists or just handle in parse_name...
+#For use with global_router
+#accepts paths as strings with prepended locations
+#done automatically in global_router.test
 
 __bias_amount = 0.5
 __name_start_index = 5
