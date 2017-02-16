@@ -209,12 +209,14 @@ def test(adj, fab_dims, neighborhood=None):
         adj = p.parse_file(adj)
     model, d = p.place(adj, neighborhood)
     place_end = time.time()
-    print('It took {} seconds to place'.format(place_end - place_start))
+    place_time = place_end - place_start
+    print('It took {} seconds to place'.format(place_time))
     fab.setModel(model)
     route_start = time.time()
     h, routes_nodes, CBr, CBb, SB = route(fab, d, model)
     route_end = time.time()
-    print('It took {} seconds to route'.format(route_end - route_start))
+    route_time = route_end - route_start
+    print('It took {} seconds to route'.format(route_time))
     #get all used CLBs
     CLBs = {}
     for comp in d.components:
@@ -222,5 +224,6 @@ def test(adj, fab_dims, neighborhood=None):
         CLBs[pcpos] = '({},{})'.format(pcpos[0], pcpos[1]) + comp.name
     if h:
         pnr2dot.generate_dot((fab.rows, fab.cols), CLBs, CBr, CBb, SB, routes_nodes, 'display.dot')
+        return routes_nodes, place_time, route_time
     else:
         print('At least one route failed.')    

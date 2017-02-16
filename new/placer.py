@@ -51,5 +51,5 @@ class Placer:
 
         if result == z3.sat:
             print('Found satisfying placement')
-            tests.model_printer(solver.model(), d)
+            #tests.model_printer(solver.model(), d)
             return solver.model(), d
