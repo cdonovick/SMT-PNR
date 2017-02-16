@@ -180,20 +180,20 @@ class Unpacked2H(Base2H):
 class BVXY(PositionBase):
     def __init__(self, name, fabric):
         super().__init__(name, fabric)
-        if self.fabric.cols%2 == 0:
+        if 2**(self.fabric.cols.bit_length()-1) == self.fabric.cols:
             #adding extra bit to avoid overflow adjacency
-            self._x = z3.BitVec(self.name + '_x', 1+int(log2(self.fabric.cols)))
-            self.__is_x_pow2 = True
+            self._x = z3.BitVec(self.name + '_x', 1+self.fabric.cols.bit_length())
+            self._is_x_pow2 = True
         else:
-            self._x = z3.BitVec(self.name + '_x', int(ceil(log2(self.fabric.cols))))
-            self.__is_x_pow2 = False
-        if self.fabric.rows%2 == 0:
+            self._x = z3.BitVec(self.name + '_x', self.fabric.cols.bit_length())
+            self._is_x_pow2 = False
+        if 2**(self.fabric.rows.bit_length()-1) == self.fabric.rows:
             #adding extra bit to avoid overflow adjacency
-            self._y = z3.BitVec(self.name + '_y', 1+int(log2(self.fabric.rows)))
-            self.__is_y_pow2 = True
+            self._y = z3.BitVec(self.name + '_y', 1+self.fabric.rows.bit_length())
+            self._is_y_pow2 = True
         else:
-            self._y = z3.BitVec(self.name + '_y', int(ceil(log2(self.fabric.rows))))
-            self.__is_y_pow2 = False
+            self._y = z3.BitVec(self.name + '_y', self.fabric.rows.bit_length())
+            self._is_y_pow2 = False
 
     def delta_x(self, other):
         return [], zu.absolute_value(self.x - other.x)
@@ -203,12 +203,14 @@ class BVXY(PositionBase):
 
     def delta_x_fun(self, other):
         def delta_fun(constant):
-            return self.delta_x(other) == constant
+            _, c = self.delta_x(other)
+            return c == constant
         return delta_fun
 
     def delta_y_fun(self, other):
         def delta_fun(constant):
-            return self.delta_y(other) == constant
+            _, c = self.delta_y(other)
+            return c == constant
         return delta_fun
 
     @property 
@@ -226,12 +228,12 @@ class BVXY(PositionBase):
     @property
     def invariants(self):
         constraint = []
-        if self.__is_x_pow2:
-            ix = int(log2(self.fabric.cols))
+        if self._is_x_pow2:
+            ix = self.fabric.cols.bit_length()            
             constraint.append(z3.Extract(ix, ix, self.x) == 0)
         else:
             constraint.append(z3.ULT(self.x, self.fabric.cols))
-        if self.__is_y_pow2:
+        if self._is_y_pow2:
             iy = int(log2(self.fabric.rows))
             constraint.append(z3.Extract(iy, iy, self.y) == 0)
         else:
