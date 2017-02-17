@@ -28,7 +28,7 @@ def bvxy_test(filepath, dims=(10,10), debug_prints=True):
 def run_test(design, debug_prints):
     if debug_prints: print('running test')
     s = z3.Solver()
-    
+
     s.add(design.constraints)
     start_time = time.time()
     result = s.check()
@@ -50,7 +50,7 @@ def model_printer(model, design):
     for c in design.components:
         (x, y) = c.pos.get_coordinates(model)
         mesh[(x,y)] = c.name
-    
+
     width = 2 + max(len(n) for n in mesh.values())
     s = []
     for y in range(design.fabric.dims[1]):

@@ -1,5 +1,5 @@
 """
-Convert graphviz to dict for use with smtpnr.build_graph 
+Convert graphviz to dict for use with smtpnr.build_graph
 
 Requires pygraphviz
 """

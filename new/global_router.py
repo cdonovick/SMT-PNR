@@ -13,7 +13,7 @@ class PlacedComp:
     def dist(self, pc):
         return abs(self.pos[0] - pc.pos[0]) + abs(self.pos[1] - pc.pos[1])
 
-                         
+
 __dist_factor = 2  #takes two monosat edges for every 1 unit of L1 distance
 __dist_freedom = 2  #how many extra edges can be used over the L1 distance between components (2 allows for going around other components)
 
@@ -138,13 +138,13 @@ def route(fab, des, model, verbose=False):
                 sys.stdout = open(os.devnull, 'w')
                 result = ms.Solve(ms.And(c))
                 sys.stdout = sys.__stdout__
-            
+
             if result:
             #If the result is SAT, you can find the nodes that make up a satisfying path:
                 path_node_names = []
                 for node in g.getPath(reaches):
                     path_node_names.append(g.names[node])
-                    
+
                 if verbose:
                     print("Satisfying path (as a list of nodes): " + str(path_node_names))
 
@@ -178,7 +178,7 @@ def route(fab, des, model, verbose=False):
     for row in SB:
         for col in row:
             SBnames.add(g.names[col])
-            
+
     return heuristic_routable, successful_routes, CBrnames, CBbnames, SBnames
 
 
@@ -187,7 +187,7 @@ def excl_constraints(src, dest, placed_comps, fab, g):
         generate the constraints that components other than the source and destination cannot be used in routing
     '''
     c = []
-    #don't let it route through other CLBs 
+    #don't let it route through other CLBs
     for p in placed_comps:
         if p != src and p != dest:
             c.append(~g.reaches(fab.getNode(src), fab.getNode(p)))
@@ -226,4 +226,4 @@ def test(adj, fab_dims, neighborhood=None):
         pnr2dot.generate_dot((fab.rows, fab.cols), CLBs, CBr, CBb, SB, routes_nodes, 'display.dot')
         return routes_nodes, place_time, route_time
     else:
-        print('At least one route failed.')    
+        print('At least one route failed.')

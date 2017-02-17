@@ -13,7 +13,7 @@ class Placer:
     #TODO handle different types
     def __init__(self, fabric):
         self.fabric = fabric
-        
+
     def parse_file(self, filepath):
         '''
         Parses the provided file using dot2smt

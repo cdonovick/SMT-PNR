@@ -5,7 +5,7 @@ import functools as ft
 
 def hamming_a(bv):
     s = bv.size()
-    return z3.Sum([(bv >> i) & 1 for i in range(s)]) 
+    return z3.Sum([(bv >> i) & 1 for i in range(s)])
 
 # faster than a
 def hamming_b(bv):
@@ -15,12 +15,12 @@ def hamming_b(bv):
 # faster than b
 def hamming_c(bv):
     '''
-    Based on popcount64a from https://en.wikipedia.org/wiki/Hamming_weight 
+    Based on popcount64a from https://en.wikipedia.org/wiki/Hamming_weight
 
     Operation:
-        Basic idea is take the sum of the even and odd bits,  
+        Basic idea is take the sum of the even and odd bits,
         hamming = (bv & (01)*) + ((bv & (10)*) >> 1)
-        We now have hamming weight of each bit pair, 
+        We now have hamming weight of each bit pair,
         next take the sum of the even and odd pairs
         hamming = (hamming & (0011)*) + ((hamming & (1100)*) >> 2)
         we now have the weight of each group of 4
@@ -37,8 +37,8 @@ def hamming_c(bv):
 # possibly marginally faster than c
 def hamming_d(bv):
     '''
-    Based on popcount64b from https://en.wikipedia.org/wiki/Hamming_weight 
-    
+    Based on popcount64b from https://en.wikipedia.org/wiki/Hamming_weight
+
     Operation:
         Same as hamming_c except eventual we can guarantee that top bits are always
         0 so hamming & (1{k}0{k}) == 0, hence don't bother summing the odds.
@@ -54,7 +54,7 @@ def hamming_d(bv):
     mvals = [(2**i, build_grouped_mask(2**i, bsize).value) for i in range(max_exp)]
     x = bv - (z3.LShR(bv, mvals[0][0]) & mvals[0][1])
     x = (x & mvals[1][1]) + (z3.LShR(x, mvals[1][0]) & mvals[1][1])
-    
+
     for idx,i in enumerate(mvals[2:]):
         x = (x + z3.LShR(x, i[0])) & i[1]
         if i[0] > b_point:
@@ -64,7 +64,7 @@ def hamming_d(bv):
         for i in mvals[idx+3:]:
             x += z3.LShR(x, i[0])
 
-    return x & (2**b_point - 1)    
+    return x & (2**b_point - 1)
 
 hamming = hamming_d
 
@@ -85,12 +85,12 @@ def absolute_value(bv):
              x ==  0^x
 
         now if bv < 0 then -bv == -1^(bv - 1) == mask ^ (bv + mask)
-        else bv == 0^(bv + 0) == mask^(bv + mask) 
+        else bv == 0^(bv + 0) == mask^(bv + mask)
         hence for all bv, absolute_value(bv) == mask ^ (bv + mask)
     '''
     mask = bv >> (bv.size() - 1)
     return mask ^ (bv + mask)
-    
+
 
 #used in testing
 _GIANT_NUMBER = 5016456510113118655434598811035278955030765345404790744303017523831112055108147451509157692220295382716162651878526895249385292291816524375083746691371804094271873160484737966720260389217684476157468082573 * 14197795064947621068722070641403218320880622795441933960878474914617582723252296732303717722150864096521202355549365628174669108571814760471015076148029755969804077320157692458563003215304957150157403644460363550505412711285966361610267868082893823963790439336411086884584107735010676915
@@ -115,11 +115,11 @@ class Mask:
         Over engineered class for building bit masks
     '''
     class mask_iter:
-        def __init__(self, mask): 
+        def __init__(self, mask):
             self.__mask = mask
             self.__idx = mask.size
-            
-        def __iter__(self): 
+
+        def __iter__(self):
             return self
 
         def __next__(self):
@@ -139,7 +139,7 @@ class Mask:
             if b in Mask._one_vals:
                 v |= 1
             elif b not in Mask._zero_vals:
-                raise ValueError('value must be composed of bits') 
+                raise ValueError('value must be composed of bits')
         return v, size+1
 
     def __init__(self, value=None, size=None, truncate=True):
@@ -161,7 +161,7 @@ class Mask:
 
         else:
             raise ValueError("Use of type {} as value is undefined".format(type(value)))
-    
+
         if size is None:
             size = val_size
 
@@ -169,9 +169,9 @@ class Mask:
             size = max(size, val_size)
 
         self._intmask = 2**size - 1
-        self._value = value & self._intmask 
+        self._value = value & self._intmask
         self._size = size
-    
+
     @property
     def value(self): return self._value
 
@@ -187,14 +187,14 @@ class Mask:
         elif not isinstance(value, int):
             raise ValueError("Use of type {} as value is undefined".format(type(value)))
 
-        self._value = value & self._intmask 
+        self._value = value & self._intmask
 
     @size.setter
     def size(self, size):
         self._size = size
         self._intmask = 2**size - 1
         #truncate value
-        self._value &= self._intmask 
+        self._value &= self._intmask
 
     @property
     def hamming(self): return sum(i for i in self)
@@ -224,7 +224,7 @@ class Mask:
         return ''.join(s)
 
     def __iter__(self): return Mask.mask_iter(self)
-    
+
     def __getitem__(self, idx):
         if idx >= self.size:
             raise IndexError()
@@ -261,7 +261,7 @@ class Mask:
                 raise TypeError()
         return bin_op
 
-    def _make_ibin_op(op): 
+    def _make_ibin_op(op):
         def ibin_op(self, other):
             if isinstance(other, type(self)):
                 self.value = op(self.value, other.value)
@@ -304,7 +304,7 @@ class Mask:
     __iand__ = _make_ibin_op(operator.iand)
     __ior__ = _make_ibin_op(operator.ior)
     __ixor__ = _make_ibin_op(operator.ixor)
-    
+
 
     __eq__ = _make_bool_op(operator.eq, False)
     __ne__ = _make_bool_op(operator.ne, True)

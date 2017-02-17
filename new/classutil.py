@@ -11,7 +11,7 @@ class IDObject:
 
     def __ne__(self, other):
         return not isinstance(other, type(self)) or not self._id == other._id
- 
+
     def __hash__(self):
         return hash(self._id)
 
@@ -19,7 +19,7 @@ class IDObject:
     @property
     def id(self):
         return self._id
-    
+
 class NamedIDObject(IDObject):
     def __init__(self, name):
         super().__init__()
@@ -41,7 +41,7 @@ class ValidContainer:
 
     @property
     def valid(self):
-        return self._valid 
+        return self._valid
 
     @property
     def data(self):
