@@ -278,10 +278,8 @@ class Design(NamedIDObject):
         for c in self.components:
             c.pos = self._position_type(c.name, self.fabric)
             # also find maximum (in or out) degree
-            if self._max_degree < c.in_degree:
-                self._max_degree = c.in_degree
-            if self._max_degree < c.out_degree:
-                self._max_degree = c.out_degree
+            if self._max_degree < c.degree:
+                self._max_degree = c.degree
 
     def get_sorted_components(self, descend):
         '''returns components sorted by their degree in descending order if descend = True'''
