@@ -14,14 +14,14 @@ def nearest_neighbor_var(components, wires, fabric):
 
         cx, delta_x = src.pos.delta_x(dst.pos)
         cy, delta_y = src.pos.delta_y(dst.pos)
-        
+
         constraints.append(cx)
         constraints.append(cy)
 
         c = []
         for wl in fabric.wire_lengths:
             c.append(z3.And(delta_x == 0 , delta_y == wl))
-            c.append(z3.And(delta_x == wl, delta_y == 0 )) 
+            c.append(z3.And(delta_x == wl, delta_y == 0 ))
 
         constraints.append(z3.Or(c))
 
@@ -32,7 +32,7 @@ def nearest_neighbor_fast(components, wires, fabric):
     for w in wires:
         src = w.src
         dst = w.dst
-        
+
         c = []
         dx = src.pos.delta_x_fun(dst.pos)
         dy = src.pos.delta_y_fun(dst.pos)
@@ -115,7 +115,7 @@ def in_neighborhood(num_hops):
 
             delta_x = src.pos.delta_x_fun(dst.pos)
             delta_y = src.pos.delta_y_fun(dst.pos)
-            
+
             c = []
             for dx, dy in distances:
                 c.append(z3.And(delta_x(dx), delta_y(dy)))

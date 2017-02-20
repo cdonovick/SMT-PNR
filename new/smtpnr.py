@@ -2,8 +2,8 @@ import itertools as it
 import functools as ft
 import math
 import z3
-import z3util as zu 
-        
+import z3util as zu
+
 
 
 def place_constraints(comps, fab_dims, wire_lengths, pack=True):
@@ -37,7 +37,7 @@ def place_constraints(comps, fab_dims, wire_lengths, pack=True):
                 c.append(z3.Or(
                         z3.And(_get_x(comp.pos) == z3.LShR(_get_x(adj.pos), wl) , _get_y(comp.pos) == _get_y(adj.pos)),
                         z3.And(_get_x(comp.pos) == _get_x(adj.pos) << wl        , _get_y(comp.pos) == _get_y(adj.pos)),
-                        z3.And(_get_y(comp.pos) == z3.LShR(_get_y(adj.pos), wl) , _get_x(comp.pos) == _get_x(adj.pos)), 
+                        z3.And(_get_y(comp.pos) == z3.LShR(_get_y(adj.pos), wl) , _get_x(comp.pos) == _get_x(adj.pos)),
                         z3.And(_get_y(comp.pos) == _get_y(adj.pos) << wl        , _get_x(comp.pos) == _get_x(adj.pos)),
                         ))
 
@@ -52,9 +52,9 @@ def place_constraints(comps, fab_dims, wire_lengths, pack=True):
 def find_shift(x, y, rows, cols):
     '''
         find_bit_num :: z3.BitVec[a] -> z3.BitVec[b] -> int -> int -> z3.BitVec[c]
-        Returns a z3.BitVec of size rows*cols that can be used to check that the 
-        correct bit of the 'one hot' version of the component represented by x 
-        and y is set 
+        Returns a z3.BitVec of size rows*cols that can be used to check that the
+        correct bit of the 'one hot' version of the component represented by x
+        and y is set
     '''
     n = rows*cols - x.size()
     return z3.ZeroExt(n,y)*cols + z3.ZeroExt(n,x)
@@ -89,7 +89,7 @@ def place_constraints_opt(comps, fab_dims, distinct_flag=True):
             c.append(z3.Concat(comp.pos[0],comp.pos[1]))
         constraints.append(z3.simplify(z3.Distinct(c), ':blast-distinct', True))
     else:
-        onehot_list = []        
+        onehot_list = []
         for comp in comps:
             comp.pos = (z3.BitVec(comp.name + '_x', int(math.ceil(math.log(cols,2)))), z3.BitVec(comp.name + '_y', int(math.ceil(math.log(rows,2)))))
             #one hot representation -- temporary var
@@ -173,9 +173,9 @@ def print_model_2d(model, comps, fab_dims, wire_lengths, pack=True):
     s = ''.join(s)
     print(s)
 
-def run_test(adj, fab_dims, wire_lengths={}, debug_prints=True, 
+def run_test(adj, fab_dims, wire_lengths={}, debug_prints=True,
         constraints_gen=place_constraints,
-        model_checker=None, 
+        model_checker=None,
         model_printer=print_model
         ):
 
@@ -227,8 +227,8 @@ def run_test(adj, fab_dims, wire_lengths={}, debug_prints=True,
 
 
 def tiny_test(dims=(3,3), debug_prints=True):
-    ''' 
-        place 4 nodes on a 3x3 fabric [with length 1 wires] 
+    '''
+        place 4 nodes on a 3x3 fabric [with length 1 wires]
     '''
     adj = {'n1' : {'n2','n3'}, 'n2' : {'n4'}, 'n3' : {'n4'}, 'n4' : {}}
     run_test(adj, dims, {}, debug_prints)
@@ -236,8 +236,8 @@ def tiny_test(dims=(3,3), debug_prints=True):
 
 def small_test(dims=(8,8), debug_prints=True):
     '''
-        place a depth 5 binary tree on a 8 by 8 [with length 2,3 wires] 
-    ''' 
+        place a depth 5 binary tree on a 8 by 8 [with length 2,3 wires]
+    '''
     adj = {'n{}'.format(i) : frozenset(('n{}'.format(2*i), 'n{}'.format(2*i+1))) for i in range(1,2**4)}
     run_test(adj, dims, {}, debug_prints)
 

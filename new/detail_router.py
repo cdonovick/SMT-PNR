@@ -28,7 +28,7 @@ class Track:
     @property
     def start_node(self):
         return self._start_node
-    
+
     @property
     def var(self):
         return self._var

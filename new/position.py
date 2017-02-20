@@ -15,7 +15,7 @@ class PositionBase(metaclass=ABCMeta):
     @property
     def fabric(self):
         return self._fabric
-    
+
     @property
     @abstractmethod
     def flat(self):
@@ -27,16 +27,16 @@ class PositionBase(metaclass=ABCMeta):
         pass
 
     @property
-    @abstractmethod 
+    @abstractmethod
     def x(self):
         '''
         x :: -> z3.BitVec
         '''
         pass
 
-    
+
     @property
-    @abstractmethod 
+    @abstractmethod
     def y(self):
         '''
         y :: -> z3.BitVec
@@ -72,7 +72,7 @@ class PositionBase(metaclass=ABCMeta):
         builds a function f such that f(c) => delta_y == c
         '''
         pass
-        
+
 
     @property
     @abstractmethod
@@ -117,7 +117,7 @@ class Base2H(PositionBase):
                 return self.x == other.x
             else:
                 return z3.Or(self.x == other.x << constant, other.x == self.x << constant)
-        return delta_fun 
+        return delta_fun
 
     def delta_y_fun(self, other):
         def delta_fun(constant):
@@ -142,15 +142,15 @@ class Packed2H(Base2H):
     def __init__(self, name, fabric):
         super().__init__(name, fabric)
         self._flat = z3.BitVec(self.name + '_flat', self.fabric.rows + self.fabric.cols)
-    
-    @property 
+
+    @property
     def flat(self):
         return self._flat
 
     @property
     def x(self):
         return z3.Extract(self.fabric.rows + self.fabric.cols-1, self.fabric.rows, self.flat)
-    
+
     @property
     def y(self):
         return z3.Extract(self.fabric.rows-1, 0, self.flat)
@@ -162,16 +162,16 @@ class Unpacked2H(Base2H):
     def __init__(self, name, fabric):
         super().__init__(name, fabric)
         self._x = z3.BitVec(self.name + '_x', self.fabric.cols)
-        self._y = z3.BitVec(self.name + '_y', self.fabric.rows) 
+        self._y = z3.BitVec(self.name + '_y', self.fabric.rows)
 
-    @property 
+    @property
     def flat(self):
         return z3.Concat(self.x, self.y)
 
     @property
     def x(self):
         return self._x
-    
+
     @property
     def y(self):
         return self._y
@@ -213,14 +213,14 @@ class BVXY(PositionBase):
             return c == constant
         return delta_fun
 
-    @property 
+    @property
     def flat(self):
         return z3.Concat(self.x, self.y)
 
     @property
     def x(self):
         return self._x
-    
+
     @property
     def y(self):
         return self._y
@@ -229,12 +229,12 @@ class BVXY(PositionBase):
     def invariants(self):
         constraint = []
         if self._is_x_pow2:
-            ix = self.fabric.cols.bit_length()            
+            ix = self.fabric.cols.bit_length()
             constraint.append(z3.Extract(ix, ix, self.x) == 0)
         else:
             constraint.append(z3.ULT(self.x, self.fabric.cols))
         if self._is_y_pow2:
-            iy = int(log2(self.fabric.rows))
+            iy = self.fabric.rows.bit_length()
             constraint.append(z3.Extract(iy, iy, self.y) == 0)
         else:
             constraint.append(z3.ULT(self.y, self.fabric.rows))
@@ -242,4 +242,4 @@ class BVXY(PositionBase):
 
     def get_coordinates(self, model):
         return (model.eval(self.x).as_long(), model.eval(self.y).as_long())
-        
+

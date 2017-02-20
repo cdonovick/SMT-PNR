@@ -12,13 +12,13 @@ class Fabric:
         '''
             dims := The dimensions of the fabric
             wire_lengths := the length of wires between switch boxes
-            All other operands are unimplemented 
+            All other operands are unimplemented
         '''
         super().__init__()
         if not isinstance(dims, Iterable):
             raise TypeError('dims must be iterable, recieved type {}'.format(type(dims)))
         dims = tuple(dims)
-        
+
         if len(dims) != 2:
             raise ValueError('dims must be of length 2, received object of length {}'.format(len(dims)))
 
@@ -30,7 +30,7 @@ class Fabric:
         self._model = model
         self.CLBs = {}
         self._edge_dict = {}
-        
+
 
     def update_wire_lengths(self, n=2):
         for i in range(n):
@@ -69,7 +69,7 @@ class Fabric:
             if count >= self.W:
                 max_edges.append(edge)
         return max_edges
-    
+
     def populate_CLBs(self, fab, placed_comps, g):
         '''
         add placed components to the fabric
@@ -81,31 +81,31 @@ class Fabric:
     #END: Methods for routing in MonoSAT
 
     @property
-    def dims(self): 
+    def dims(self):
         return self._dims
 
     @property
-    def rows(self): 
+    def rows(self):
         return self._dims[0]
 
     @property
-    def cols(self): 
+    def cols(self):
         return self._dims[1]
-    
+
     @property
     def wire_lengths(self):
         return self._wire_lengths
 
     @property
-    def W(self): 
+    def W(self):
         return self._W
 
     @property
-    def Fc(self): 
+    def Fc(self):
         raise NotImplementedError('This feature is not supported')
 
     @property
-    def Fs(self): 
+    def Fs(self):
         raise NotImplementedError('This feature is not supported')
 
 
@@ -121,7 +121,7 @@ class Component(NamedIDObject):
         self._in_degree = 0
         self._out_degree = 0
         self._degree = 0
-        
+
 
     @property
     def inputs(self):
@@ -129,7 +129,7 @@ class Component(NamedIDObject):
             returns a iterator over Wires
         '''
         return iter(self._inputs)
-    
+
     @property
     def outputs(self):
         '''
@@ -143,7 +143,7 @@ class Component(NamedIDObject):
            returns a list of Wires
         '''
         return self._outputs_list
-    
+
     @property
     def pos(self):
         return self._pos
@@ -163,7 +163,7 @@ class Component(NamedIDObject):
     @pos.setter
     def pos(self, p):
         self._pos = p
-    
+
     def _add_input(self, src):
         self._inputs.add(src)
         self._in_degree += 1
@@ -200,7 +200,7 @@ class Wire(IDObject):
 class Design(NamedIDObject):
     def __init__(self, adj_dict, fabric, position_type, name='', constraint_generators=(), optimizers=()):
         '''
-        adj_dict :: {str : [(str, int)]} 
+        adj_dict :: {str : [(str, int)]}
         adj_dict[x] := out edges of x with the their width
         fabric :: Fabric
         position_type ::  str -> Frabric -> PositionBase
@@ -210,11 +210,11 @@ class Design(NamedIDObject):
             constraints
 
         optimizers :: [([Component] -> [Wire] -> fabric -> (z3.Bool, z3.Object), bool)]
-        optimizers := [k, f, b] 
-            where 
+        optimizers := [k, f, b]
+            where
                 k is the key
                 f(components, wires) := an Iterable of functions that
-                    generate hard constraint / optimizing parameters pairs, 
+                    generate hard constraint / optimizing parameters pairs,
                 b := a bool which indicating whether Optimizing parameter is minimized or maximized
         '''
 
@@ -226,7 +226,7 @@ class Design(NamedIDObject):
 
         self._comps = dict()
         self._wires = dict()
-        
+
         self._p_constraints = ValidContainer()
         self._cg = dict()
         self._opt = dict()
@@ -312,7 +312,7 @@ class Design(NamedIDObject):
     @property
     def max_degree(self):
         return self._max_degree
-    
+
     def _reset_constraints(self):
         self._reset_p_constraints()
         self._reset_g_constraints()
@@ -336,7 +336,7 @@ class Design(NamedIDObject):
             self._gen_pos()
 
     @property
-    def p_constraints(self): 
+    def p_constraints(self):
         if not self._p_constraints.valid:
             cl = []
             for c in self.components:
@@ -354,7 +354,7 @@ class Design(NamedIDObject):
     '''
     @property
     def constraint_generators(self):
-        return set((k, f) for k,(f,_) in self._cg.items()) 
+        return set((k, f) for k,(f,_) in self._cg.items())
 
     def add_constraint_generator(self, k, f):
         self._cg[k] = (f, ValidContainer())
@@ -366,7 +366,7 @@ class Design(NamedIDObject):
     def g_constraints(self):
         cl = []
         for k,(f, c) in self._cg.items():
-            if not c.valid: 
+            if not c.valid:
                 c.data = f(self.components, self.wires, self.fabric)
             cl.append(c.data)
         return z3.And(cl)
@@ -380,7 +380,7 @@ class Design(NamedIDObject):
         Optimization Related Stuff
         -----------------------------------------------------------------------
     '''
-        
+
     @property
     def optimizers(self):
         return set((k, f, b) for k,(f,_,b) in self._cg.items())
@@ -391,7 +391,7 @@ class Design(NamedIDObject):
     def remove_optimizer(self, k):
         del self._opt[k]
 
-    @property 
+    @property
     def o_constraints(self):
         cl = []
         for f,c,m in self._opt.values():
@@ -402,11 +402,11 @@ class Design(NamedIDObject):
                 c.data = f(self.components, self.wires, self.fabric)
             if c.data[0]:
                 #check that list nonempty to avoid appending an empty list
-                cl.append(c.data[0]) 
+                cl.append(c.data[0])
         return z3.And(cl)
 
     @property
-    def opt_parameters(self): 
+    def opt_parameters(self):
         cl = []
         for f,c,m in self._opt.values():
             # f := functiom
