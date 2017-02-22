@@ -6,13 +6,6 @@ import sys
 import os
 import time
 
-class PlacedComp:
-    def __init__(self, pos, adj=()):
-        self.pos = pos
-        self.adj = set(adj)
-    def dist(self, pc):
-        return abs(self.pos[0] - pc.pos[0]) + abs(self.pos[1] - pc.pos[1])
-
 
 __dist_factor = 2  #takes two monosat edges for every 1 unit of L1 distance
 __dist_freedom = 2  #how many extra edges can be used over the L1 distance between components (2 allows for going around other components)
@@ -41,28 +34,46 @@ def build_mgraph(fab, placed_comps):
     CBr = [[g.addNode('({},{})CB_r'.format(x,y)) for y in range(fab.rows)] for x in range(fab.cols - 1)]
     CBb = [[g.addNode('({},{})CB_b'.format(x,y)) for y in range(fab.rows - 1)] for x in range(fab.cols)]
     SB = [[g.addNode('({},{})SB'.format(x,y)) for y in range(fab.rows-1)] for x in range(fab.cols-1)]
+
+    #Create dictionary to keep track of edges used by CBs
+    CBedges = {}
+    for row in CBr:
+        for n in row:
+            CBedges[n] = []
+    for row in CBb:
+        for n in row:
+            CBedges[n] = []
+    
     #add edges
     for y in range(fab.rows):
         for x in range(fab.cols):
             #TODO make less checks (or set up outside of loop)
             if x < fab.cols-1 and y < fab.rows-1:
-                g.addUndirectedEdge(CBr[x][y], SB[x][y])
-                g.addUndirectedEdge(CBb[x][y], SB[x][y])
+                e1 = g.addUndirectedEdge(CBr[x][y], SB[x][y])
+                e2 = g.addUndirectedEdge(CBb[x][y], SB[x][y])
+                CBedges[CBr[x][y]].append(e1)
+                CBedges[CBb[x][y]].append(e2)
             if (x,y) in fab.CLBs:
                 if x < fab.cols - 1:
-                    g.addUndirectedEdge(fab.CLBs[(x,y)], CBr[x][y])
+                    e = g.addUndirectedEdge(fab.CLBs[(x,y)], CBr[x][y])
+                    CBedges[CBr[x][y]].append(e)
                 if y < fab.rows - 1:
-                    g.addUndirectedEdge(fab.CLBs[(x,y)], CBb[x][y])
+                    e = g.addUndirectedEdge(fab.CLBs[(x,y)], CBb[x][y])
+                    CBedges[CBb[x][y]].append(e)
                 if x > 0:
-                    g.addUndirectedEdge(CBr[x-1][y], fab.CLBs[(x,y)])
+                    e = g.addUndirectedEdge(CBr[x-1][y], fab.CLBs[(x,y)])
+                    CBedges[CBr[x-1][y]].append(e)
                 if y > 0:
-                    g.addUndirectedEdge(CBb[x][y-1], fab.CLBs[(x,y)])
+                    e = g.addUndirectedEdge(CBb[x][y-1], fab.CLBs[(x,y)])
+                    CBedges[CBb[x][y-1]].append(e)
             if x > 0 and x <= fab.cols - 1 and y < fab.rows - 1:
-                g.addUndirectedEdge(SB[x-1][y], CBb[x][y])
+                e = g.addUndirectedEdge(SB[x-1][y], CBb[x][y])
+                CBedges[CBb[x][y]].append(e)
             if y > 0 and x < fab.cols - 1 and y <= fab.rows - 1:
-                g.addUndirectedEdge(SB[x][y-1], CBr[x][y])
+                e = g.addUndirectedEdge(SB[x][y-1], CBr[x][y])
+                CBedges[CBr[x][y]].append(e)
     fab.populate_edge_dict(g.getEdgeVars())
-    return g, CBr, CBb, SB
+    return g, CBr, CBb, SB, CBedges
 
 
 def comp_dist(pc, adj, model):
@@ -89,7 +100,7 @@ def route(fab, des, model, verbose=False):
     '''
         attempt to globally (doesn't consider track widths and allows sharing wires) route all of the placed components
     '''
-    g, CBr, CBb, SB = build_mgraph(fab, des.components)
+    g, CBr, CBb, SB, CBedges = build_mgraph(fab, des.components)
     dist = total_L1(des.components, model)
     print('Placed components have a total L1 distance = ', dist)
     #if made false, still not necessarily unroutable, just unroutable for the given netlist ordering
@@ -144,13 +155,17 @@ def route(fab, des, model, verbose=False):
                 path_node_names = []
                 for node in g.getPath(reaches):
                     path_node_names.append(g.names[node])
+                    if node in CBedges:
+                        for e in CBedges[node]:
+                            used_edges.add(e)
 
                 if verbose:
                     print("Satisfying path (as a list of nodes): " + str(path_node_names))
 
+                #deprecated: using connection boxes now
                 #increment edge counts
-                for edge in g.getPath(reaches, return_edge_lits=True):
-                    used_edges.add(edge)
+                #for edge in g.getPath(reaches, return_edge_lits=True):
+                #    used_edges.add(edge)
 
                 #save path
                 successful_routes.append(path_node_names)
