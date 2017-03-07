@@ -33,10 +33,13 @@ class Node:
         self._track = track
         self._x = x
         self._y = y
-        if direction is None and track is None:
-            self._type_string = 'PE'
-        else:
+        if isinstance(direction, str):
+            self._type_string = direction
+        elif isinstance(direction, Direction):
             self._type_string = direction.name
+        else:
+            raise ValueError('Received invalid direction type. Expected string or Direction '
+            'and received {} of type {}'.format(direction, type(direction)))
 
     def addEdges(self, g):
         if self._msnode:
@@ -112,11 +115,21 @@ class Tile:
         self._input_nodes = self.initNodes()
         self._output_nodes = 4*[[]]
         if PE_used:
-            self._PE_i = Node(None, None, x, y)
-            self._PE_o = Node(None, None, x, y)
+            self._PE_i = Node('PE', None, x, y)
+            self._PE_o = Node('PE', None, x, y)
+            self._CBV = Node('CB', None, x, y)
+            self._CBH = Node('CB', None, x, y)
             for direc in self._input_nodes:
                 for node in direc:
-                    self._wires.append(Wire(node, self._PE_i))
+                    if node.direction == Direction.N or node.direction == Direction.S:
+                        self._wires.append(Wire(node, self._CBV))
+                    elif node.direction == Direction.E or node.direction == Direction.W:
+                        self._wires.append(Wire(node, self._CBH))
+                    else:
+                        raise ValueError('Node with invalid direction')
+
+            self._wires.append(Wire(self._CBV, self._PE_i))
+            self._wires.append(Wire(self._CBH, self._PE_i))
         else:
             self._PE = None
 
@@ -190,6 +203,14 @@ class Tile:
     @property
     def PE_o(self):
         return self._PE_o
+
+    @property
+    def CBV(self):
+        return self._CBV
+
+    @property
+    def CBH(self):
+        return self._CBH
 
     @property
     def input_nodes(self):
@@ -306,6 +327,8 @@ def build_msgraph(fab, g):
             if (tile.x, tile.y) in fab.used_PEs:
                 tile.PE_i.msnode = g.addNode('({},{})PE_i'.format(tile.x, tile.y))
                 tile.PE_o.msnode = g.addNode('({},{})PE_o'.format(tile.x, tile.y))
+                tile.CBV.msnode = g.addNode('({},{})CBV'.format(tile.x, tile.y))
+                tile.CBH.msnode = g.addNode('({},{})CBH'.format(tile.x, tile.y))
     for column in fab.Tiles:
         for tile in column:
             #deprecated -- just handling them all as wires now
