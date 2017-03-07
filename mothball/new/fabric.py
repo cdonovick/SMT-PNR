@@ -277,26 +277,26 @@ def parseXML(filepath, used_PEs):
             if y < height-1:
                 tile.STile = fab.Tiles[x][y+1]
                 tile.output_nodes[S.value] = tile.STile.input_nodes[N.value]
-            else:
-                tile.output_nodes[S.value] = [Node(N,i, x, y+1) for i in range(tile.trk_count)]
+            #else:
+                #tile.output_nodes[S.value] = [Node(N,i, x, y+1) for i in range(tile.trk_count)]
 
             if y > 0:
                 tile.NTile = fab.Tiles[x][y-1]
                 tile._output_nodes[N.value] = fab.Tiles[x][y-1].input_nodes[S.value]
-            else:
-                tile._output_nodes[N.value] = [Node(S,i, x, y-1) for i in range(tile.trk_count)]
+            #else:
+                #tile._output_nodes[N.value] = [Node(S,i, x, y-1) for i in range(tile.trk_count)]
                 
             if x < width-1:
                 tile.ETile = fab.Tiles[x+1][y]
                 tile.output_nodes[E.value] = fab.Tiles[x+1][y].input_nodes[W.value]
-            else:
-                tile.output_nodes[E.value] = [Node(E,i, x+1, y) for i in range(tile.trk_count)]
+           # else:
+                #tile.output_nodes[E.value] = [Node(E,i, x+1, y) for i in range(tile.trk_count)]
 
             if x > 0:
                 tile.WTile = fab.Tiles[x-1][y]
                 tile.output_nodes[W.value] = fab.Tiles[x-1][y].input_nodes[E.value]
-            else:
-                tile.output_nodes[W.value] = [Node(W,i, x-1, y) for i in range(tile.trk_count)]
+            #else:
+                #tile.output_nodes[W.value] = [Node(W,i, x-1, y) for i in range(tile.trk_count)]
 
     for sb in root:
         x = int(sb.get('x'))
@@ -306,16 +306,18 @@ def parseXML(filepath, used_PEs):
                 snk = mux.find('snk').text
                 dsnk = getDir(snk[0])
                 trksnk = int(re.findall('\d+', snk)[0])
-                snk_node = fab.Tiles[x][y].output_nodes[dsnk.value][trksnk]
-                for src in mux.findall('src'):
-                    s = src.text
-                    if s != 'PE':
-                        d = getDir(s[0])
-                        trk = int(re.findall('\d+', s)[0])
-                        src_node = fab.Tiles[x][y].input_nodes[d.value][trk]
-                        fab.Tiles[x][y].addWire(src_node, snk_node)
-                    elif (x, y) in used_PEs:
-                        fab.Tiles[x][y].addWire(fab.Tiles[x][y].PE_o, snk_node)
+                #temporarily not including pins
+                if fab.Tiles[x][y].output_nodes[dsnk.value]:
+                    snk_node = fab.Tiles[x][y].output_nodes[dsnk.value][trksnk]
+                    for src in mux.findall('src'):
+                        s = src.text
+                        if s != 'PE':
+                            d = getDir(s[0])
+                            trk = int(re.findall('\d+', s)[0])
+                            src_node = fab.Tiles[x][y].input_nodes[d.value][trk]
+                            fab.Tiles[x][y].addWire(src_node, snk_node)
+                        elif (x, y) in used_PEs:
+                            fab.Tiles[x][y].addWire(fab.Tiles[x][y].PE_o, snk_node)
 
     return fab
 
@@ -347,10 +349,11 @@ def build_msgraph(fab, g):
                     src.msnode = g.addNode('({},{}){}_i[{}]'.format(str(src.x), str(src.y), src.type_string, str(src.track)))
                 if dst.msnode is None:
                     dst.msnode = g.addNode('({},{}){}_i[{}]'.format(str(dst.x), str(dst.y), dst.type_string, str(dst.track)))
-                if src.type_string is not 'PE' and dst.type_string is not 'PE':
+                if dst.type_string is not 'PE':
                     g.addUndirectedEdge(src.msnode, dst.msnode)
                 else:
                     g.addEdge(src.msnode, dst.msnode)
+                #g.addUndirectedEdge(src.msnode, dst.msnode)
     return g
 
 
