@@ -1,7 +1,11 @@
-language: CPP
+language: python
+
+python: 3.5
 
 addons:
     apt:
+        sources:
+           - ubuntu-toolchain-r-test
         packages:
             - libgmp3-dev
             - git
@@ -10,9 +14,12 @@ addons:
             - zlib1g-dev
             - graphviz-dev
             - git
-            - libpython3-all-dev
+            - g++-4.9
+            - build-essential
 
 before_install:
+    - export CXX="g++-4.9"
+    - export CC="gcc-4.9"
     # Build monosat
     - git clone https://github.com/sambayless/monosat.git 
     - cd monosat
@@ -31,6 +38,8 @@ before_install:
     - sudo make install
     - cd ../
 
-scripts: ./mothball/new/demo.sh
+scripts: 
+    - cd ./mothball/new/
+    - ./demo.sh
 
 
