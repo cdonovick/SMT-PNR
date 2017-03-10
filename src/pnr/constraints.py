@@ -39,12 +39,12 @@ def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []
     for net in design.nets:
         src = net.src
-        snk = net.snk
+        dst = net.dst
 
 
         c = []
-        dx = vars[src].delta_x_fun(vars[snk])
-        dy = vars[src].delta_y_fun(vars[snk])
+        dx = vars[src].delta_x_fun(vars[dst])
+        dy = vars[src].delta_y_fun(vars[dst])
         c.append(solver.And(dx(0), dy(1)))
         c.append(solver.And(dx(1), dy(0)))
         constaints.append(solver.Or(c))

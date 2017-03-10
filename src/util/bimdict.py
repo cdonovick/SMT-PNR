@@ -1,5 +1,4 @@
 from collections import defaultdict, Iterable
-from types import StringTypes
 
 class BiMultiDict:
     def __init__(self, d=dict()):
@@ -7,7 +6,7 @@ class BiMultiDict:
         self._i = defaultdict(set)
 
         for k,v in d.items():
-            if isinstance(v, Iterable) and not isinstance(v, StringTypes):
+            if isinstance(v, Iterable) and not isinstance(v, basestring):
                 for e in v:
                     self[k] = e
             else:
