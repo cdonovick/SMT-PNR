@@ -1,6 +1,6 @@
 language: python
 
-python: "3.6"
+python: 3.6
 
 addons:
     apt:
@@ -12,6 +12,7 @@ addons:
             - zlib1g-dev
             - graphviz-dev
             - git
+            - libpython3-all-dev
 
 before_install:
     # Build monosat
@@ -32,7 +33,6 @@ before_install:
     - sudo make install
     - cd ../
 
-scripts:
-    - "./mothball/new/demo.sh"
+scripts: ./mothball/new/demo.sh
 
 
