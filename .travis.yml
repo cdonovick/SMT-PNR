@@ -10,7 +10,6 @@ addons:
             - cmake
             - zlib1g
             - zlib1g-dev
-            - libpython3-all-dev
             - graphviz-dev
             - git
 
