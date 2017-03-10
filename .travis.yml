@@ -13,7 +13,6 @@ addons:
             - git
 
 before_install:
-    - base_dir=$(pwd)
     # Build monosat
     - git clone https://github.com/sambayless/monosat.git 
     - cd monosat
@@ -22,7 +21,7 @@ before_install:
     - sudo make install
     - cd src/monosat/api/python
     - sudo python3 setup.py install -f
-    - cd base_dir
+    - cd ../../../../../
     # Build z3
     - git clone https://github.com/Z3Prover/z3.git
     - cd z3
@@ -30,8 +29,7 @@ before_install:
     - cd build
     - make
     - sudo make install
-    - cd base_dir
-
+    - cd ../
 
 scripts:
     - cd ./mothball/new/
