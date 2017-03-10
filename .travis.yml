@@ -10,11 +10,12 @@ addons:
             - zlib1g-dev
             - libpython3-all-dev
             - graphviz-dev
+            - git
 
 before_install:
     - base_dir=$(pwd)
     # Build monosat
-    - git clone git@github.com:sambayless/monosat.git
+    - git clone https://github.com/sambayless/monosat.git 
     - cd monosat
     - cmake .
     - make
@@ -23,7 +24,7 @@ before_install:
     - sudo python3 setup.py install -f
     - cd base_dir
     # Build z3
-    - git clone git@github.com:Z3Prover/z3.git
+    - git clone https://github.com/Z3Prover/z3.git
     - cd z3
     - python scripts/mk_make.py --python
     - cd build
