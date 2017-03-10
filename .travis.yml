@@ -1,0 +1,31 @@
+language: python3
+
+addons:
+    apt:
+        packages:
+            - z3
+            - libgmp3
+            - libgmp3-dev
+            - git
+            - cmake
+            - zlib1g
+            - zlib1g-dev
+            - libpython3-all-dev
+            - graphviz-dev
+
+before_install:
+    - base_dir=$(pwd)
+    - git clone git@github.com:sambayless/monosat.git
+    - cd monosat
+    - cmake .
+    - make
+    - sudo make install
+    - cd src/monosat/api/python
+    - sudo python3 setup.py install -f
+    - cd base_dir
+
+scripts:
+    - cd ./mothball/new/
+    - ./demo.sh
+
+
