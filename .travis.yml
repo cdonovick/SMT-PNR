@@ -22,6 +22,8 @@ addons:
 before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
+
+install:
     # Build monosat
     - git clone https://github.com/sambayless/monosat.git 
     - cd monosat
@@ -39,8 +41,6 @@ before_install:
     - make
     - sudo make install
     - cd ../
-
-install:
 
 scripts: 
     - cd ./mothball/new/
