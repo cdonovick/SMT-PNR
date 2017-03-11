@@ -40,6 +40,8 @@ before_install:
     - sudo make install
     - cd ../
 
+install:
+
 scripts: 
     - cd ./mothball/new/
     - ./demo.sh
