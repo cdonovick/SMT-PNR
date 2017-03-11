@@ -42,7 +42,7 @@ install:
     - sudo make install
     - cd ../
 
-scripts: 
+script: 
     - cd ./mothball/new/
     - ./demo.sh
 
