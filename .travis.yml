@@ -40,7 +40,7 @@ install:
     - cd build
     - make
     - sudo make install
-    - cd ../
+    - cd ../../
 
 script: 
     - cd ./mothball/new/
