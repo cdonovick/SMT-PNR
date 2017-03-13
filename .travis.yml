@@ -1,14 +1,13 @@
 dist: trusty
 
-language: python
-
-python: 3.4
+language: c
 
 addons:
     apt:
         sources:
            - ubuntu-toolchain-r-test
         packages:
+            - libpython3-all-dev
             - libgmp3-dev
             - git
             - cmake
