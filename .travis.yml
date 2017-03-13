@@ -28,19 +28,20 @@ install:
     - git clone https://github.com/sambayless/monosat.git 
     - cd monosat
     - cmake .
-    - make
+    - make -j 2
     - sudo make install
     - cd src/monosat/api/python
-    - sudo python3 setup.py install -f
-    - cd ../../../../../
+    - pip install -e .
+    - cd $TRAVIS_BUILD_DIR
     # Build z3
     - git clone https://github.com/Z3Prover/z3.git
     - cd z3
     - python scripts/mk_make.py --python
     - cd build
-    - make
+    - make -j 2
     - sudo make install
-    - cd ../../
+    - cd $TRAVIS_BUILD_DIR
+    - pip install pygraphviz
 
 script: 
     - cd ./mothball/new/
