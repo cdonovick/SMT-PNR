@@ -39,6 +39,7 @@ install:
     - unzip z3-4.5.0-x64-ubuntu-14.04.zip
     - export PATH=$PATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/
     - export PYTHONPATH=$PYTHONPATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/python/
+    - sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
     - pip install pygraphviz
 
 script: 
