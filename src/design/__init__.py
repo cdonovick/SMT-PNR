@@ -1,3 +1,3 @@
-from design import *
-from module import *
-from net import *
+from .design import *
+from .module import *
+from .net import *
