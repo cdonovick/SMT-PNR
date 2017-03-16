@@ -50,3 +50,19 @@ def nearest_neighbor(fabric, design, state, vars, solver):
         constaints.append(solver.Or(c))
 
     return constaints
+
+
+#################################### Routing Constraints ################################
+
+def excl_constraints(fabric, design, pnr):
+    #written in old way -- need to update
+    for m1 in design.modules:
+        outputs = {x.dst for x in m1.outputs}
+        m1_pos = m1.pos.get_coordinates(model)
+        c = []
+        for m2 in design.modules:
+            if m2 != m1 and m2 not in outputs:
+                m2_pos = m2.pos.get_coordinates(model)
+                c.append(~g.reaches(msnodes[fab[comp_pos].PE.getPort('out')], msnodes[fab[p_pos].PE.getPort('a')]))
+                c.append(~g.reaches(msnodes[fab[comp_pos].PE.getPort('out')], msnodes[fab[p_pos].PE.getPort('b')]))
+    return c
