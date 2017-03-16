@@ -3,7 +3,7 @@ from enum import Enum
 import monosat as ms
 import re
 from collections import defaultdict
-from ..util import IDObject
+from util import IDObject
 
 
 class Side(Enum):
