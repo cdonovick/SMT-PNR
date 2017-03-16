@@ -236,7 +236,7 @@ class Port(IDObject):
         return self._type_string
 
 
-class Track:
+class Track(IDObject):
     '''
        Holds two nodes describing a single track between switch boxes
        Note: Not directly modeling output nodes of a SB, so this maps an input node
