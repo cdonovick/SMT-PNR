@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from math import log2, ceil
-import z3util as zu
+import smt.z3util as zu
 import z3
 
 class PositionBase(metaclass=ABCMeta):

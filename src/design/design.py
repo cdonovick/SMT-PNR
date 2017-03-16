@@ -2,8 +2,8 @@
     Classes for represtenting designs and various constructors
 '''
 from util import NamedIDObject
-from types import StringTypes
-import Module
+#from types import StringTypes
+from .module import Module
 
 class Design(NamedIDObject):
     def __init__(self, adj_dict, op_dict, name=''):

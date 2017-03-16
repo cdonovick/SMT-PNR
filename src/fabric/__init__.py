@@ -1,2 +1,2 @@
-from fabric import *
+from .fabric import *
 
