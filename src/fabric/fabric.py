@@ -506,6 +506,8 @@ def build_msgraph(fab, g, used_PEs):
                 msnodes[fab[(x, y)].PE.getPort('a')] = g.addNode('({},{})PE_a'.format(x, y))
                 msnodes[fab[(x, y)].PE.getPort('b')] = g.addNode('({},{})PE_b'.format(x, y))
                 msnodes[fab[(x, y)].PE.getPort('out')] = g.addNode('({},{})PE_out'.format(x, y))
+                #msnodes[fab[(x, y)].CBV.output_port] = g.addNode('({},{})CBV'.format(x,y))
+                #msnodes[fab[(x, y)].CBH.output_port] = g.addNode('({},{})CBH'.format(x,y))
 
     for tile in fab.Tiles.values(): 
         for track in tile.tracks:
