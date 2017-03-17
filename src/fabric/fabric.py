@@ -345,6 +345,14 @@ class Fabric:
         return self._height
 
     @property
+    def rows(self):
+        return self._height
+
+    @property
+    def cols(self):
+        return self._width
+    
+    @property
     def Tiles(self):
         return self._Tiles
 

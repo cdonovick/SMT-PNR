@@ -1,12 +1,12 @@
 from util import IDObject
 
 class Net(IDObject):
-    def __init__(self, src, dst, width=1):
+    def __init__(self, src, src_port, dst, dst_port, width=1):
         super().__init__()
         self._src = src
         self._dst = dst
-        src._add_output(self)
-        dst._add_input(self)
+        src._add_output(self, src_port)
+        dst._add_input(self, dst_port)
         self._width = width
 
     @property
