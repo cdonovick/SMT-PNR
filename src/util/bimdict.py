@@ -49,12 +49,13 @@ class BiMultiDict:
             yield k
 
     def items(self):
-        for k,v in self._d.items():
-            yield (k,v)
+        for k,vs in self._d.items():
+            for v in vs:
+                yield (k,v)
 
     def values(self):
-        for v in self._d.values():
-            yield v
+        for v in self._i:
+            yield v 
 
     @property
     def I(self):

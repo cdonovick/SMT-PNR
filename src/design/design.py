@@ -23,7 +23,7 @@ class Design(NamedIDObject):
 
     def _gen_graph(self, adj_dict, op_dict):
         mods = dict()
-        for src_name, adj_list in self._adj_dict.items():
+        for (src_name, src_port), adj_list in self._adj_dict.items():
             if src_name not in mods:
                 src = Modules(src_name, op_dict[src_name])
                 mods[src_name] = src
@@ -32,7 +32,7 @@ class Design(NamedIDObject):
                 src = mods[src_name]
             
             
-            for dst_name, width in adj_list:
+            for dst_name, dst_port, width in adj_list:
                 if dst_name not in mods:
                     dst = Modules(dst_name, op_dict[dst_name])
                     mods[dst_name] = dst
@@ -40,5 +40,5 @@ class Design(NamedIDObject):
                 else:
                     dst = mods[dst_name]
 
-                self._nets.add(Wire(src, dst, width))
+                self._nets.add(Wire(src, src_port, dst, dst_port, width))
 

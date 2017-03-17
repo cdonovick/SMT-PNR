@@ -33,27 +33,30 @@ class PNR:
             c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.add(c)
 
-        ###
-        # Should inspect model and update place_state
-        ###
+        
         if not self._place_solver.solve():
-            return None
+            return False
+        
+        model_reader(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
 
-        return self._place_solver.get_model()
+        return True
 
 
     def route_designs(self, initializers=(), consraint_generators=(), finalizers=(), model_reader=None):
         constraints = []
         for f in it.chain(initializers, constraint_generators, finalizers):
-            c = f(self.fabric, self.design, self._route_state, self._route_vars, self._route_solver)
+            c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver)
             self._route_solver.add(self._route_solver.And(c))
 
         ###
         # Should inspect model and update route_state
         ###
         if not self._route_solver.solve():
-            return None
-        return self._route_solver.get_model()
+            return False
+        
+        
+        model_reader(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver)
+        return True
 
     @property
     def fabric(self):
