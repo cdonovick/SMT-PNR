@@ -45,7 +45,7 @@ class PNR:
     def route_designs(self, initializers=(), consraint_generators=(), finalizers=(), model_reader=None):
         constraints = []
         for f in it.chain(initializers, constraint_generators, finalizers):
-            c = f(self.fabric, self.design, self._route_state, self._route_vars, self._route_solver)
+            c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver)
             self._route_solver.add(self._route_solver.And(c))
 
         ###
