@@ -68,26 +68,28 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
 
                 c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('a')]))
                 c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('b')]))
+                
 
     return solver.And(c)
 
 
 def reachability(fabric, design, p_state, r_state, vars, solver):
     #TODO: Specify port of connection (that would be easier than allowing for either)
-    c = []
+    reaches = []
     for m1 in design.modules:
-        for net in m1.outputs:
+        for port, net in m1.outputs.items():
             src_pos = p_state[net.src]
             dst_pos = p_state[net.dst]
             src_pe = fab[src_pos].PE
             dst_pe = fab[dst_pos].PE
-
-            #Hardcoded port for now
-            #want something like: port = net.port
-            port = 'a'
-
-            c.append(solver.g.reaches(src_pe.getPort('out'), solver.g.reaches(dst_pe.getPort(port))))
-    return solver.And(c)
+            reaches.append(solver.g.reaches(src_pe.getPort('out'), dst_pe.getPort(port)))
+            #make sure not connected to other port
+            if port == 'a':
+                notport = 'b'
+            else:
+                notport = 'a'
+            reaches.append(~solver.g.reaches(src_pe.getPort('out'), dst_pe.getPort(notport)))
+    return solver.And(reaches)
 
 
 def thing():
