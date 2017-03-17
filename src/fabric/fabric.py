@@ -11,10 +11,10 @@ class Side(Enum):
     S = 1
     E = 0
     W = 2
-    ND = 4 #no side
+    NS = 4 #no side
 
 
-def getDir(side_str):
+def getSide(side_str):
     '''
        Takes a string and returns the corresponding side
     '''
@@ -26,6 +26,8 @@ def getDir(side_str):
         return Side.E
     elif side_str == 'W':
         return Side.W
+    elif side_str == 'NS':
+        return Side.NS
     else:
         raise ValueError('Not passed a valid side string')
 
@@ -61,10 +63,9 @@ class PE(Element):
     def __init__(self, x, y, opcode=None):
         super().__init__(x, y, dict())
         self._opcode = opcode
-        #instantiate ports with no side
-        #self._ports['V'] = Port(Side.ND, None, x, y)
-        #self._ports['H'] = Port(Side.ND, None, x, y)
-        self._ports['out'] = Port(Side.ND, None, x, y)
+        #ports added by parsing input
+        #instantiate out port (not explicitly defined in input format)
+        self._ports['out'] = Port(Side.NS, None, x, y)
 
     @property
     def opcode(self):
@@ -92,17 +93,11 @@ class CB(Element):
     '''
     def __init__(self, x, y):
         super().__init__(x, y, [])
-        #create the output port
-        self._output_port = Port(Side.ND, None, x, y) 
 
 
     def addPort(self, port):
         self._ports.append(port)
 
-
-    @property
-    def output_port(self):
-        return self._output_port
 
     @property
     def ports(self):
@@ -278,23 +273,6 @@ class Tile:
         self._PE = PE(x, y)
         self._SB = SB(x, y, trk_count)
         self._CB = dict()
-        #self._CBV = CB(x, y)
-        #self._CBH = CB(x, y)
-
-        #add switch box ports to connection boxes
-        #for now, connection boxes are just aliases for
-        #ports coming from nearby switch boxes
-        #for port in self._SB.getPorts(Side.N):
-        #    self._CBV.addPort(port)
-
-        #for port in self._SB.getPorts(Side.S):
-        #    self._CBV.addPort(port)
-
-        #for port in self._SB.getPorts(Side.E):
-        #    self._CBH.addPort(port)
-
-        #for port in self._SB.getPorts(Side.W):
-        #    self._CBH.addPort(port)
         
         self._PE_used = False
 
@@ -303,14 +281,12 @@ class Tile:
 
     def enablePE(self):
         self._PE_used = True
-        for port in self._CBV.ports:
+        for port in self._CB['a'].ports:
             src = '{}_i[{}]'.format(port.side.name, str(port.track))
-            self.addTrack(port, self._PE.getPort('V'), (src, 'PE_V'), self._CBV)
-        for port in self._CBH.ports:
+            self.addTrack(port, self._PE.getPort('a'), (src, 'PE_a'), self._CB['a'])
+        for port in self._CB['b'].ports:
             src = '{}_i[{}]'.format(port.side.name, str(port.track))
-            self.addTrack(port, self._PE.getPort('H'), (src, 'PE_H'), self._CBH)
-        #for port in self._SB.ports:
-        #    self.addTrack(self._PE.getPort('out'), port)
+            self.addTrack(port, self._PE.getPort('b'), (src, 'PE_b'), self._CB['b'])
 
     @property
     def x(self):
@@ -371,13 +347,6 @@ class Fabric:
     @property
     def Tiles(self):
         return self._Tiles
-
-    #deprecated -- replaced with dictionary
-    #def setTile(self, Tile):
-    #    if self._Tiles[Tile.x][Tile.y] is None:
-    #        self._Tiles[Tile.x][Tile.y] = Tile
-    #    else:
-    #        raise ValueError('Fabric already has a tile set at ({},{})'.format(Tile.x, Tile.y))
 
 
 
@@ -442,7 +411,7 @@ def parseXML(filepath):
             if cb.get('bus') == 'BUS16':
                 for mux in cb.findall('mux'):
                     snk = mux.get('snk')
-                    t.PE.addPort(snk, Port(Side.ND, None, x, y))
+                    t.PE.addPort(snk, Port(Side.NS, None, x, y))
                     for src in mux.findall('src'):
                         sel = int(src.get('sel'))
                         port = src.text
@@ -498,8 +467,6 @@ def build_msgraph(fab, g, used_PEs):
                 msnodes[fab[(x, y)].PE.getPort('a')] = g.addNode('({},{})PE_a'.format(x, y))
                 msnodes[fab[(x, y)].PE.getPort('b')] = g.addNode('({},{})PE_b'.format(x, y))
                 msnodes[fab[(x, y)].PE.getPort('out')] = g.addNode('({},{})PE_out'.format(x, y))
-                #msnodes[fab[(x, y)].CBV.output_port] = g.addNode('({},{})CBV'.format(x,y))
-                #msnodes[fab[(x, y)].CBH.output_port] = g.addNode('({},{})CBH'.format(x,y))
 
     for tile in fab.Tiles.values(): 
         for track in tile.tracks:
@@ -516,7 +483,7 @@ def build_msgraph(fab, g, used_PEs):
     return msnodes, edge2track
 
 
-def mapDir(x, y, side):
+def mapSide(x, y, side):
     '''
        Given a location and a side, returns the receiving tile location and receiving side
     '''
