@@ -54,15 +54,51 @@ def nearest_neighbor(fabric, design, state, vars, solver):
 
 #################################### Routing Constraints ################################
 
-def excl_constraints(fabric, design, pnr):
+def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     #written in old way -- need to update
     for m1 in design.modules:
         outputs = {x.dst for x in m1.outputs}
-        m1_pos = m1.pos.get_coordinates(model)
+        m1_pos = p_state[m1]
         c = []
         for m2 in design.modules:
             if m2 != m1 and m2 not in outputs:
-                m2_pos = m2.pos.get_coordinates(model)
-                c.append(~g.reaches(msnodes[fab[comp_pos].PE.getPort('out')], msnodes[fab[p_pos].PE.getPort('a')]))
-                c.append(~g.reaches(msnodes[fab[comp_pos].PE.getPort('out')], msnodes[fab[p_pos].PE.getPort('b')]))
-    return c
+                m2_pos = p_state[m2]
+                pe1 = fab[m1_pos].PE
+                pe2 = fab[m2_pos].PE
+
+                c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('a')]))
+                c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('b')]))
+
+    return solver.And(c)
+
+def thing():
+    for net in design.nets:
+        r_state[net] = (path)
+
+        if track in r_state.I
+
+    if (x, y) in p_sate:
+    
+
+def build_msgraph(fabric, design, p_state, r_state, vars, solver):
+
+    #add msnodes for all the used PEs first (because special naming scheme)
+    for x in range(fabric.width):
+        for y in range(fabric.height):
+            if (x, y) in p_state.I:
+                vars[fab[(x, y)].PE.getPort('a')] = solver.g.addNode('({},{})PE_a'.format(x, y))
+                vars[fab[(x, y)].PE.getPort('b')] = solver.g.addNode('({},{})PE_b'.format(x, y))
+                vars[fab[(x, y)].PE.getPort('out')] = solver.g.addNode('({},{})PE_out'.format(x, y))
+
+    for tile in fabric.Tiles.values(): 
+        for track in tile.tracks:
+            src = track.src
+            dst = track.dst
+            if src not in vars:
+                vars[src] = solver.g.addNode('({},{}){}_i[{}]'.format(str(src.x), str(src.y), src.side.name, str(src.track)))
+            if dst not in msnodes:
+                vars[dst] = solver.g.addNode('({},{}){}_i[{}]'.format(str(dst.x), str(dst.y), dst.side.name, str(dst.track)))
+
+            vars[track] = solver.g.addEdge(vars[src], vars[dst])
+
+

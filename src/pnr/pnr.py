@@ -15,9 +15,9 @@ class PNR:
         self._place_state = BiMultiDict()
         self._route_state = BiMultiDict()
 
-        self._place_vars = dict()
-        self._route_vars = dict()
-
+        self._place_vars = BiMultiDict()
+        self._route_vars = BiMultiDict()
+        
         self._place_solver = __PLACE_SOLVER() 
         self._route_solver = __ROUTE_SOLVER()
 

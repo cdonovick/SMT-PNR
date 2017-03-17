@@ -187,7 +187,6 @@ class Port(IDObject):
     '''
     def __init__(self, side, track, x, y):
         super().__init__()
-        self._msnode = None
         self._side = side
         self._track = track
         self._x = x
@@ -207,13 +206,6 @@ class Port(IDObject):
         else:
             raise ValueError('MonoSAT node not created, cannot add edges.')
 
-    @property
-    def msnode(self):
-        return self._msnode
-
-    @msnode.setter
-    def msnode(self, msnode):
-        self._msnode = msnode
 
     @property
     def side(self):

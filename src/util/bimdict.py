@@ -13,7 +13,7 @@ class BiMultiDict:
                 self[k] = v
 
     def __getitem__(self, key):
-        return self._d(key)
+        return self._d[key]
 
     def __setitem__(self, key, val):
         self._d[key].add(val)
