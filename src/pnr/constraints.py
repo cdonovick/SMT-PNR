@@ -55,11 +55,11 @@ def nearest_neighbor(fabric, design, state, vars, solver):
 #################################### Routing Constraints ################################
 
 def excl_constraints(fabric, design, p_state, r_state, vars, solver):
-    #written in old way -- need to update
+    #TODO: For a given module: need to make sure it doesn't reach the wrong port
+    c = []
     for m1 in design.modules:
         outputs = {x.dst for x in m1.outputs}
         m1_pos = p_state[m1]
-        c = []
         for m2 in design.modules:
             if m2 != m1 and m2 not in outputs:
                 m2_pos = p_state[m2]
@@ -70,6 +70,25 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
                 c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('b')]))
 
     return solver.And(c)
+
+
+def reachability(fabric, design, p_state, r_state, vars, solver):
+    #TODO: Specify port of connection (that would be easier than allowing for either)
+    c = []
+    for m1 in design.modules:
+        for net in m1.outputs:
+            src_pos = p_state[net.src]
+            dst_pos = p_state[net.dst]
+            src_pe = fab[src_pos].PE
+            dst_pe = fab[dst_pos].PE
+
+            #Hardcoded port for now
+            #want something like: port = net.port
+            port = 'a'
+
+            c.append(solver.g.reaches(src_pe.getPort('out'), solver.g.reaches(dst_pe.getPort(port))))
+    return solver.And(c)
+
 
 def thing():
     for net in design.nets:
