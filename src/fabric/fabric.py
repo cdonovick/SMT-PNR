@@ -10,9 +10,10 @@ class Element:
     '''
        Interface for PE, CB or SB
     '''
-    def __init__(self, x, y, ports):
+    def __init__(self, x, y, typestr, ports):
         self._x = x
         self._y = y
+        self._typestr = typestr
         self._ports = ports
         self._enabled_tracks = {}
 
@@ -23,6 +24,10 @@ class Element:
     @property
     def y(self):
         return self._y
+
+    @property
+    def typestr(self):
+        return self._typestr
 
     @property
     def ports(self):
@@ -37,7 +42,7 @@ class PE(Element):
        Holds the ports for PEs
     '''
     def __init__(self, x, y, opcode=None):
-        super().__init__(x, y, dict())
+        super().__init__(x, y, 'PE', dict())
         self._opcode = opcode
         #ports added by parsing input
         #instantiate out port (not explicitly defined in input format)
@@ -68,7 +73,7 @@ class CB(Element):
        Represents a connection box
     '''
     def __init__(self, x, y):
-        super().__init__(x, y, [])
+        super().__init__(x, y, 'CB', [])
 
 
     def addPort(self, port):
@@ -86,7 +91,7 @@ class SB(Element):
        Represents a switch box 
     '''
     def __init__(self, x, y, trk_count):
-        super().__init__(x, y, dict())
+        super().__init__(x, y, 'SB', dict())
         self._ports[Side.N.value] = [Port(Side.N, t, x, y) for t in range(0, trk_count)]
         self._ports[Side.S.value] = [Port(Side.S, t, x, y) for t in range(0, trk_count)]
         self._ports[Side.E.value] = [Port(Side.E, t, x, y) for t in range(0, trk_count)]
@@ -389,8 +394,8 @@ def parseXML(filepath):
                 tile.SB.setOutputPorts(W, [Port(W, t, x-1, y) for t in range(tile.trk_count)])
         
     for tile in root:
-        x = int(tile.get('row'))
-        y = int(tile.get('col'))
+        x = int(tile.get('col'))
+        y = int(tile.get('row'))
         t = fab[(x,y)]
         for cb in tile.findall('cb'):
             feature_address = int(cb.get('feature_address'))
