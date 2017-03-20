@@ -1,17 +1,9 @@
 import xml.etree.ElementTree as ET
-from enum import Enum
 import monosat as ms
 import re
 from collections import defaultdict
-import fabricfuns as ff
+from fabricfuns import Side, getSide, mapSide, parse_name
 from util import IDObject
-
-class Side(Enum):
-    N = 3
-    S = 1
-    E = 0
-    W = 2
-    NS = 4 #no side
 
     
 class Element:
@@ -410,7 +402,7 @@ def parseXML(filepath):
                     for src in mux.findall('src'):
                         sel = int(src.get('sel'))
                         port = src.text
-                        direc, bus, side, track = ff.parse_name(port)
+                        direc, bus, side, track = parse_name(port)
                         t.CB[snk] = CB(x,y)
                         t.CB[snk].addPort(t.SB.getPort(side, track))
                         t.addTrack(t.SB.getPort(side, track), t.PE.getPort(snk), (port, snk), t.CB[snk])
@@ -427,14 +419,14 @@ def parseXML(filepath):
             if sb.get('bus') == 'BUS16':
                 for mux in sb.findall('mux'):
                     snk = mux.get('snk')
-                    snk_direc, snk_bus, snk_side, snk_track = ff.parse_name(snk)
+                    snk_direc, snk_bus, snk_side, snk_track = parse_name(snk)
                     for src in mux.findall('src'):
                         sel = int(src.get('sel'))
                         port = src.text
                         if port[0:2] == 'pe':
                             t.addTrack(t.PE.getPort('out'), t.SB.getOutputPort(snk_side, snk_track), (port, snk), t.SB)
                         else:
-                            src_direc, src_bus, src_side, src_track = ff.parse_name(port)
+                            src_direc, src_bus, src_side, src_track = parse_name(port)
                             t.addTrack(t.SB.getPort(src_side, src_track), t.SB.getOutputPort(snk_side, snk_track), (port, snk), t.SB)
                         
 
@@ -442,8 +434,8 @@ def parseXML(filepath):
                         snk = ft.get('snk')
                         #since it's a feedthrough, there should be exactly one source
                         src = ft.find('src').text
-                        snk_direc, snk_bus, snk_side, snk_track = ff.parse_name(snk)
-                        src_direc, src_bus, src_side, src_track = ff.parse_name(src)
+                        snk_direc, snk_bus, snk_side, snk_track = parse_name(snk)
+                        src_direc, src_bus, src_side, src_track = parse_name(src)
                         t.addTrack(t.SB.getPort(src_side, src_track), t.SB.getOutputPort(snk_side, snk_track), (src, snk), t.SB)
 
     return fab
