@@ -53,6 +53,8 @@ def write_to_xml(filepath):
                     #op.text = p_state.I[(x,y)].opcode
         filepath_noext = os.path.splitext(filepath)[0]
 
-        tree.write(filepath_noext + '_pnr-ed.xml')        
+        tree.write(filepath_noext + '_pnr-ed.xml')
+
+    return model_write
         
                   
