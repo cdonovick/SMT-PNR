@@ -5,7 +5,7 @@ DESIGN_FILE = '../add.json'
 OUTPUT_FILE = '../demo_placed.xml'
 
 POSITION_T = smt.BVXY
-PLACE_CONSTRAINTS = pnr.init_positons(POSITION_T), pnr.distinct, pnr.nearest_neighbor,
+PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor,
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, #pnr.dist_limit(1.5)
 
 
