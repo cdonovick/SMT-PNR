@@ -17,14 +17,6 @@ class Solver_base(metaclass=ABCMeta):
         self.constraints = []
         self.sat = None
 
-    @classmethod
-    def And(cls, *pargs, **kwargs):
-        return cls.And(*pargs, **kwargs)
-
-    @classmethod
-    def Or(cls, *pargs, **kwargs):
-        return cls.Or(*pargs, **kwargs)
-
     @abstractmethod
     def solve(self):
         pass
@@ -34,11 +26,11 @@ class Solver_base(metaclass=ABCMeta):
         pass
 
 class Solver_z3(Solver_base):
-    And = z3.And
-    Or = z3.Or
     def __init__(self):
         super().__init__()
         self._solver = z3.Solver()
+        self.And = z3.And
+        self.Or = z3.Or
 
     def solve(self):
         self._solver.add(self.And(self.constraints))
@@ -60,20 +52,19 @@ class Solver_z3(Solver_base):
         else:
             raise RuntimeError('Solver has not been run')
 
-class Solver_monosat:
-    And = ms.And
-    Or = ms.Or
-
+class Solver_monosat(Solver_base):
     def __init__(self):
         super().__init__()
         self.g = ms.Graph()
 
+
     def solve(self):
-        self.sat = ms.Solve(self.And(self.constraints))
+        ms.Assert(self.And(self.constraints))
+        self.sat = ms.Solve()
         return self.sat
 
     def reset(self):
-        super().__init__()
+        super().reset()
         self.g = ms.Graph()
 
     def get_model(self):
@@ -83,3 +74,18 @@ class Solver_monosat:
             raise RuntimeError('Problem is unsat')
         else:
             raise RuntimeError('Solver has not been run')
+
+    def And(self, *pargs, **kwargs):
+        if pargs == ([],):
+           return True 
+
+        if not pargs and not kwargs:
+            return True
+        else:
+            return ms.And(*pargs, **kwargs)
+
+    def Or(self, *pargs, **kwargs):
+        if not pargs and not kwargs:
+            return True
+        else:
+            return ms.Or(*pargs, **kwargs)

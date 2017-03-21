@@ -2,9 +2,11 @@ import xml.etree.ElementTree as ET
 import os
 
 
-def write_to_xml(filepath):
-    def model_write(fabric, design, p_state, r_state, vars, solver):
-        tree = ET.parse(filepath)
+def write_to_xml(inpath, outpath):
+    def model_write(p_state, r_state):
+        with open(inpath, 'r') as f:
+            tree = ET.parse(f)
+
         root = tree.getroot()
 
         for tile in root:
@@ -20,11 +22,11 @@ def write_to_xml(filepath):
                             cb_used = True
                             mux_used = True
                         else:
-                            src.remove()
+                            mux.remove(src)
                     if not mux_used:
-                        mux.remove()
+                        cb.remove(mux)
                 if not cb_used:
-                    cb.remove()
+                    tile.remove(cb)
 
             for sb in tile.findall('sb'):
                 sb_used = False
@@ -36,24 +38,18 @@ def write_to_xml(filepath):
                             sb_used = True
                             mux_used = True
                         else:
-                            src.remove()
+                            mux.remove(src)
                     if not mux_used:
-                        mux.remove()
+                        sb.remove(mux)
                 if not sb_used:
-                    sb.remove()
+                    tile.remove(sb)
 
             if (x, y) in p_state.I:
                 op = tile.find('opcode')
+                ET.SubElement(op, p_state.I[(x,y)][0].op)
 
-                #retrieve the opcde from somewhere
-                #if opcode is a constant:
-                    #const = ET.SubElement(op, 'constant')
-                    #const.text = p_state.I[(x,y)].opcode
-                #else:
-                    #op.text = p_state.I[(x,y)].opcode
-        filepath_noext = os.path.splitext(filepath)[0]
-
-        tree.write(filepath_noext + '_pnr-ed.xml')
+        with open(outpath, 'w') as f:
+            tree.write(f, encoding='unicode')
 
     return model_write
         

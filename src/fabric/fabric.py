@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import monosat as ms
 import re
 from collections import defaultdict
-from fabricfuns import Side, getSide, mapSide, parse_name
+from .fabricfuns import Side, getSide, mapSide, parse_name
 from util import IDObject
 
     
@@ -214,6 +214,7 @@ class Track(IDObject):
             it's just  (0,0)W_i[0] --> (1,0)W_i[0]
     '''
     def __init__(self, src, dst, names, element):
+        super().__init__()
         self._src = src
         self._dst = dst
         self._names = names

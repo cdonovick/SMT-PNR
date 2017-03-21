@@ -12,14 +12,14 @@ class Module(NamedIDObject):
         '''
             returns a iterator over Wires
         '''
-        return iter(self._inputs)
+        return self._inputs.values()
 
     @property
     def outputs(self):
         '''
             returns a iterator over Wires
         '''
-        return iter(self._outputs)
+        return self._outputs.values()
 
     @property
     def op(self):
@@ -33,6 +33,7 @@ class Module(NamedIDObject):
 
         
     def __repr__(self):
-        return 'name: {}, inputs: {}, outputs: {}'.format(self.name, {x.src.name for x in self.inputs.values()}, {x.dst.name for x in self.outputs.values()})
+        return self.name
+        #return 'name: {}, inputs: {}, outputs: {}'.format(self.name, {x.src.name for x in self.inputs.values()}, {x.dst.name for x in self.outputs.values()})
 
 

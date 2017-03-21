@@ -15,7 +15,7 @@ def init_positons(position_type):
                 vars[module] = p
                 constraints.append(p.invariants)
 
-        return solver.And(contraints)
+        return solver.And(constraints)
     return initializer
 
 def assert_pinned(position_type):
@@ -23,33 +23,31 @@ def assert_pinned(position_type):
         constraints = []
         for module in design.modules:
             if module in state:
-                contraints.append(vars[module] == position_type.encode(state[module]))
-        return solver.And(contraints)
+                constraints.append(vars[module][0] == position_type.encode(state[module][0]))
+        return solver.And(constraints)
     return generator
 
 def distinct(fabric, design, state, vars, solver):
-    constaints = []
+    constraints = []
     for m1 in design.modules:
         for m2 in design.modules:
             if m1 != m2:
                 constraints.append(vars[m1].flat != vars[m2].flat)
-    return solver.And(contraints)
+    return solver.And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []
     for net in design.nets:
         src = net.src
         dst = net.dst
-
-
         c = []
         dx = vars[src].delta_x_fun(vars[dst])
         dy = vars[src].delta_y_fun(vars[dst])
         c.append(solver.And(dx(0), dy(1)))
         c.append(solver.And(dx(1), dy(0)))
-        constaints.append(solver.Or(c))
+        constraints.append(solver.Or(c))
 
-    return constaints
+    return solver.And(constraints)
 
 
 #################################### Routing Constraints ################################
@@ -59,12 +57,12 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     c = []
     for m1 in design.modules:
         outputs = {x.dst for x in m1.outputs}
-        m1_pos = p_state[m1]
+        m1_pos = p_state[m1][0]
         for m2 in design.modules:
             if m2 != m1 and m2 not in outputs:
-                m2_pos = p_state[m2]
-                pe1 = fab[m1_pos].PE
-                pe2 = fab[m2_pos].PE
+                m2_pos = p_state[m2][0]
+                pe1 = fabric[m1_pos].PE
+                pe2 = fabric[m2_pos].PE
 
                 c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('a')]))
                 c.append(~solver.g.reaches(vars[pe1.getPort('out')], vars[pe2.getPort('b')]))
@@ -76,30 +74,20 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
 def reachability(fabric, design, p_state, r_state, vars, solver):
     #TODO: Specify port of connection (that would be easier than allowing for either)
     reaches = []
-    for m1 in design.modules:
-        for port, net in m1.outputs.items():
-            src_pos = p_state[net.src]
-            dst_pos = p_state[net.dst]
-            src_pe = fab[src_pos].PE
-            dst_pe = fab[dst_pos].PE
-            reaches.append(solver.g.reaches(src_pe.getPort('out'), dst_pe.getPort(port)))
-            #make sure not connected to other port
-            if port == 'a':
-                notport = 'b'
-            else:
-                notport = 'a'
-            reaches.append(~solver.g.reaches(src_pe.getPort('out'), dst_pe.getPort(notport)))
-    return solver.And(reaches)
-
-
-def thing():
     for net in design.nets:
-        r_state[net] = (path)
-
-        if track in r_state.I
-
-    if (x, y) in p_sate:
-    
+        src_pos = p_state[net.src][0]
+        dst_pos = p_state[net.dst][0]
+        src_pe = fabric[src_pos].PE
+        dst_pe = fabric[dst_pos].PE
+        reaches.append(solver.g.reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(net.dst_port)]))
+        #make sure not connected to other port
+        if net.dst_port == 'a':
+            notport = 'b'
+        else:
+            notport = 'a'
+        reaches.append(~solver.g.reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(notport)]))
+    return solver.And(reaches)
+ 
 
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
@@ -107,9 +95,9 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
     for x in range(fabric.width):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
-                vars[fab[(x, y)].PE.getPort('a')] = solver.g.addNode('({},{})PE_a'.format(x, y))
-                vars[fab[(x, y)].PE.getPort('b')] = solver.g.addNode('({},{})PE_b'.format(x, y))
-                vars[fab[(x, y)].PE.getPort('out')] = solver.g.addNode('({},{})PE_out'.format(x, y))
+                vars[fabric[(x, y)].PE.getPort('a')] = solver.g.addNode('({},{})PE_a'.format(x, y))
+                vars[fabric[(x, y)].PE.getPort('b')] = solver.g.addNode('({},{})PE_b'.format(x, y))
+                vars[fabric[(x, y)].PE.getPort('out')] = solver.g.addNode('({},{})PE_out'.format(x, y))
 
     for tile in fabric.Tiles.values(): 
         for track in tile.tracks:
@@ -117,9 +105,9 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
             dst = track.dst
             if src not in vars:
                 vars[src] = solver.g.addNode('({},{}){}_i[{}]'.format(str(src.x), str(src.y), src.side.name, str(src.track)))
-            if dst not in msnodes:
+            if dst not in vars:
                 vars[dst] = solver.g.addNode('({},{}){}_i[{}]'.format(str(dst.x), str(dst.y), dst.side.name, str(dst.track)))
 
             vars[track] = solver.g.addEdge(vars[src], vars[dst])
 
-
+    return solver.And([])

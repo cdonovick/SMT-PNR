@@ -2,8 +2,8 @@
     Classes for represtenting designs and various constructors
 '''
 from util import NamedIDObject
-#from types import StringTypes
 from .module import Module
+from .net import Net
 
 class Design(NamedIDObject):
     def __init__(self, adj_dict, op_dict, name=''):
@@ -23,9 +23,9 @@ class Design(NamedIDObject):
 
     def _gen_graph(self, adj_dict, op_dict):
         mods = dict()
-        for (src_name, src_port), adj_list in self._adj_dict.items():
+        for (src_name, src_port), adj_list in adj_dict.items():
             if src_name not in mods:
-                src = Modules(src_name, op_dict[src_name])
+                src = Module(src_name, op_dict[src_name])
                 mods[src_name] = src
                 self._modules.add(src)
             else:
@@ -34,11 +34,11 @@ class Design(NamedIDObject):
             
             for dst_name, dst_port, width in adj_list:
                 if dst_name not in mods:
-                    dst = Modules(dst_name, op_dict[dst_name])
+                    dst = Module(dst_name, op_dict[dst_name])
                     mods[dst_name] = dst
                     self._modules.add(dst)
                 else:
                     dst = mods[dst_name]
 
-                self._nets.add(Wire(src, src_port, dst, dst_port, width))
+                self._nets.add(Net(src, src_port, dst, dst_port, width))
 
