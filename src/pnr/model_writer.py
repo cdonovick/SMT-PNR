@@ -41,6 +41,15 @@ def write_to_xml(inpath, outpath):
                             mux.remove(src)
                     if not mux_used:
                         sb.remove(mux)
+
+                for ft in sb.findall('ft'):
+                    snk = ft.get('snk')
+                    src = ft.find('src')
+                    if (x, y, 'SB', snk, src.text) in r_state.I:
+                        sb_used = True
+                    else:
+                        sb.remove(ft)
+                        
                 if not sb_used:
                     tile.remove(sb)
 
@@ -52,5 +61,4 @@ def write_to_xml(inpath, outpath):
             tree.write(f, encoding='unicode')
 
     return model_write
-        
                   

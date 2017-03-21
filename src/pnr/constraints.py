@@ -2,7 +2,7 @@
 Constraint generators
 '''
 
-def init_positons(position_type):
+def init_positions(position_type):
     '''
     init_positons:
         place initializer
@@ -106,7 +106,8 @@ def dist_limit(dist_factor):
             constraints.append(solver.g.distance_leq(vars[src_pe.getPort(net.src_port)],
                                                      vars[dst_pe.getPort(net.dst_port)],
                                                      3*dist_factor*manhattan_dist + 1))
-    return 
+        return solver.And(constraints)
+    return dist_constraints
  
 
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):

@@ -17,15 +17,16 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
         dst_pe = fabric[dst_pos].PE
         reaches = solver.g.reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(net.dst_port)])
         l = model.getPath(reaches)
-        #lst = [model.names[node] for node in l]
-        #print(lst)
+        lst = [model.names[node] for node in l]
+        print(lst)
         for n1, n2 in zip(l, l[1:]):
-            edge = model.getEdge(l[0], l[1])
+            edge = model.getEdge(n1, n2)
             track = vars.I[edge]
             src_port = track.src
             dst_port = track.dst
             outname = track.names[1]
             inname = track.names[0]
             state = (src_port.x, src_port.y, track.element.typestr, outname, inname)
+            print(state)
             r_state[net] = state
     
