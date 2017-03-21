@@ -87,6 +87,26 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
             notport = 'a'
         reaches.append(~solver.g.reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(notport)]))
     return solver.And(reaches)
+
+
+def dist_limit(dist_factor):
+    def dist_constraints(fabric, design, p_state, r_state, vars, solver):
+        constraints = []
+        for net in design.nets:
+            src_pos = p_state[net.src][0]
+            dst_pos = p_state[net.dst][0]
+            src_pe = fabric[src_pos].PE
+            dst_pe = fabric[dst_pos].PE
+            manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
+            #This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
+            #for each jump it needs to go through a port.
+            #Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
+            #It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
+            #You can adjust it with dist_factor
+            constraints.append(solver.g.distance_leq(vars[src_pe.getPort(net.src_port)],
+                                                     vars[dst_pe.getPort(net.dst_port)],
+                                                     3*dist_factor*manhattan_dist + 1))
+    return 
  
 
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):
