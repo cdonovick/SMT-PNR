@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 import monosat as ms
 import re
 from collections import defaultdict
@@ -395,8 +395,9 @@ def parseXML(filepath):
                 tile.SB.setOutputPorts(W, [Port(W, t, x-1, y) for t in range(tile.trk_count)])
         
     for tile in root:
-        x = int(tile.get('col'))
+        tile_addr = int(tile.get('tile_addr'))
         y = int(tile.get('row'))
+        x = int(tile.get('col'))
         t = fab[(x,y)]
         for cb in tile.findall('cb'):
             feature_address = int(cb.get('feature_address'))

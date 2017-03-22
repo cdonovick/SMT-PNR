@@ -90,6 +90,9 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
 
 
 def dist_limit(dist_factor):
+    if not isinstance(dist_factor, int):
+        dist_factor = int(dist_factor) + 1
+        print('Received non-integer dist_factor. Need int, so casting to {}'.format(dist_factor))
     def dist_constraints(fabric, design, p_state, r_state, vars, solver):
         constraints = []
         for net in design.nets:

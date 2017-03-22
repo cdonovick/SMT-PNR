@@ -1,17 +1,18 @@
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 import os
 
 
 def write_to_xml(inpath, outpath):
     def model_write(p_state, r_state):
-        with open(inpath, 'r') as f:
-            tree = ET.parse(f)
+        #with open(inpath, 'r') as f:
+        #    tree = ET.parse(f)
+        tree = ET.parse(inpath)
 
         root = tree.getroot()
 
         for tile in root:
-            x = int(tile.get('col'))
             y = int(tile.get('row'))
+            x = int(tile.get('col'))
             for cb in tile.findall('cb'):
                 cb_used = False
                 for mux in cb.findall('mux'):
@@ -54,11 +55,12 @@ def write_to_xml(inpath, outpath):
                     tile.remove(sb)
 
             if (x, y) in p_state.I:
-                op = tile.find('opcode')
-                ET.SubElement(op, p_state.I[(x,y)][0].op)
+                opcode = tile.find('opcode')
+                op = ET.SubElement(opcode, p_state.I[(x,y)][0].op)
 
-        with open(outpath, 'w') as f:
-            tree.write(f, encoding='unicode')
+        #with open(outpath, 'w') as f:
+            #tree.write(f, encoding='unicode')
+        tree.write(outpath)
 
     return model_write
                   
