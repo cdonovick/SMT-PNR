@@ -2,101 +2,53 @@
   "namespaces": {
     "_G": {
       "modules": {
-        "Add4": {
+        "DesignTop": {
           "def": {
             "connections": [
               [
                 [
-                  "self",
-                  "in",
-                  "2"
-                ],
-                [
-                  "add01",
-                  "in0"
-                ]
-              ],
-              [
-                [
-                  "add00",
-                  "out"
-                ],
-                [
-                  "add1",
-                  "in0"
-                ]
-              ],
-              [
-                [
-                  "self",
-                  "in",
-                  "3"
-                ],
-                [
-                  "add01",
+                  "mult_373_374",
                   "in1"
+                ],
+                [
+                  "const"
                 ]
               ],
               [
                 [
-                  "add01",
-                  "out"
-                ],
-                [
-                  "add1",
-                  "in1"
-                ]
-              ],
-              [
-                [
-                  "self",
-                  "in",
-                  "1"
-                ],
-                [
-                  "add00",
-                  "in1"
-                ]
-              ],
-              [
-                [
-                  "add1",
-                  "out"
-                ],
-                [
-                  "self",
-                  "out"
-                ]
-              ],
-              [
-                [
-                  "self",
-                  "in",
-                  "0"
-                ],
-                [
-                  "add00",
+                  "mult_373_374",
                   "in0"
+                ],
+                [
+                  "self",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "self",
+                  "out"
+                ],
+                [
+                  "mult_373_374",
+                  "out"
                 ]
               ]
             ],
             "instances": {
-              "add00": {
+              "const": {
+                "config": {
+                  "value": 2
+                },
                 "instref": [
-                  "_G",
-                  "add2_32"
+                  "stdlib",
+                  "const_16"
                 ]
               },
-              "add01": {
+              "mult_373_374": {
                 "instref": [
-                  "_G",
-                  "add2_32"
-                ]
-              },
-              "add1": {
-                "instref": [
-                  "_G",
-                  "add2_32"
+                  "stdlib",
+                  "mult2_16"
                 ]
               }
             }
@@ -108,26 +60,112 @@
                 "in",
                 [
                   "Array",
-                  4,
-                  [
-                    "Array",
-                    32,
-                    "BitIn"
-                  ]
+                  16,
+                  "BitIn"
                 ]
               ],
               [
                 "out",
                 [
                   "Array",
-                  32,
+                  16,
                   "BitOut"
                 ]
               ]
             ]
           ]
         },
-        "add2_32": {
+        "DesignTop_mapped": {
+          "def": {
+            "connections": [
+              [
+                [
+                  "mult_373_374",
+                  "out"
+                ],
+                [
+                  "ioout",
+                  "in0"
+                ]
+              ],
+              [
+                [
+                  "ioin",
+                  "out"
+                ],
+                [
+                  "mult_373_374",
+                  "in0"
+                ]
+              ],
+              [
+                [
+                  "const",
+                  "out"
+                ],
+                [
+                  "mult_373_374",
+                  "in1"
+                ]
+              ]
+            ],
+            "instances": {
+              "const": {
+                "config": {
+                  "constvalue": 2,
+                  "op": "const"
+                },
+                "instref": [
+                  "cgra",
+                  "PE_16"
+                ]
+              },
+              "ioin": {
+                "instref": [
+                  "cgra",
+                  "IOIn_16"
+                ]
+              },
+              "ioout": {
+                "instref": [
+                  "cgra",
+                  "IOOut_16"
+                ]
+              },
+              "mult_373_374": {
+                "config": {
+                  "constvalue": 0,
+                  "op": "mult"
+                },
+                "instref": [
+                  "cgra",
+                  "PE_16"
+                ]
+              }
+            }
+          },
+          "type": "Any"
+        }
+      }
+    },
+    "cgra": {
+      "modules": {
+        "IOIn_16": {
+          "type": [
+            "Record",
+            [
+              [
+                "out",
+                [
+                  "Array",
+                  16,
+                  "BitOut"
+                ]
+              ]
+            ]
+          ]
+        },
+        "IOOut_16": {
           "type": [
             "Record",
             [
@@ -135,7 +173,26 @@
                 "in0",
                 [
                   "Array",
-                  32,
+                  16,
+                  "BitIn"
+                ]
+              ]
+            ]
+          ]
+        },
+        "PE_16": {
+          "configparams": {
+            "constvalue": "int",
+            "op": "string"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "in0",
+                [
+                  "Array",
+                  16,
                   "BitIn"
                 ]
               ],
@@ -143,7 +200,7 @@
                 "in1",
                 [
                   "Array",
-                  32,
+                  16,
                   "BitIn"
                 ]
               ],
@@ -151,7 +208,7 @@
                 "out",
                 [
                   "Array",
-                  32,
+                  16,
                   "BitOut"
                 ]
               ]
@@ -261,6 +318,6 @@
   },
   "top": [
     "_G",
-    "Add4"
+    "DesignTop_mapped"
   ]
 }

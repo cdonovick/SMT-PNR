@@ -57,7 +57,10 @@ def write_to_xml(inpath, outpath):
 
             if (x, y) in p_state.I:
                 opcode = tile.find('opcode')
-                op = ET.SubElement(opcode, p_state.I[(x,y)][0].op)
+                op_name = p_state.I[(x,y)][0].op
+                op_text = p_state.I[(x,y)][0].op_val
+                op = ET.SubElement(opcode, op_name)
+                op.text = op_text
 
         processed_xml = re.sub(r'"', r"'", ET.tostring(root, pretty_print=True).decode('utf-8'))
         #processed_root = ET.fromstring(processed_xml)
