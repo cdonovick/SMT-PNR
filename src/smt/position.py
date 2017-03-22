@@ -229,12 +229,12 @@ class BVXY(PositionBase):
     def invariants(self):
         constraint = []
         if self._is_x_pow2:
-            ix = self.fabric.cols.bit_length()
+            ix = (self.fabric.cols-1).bit_length()
             constraint.append(z3.Extract(ix, ix, self.x) == 0)
         else:
             constraint.append(z3.ULT(self.x, self.fabric.cols))
         if self._is_y_pow2:
-            iy = self.fabric.rows.bit_length()
+            iy = (self.fabric.rows-1).bit_length()
             constraint.append(z3.Extract(iy, iy, self.y) == 0)
         else:
             constraint.append(z3.ULT(self.y, self.fabric.rows))

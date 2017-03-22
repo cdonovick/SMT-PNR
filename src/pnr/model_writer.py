@@ -1,5 +1,6 @@
 import lxml.etree as ET
 import os
+import re
 
 
 def write_to_xml(inpath, outpath):
@@ -58,9 +59,14 @@ def write_to_xml(inpath, outpath):
                 opcode = tile.find('opcode')
                 op = ET.SubElement(opcode, p_state.I[(x,y)][0].op)
 
-        #with open(outpath, 'w') as f:
+        processed_xml = re.sub(r'"', r"'", ET.tostring(root, pretty_print=True).decode('utf-8'))
+        #processed_root = ET.fromstring(processed_xml)
+        #processed_root.write(outpath)
+
+        with open(outpath, 'w') as f:
+            f.write(processed_xml)
             #tree.write(f, encoding='unicode')
-        tree.write(outpath)
+        #tree.write(outpath)
 
     return model_write
                   
