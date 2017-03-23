@@ -30,17 +30,18 @@ def load_core(file):
             s = i.select('out')
             src_name, src_port = s.get_ancestors()
             src_op = 'io'
-            src_op_atr['name'] = src_port
+            src_op_atr['name'] = src_name
             src_op_atr['type'] = 'source'
             out_edges = s.get_connected_wireables()
         elif i.module_name()[0:5] == 'IOOut':
-            src_name = i.get_ancestors()[0]
-            src_op_atr['name'] = src_port
-            src_op_atr['type'] = 'sink'
             src_port = 'out'
+            src_name = i.get_ancestors()[0]
+            src_op_atr['name'] = src_name
+            src_op_atr['type'] = 'sink'
             src_op = 'io'
             out_edges = []
         else:
+            print(i.module_name())
             raise ValueError('Unknown module type')
         
         src_port = PORT_TRANSLATION[src_port]

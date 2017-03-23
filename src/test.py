@@ -4,6 +4,7 @@ import design, design.core2graph, fabric, pnr, smt
 FABRIC_FILE = '../demo_cgra4x4.xml'
 DESIGN_FILE = '../mapped.json'
 OUTPUT_FILE = '../demo_placed.xml'
+IO_OUTPUT_FILE = '../io_cgra.xml'
 
 POSITION_T = smt.BVXY
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
@@ -37,4 +38,4 @@ else:
     sys.exit(1)
 
 print("Writing design to {}".format(OUTPUT_FILE))
-p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE))
+p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
