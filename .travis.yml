@@ -40,20 +40,24 @@ install:
     - export PATH=$PATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/
     - export PYTHONPATH=$PYTHONPATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/python/
     - sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
+    - cd $TRAVIS_BUILD_DIR
     # Build coreir
     - git clone https://github.com/rdaly525/coreir.git 
     - cd coreir
+    - export CORECONFIG="g++-4.9";
     - make -C src
     - make -C src ../build/coreir.so  # For bindings tests
     - make -C tests
     - pip install pytest
     - pip install -e bindings/python
+    - cd $TRAVIS_BUILD_DIR
     # Stuff needed for P&R
     - pip install pygraphviz
     - pip install lxml
 
 script: 
     - cd ./src
-    - ./test.py ../mapped.json ../demo_cgra4x4.xml ../demo_mapped.xml
+    - ./test.py ../mapped.json ../demo_cgra4x4.xml ../demo_mapped.xml ../io.xml
+
 
 
