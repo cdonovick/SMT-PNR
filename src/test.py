@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 import sys
 import design, design.core2graph, fabric, pnr, smt
-FABRIC_FILE = '../demo_cgra4x4.xml'
-DESIGN_FILE = '../mapped.json'
-OUTPUT_FILE = '../demo_placed.xml'
-IO_OUTPUT_FILE = '../io_cgra.xml'
+
+if len(sys.argv) != 4:
+    print('usage: {} <DESIGN_FILE> <FABRIC_FILE> <OUTPUT_FILE>'.format(sys.argv[0]))
+    sys.exit(1)
+
+
+DESIGN_FILE = sys.argv[1] 
+FABRIC_FILE = sys.argv[2]
+OUTPUT_FILE = sys.argv[3]
 
 POSITION_T = smt.BVXY
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
@@ -38,4 +43,4 @@ else:
     sys.exit(1)
 
 print("Writing design to {}".format(OUTPUT_FILE))
-p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
+p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE))
