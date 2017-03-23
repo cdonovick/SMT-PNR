@@ -180,7 +180,7 @@ class Packed2H(Base2H):
     def y(self):
         return z3.Extract(self.fabric.rows-1, 0, self.flat)
 
-    def encode(self, p)
+    def encode(self, p):
         return z3.Concat(self.encode_x(p[0]), self.encode_y(p[1]))
 
 class Unpacked2H(Base2H):
@@ -204,7 +204,7 @@ class Unpacked2H(Base2H):
     def y(self):
         return self._y
 
-    def encode(self, p)
+    def encode(self, p):
         return z3.Concat(self.encode_x(p[0]), self.encode_y(p[1]))
 
 
