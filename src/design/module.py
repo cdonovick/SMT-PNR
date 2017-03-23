@@ -31,6 +31,7 @@ class Module(NamedIDObject):
     def op_val(self):
         return self._op_val
     
+    @property
     def op_atr(self):
         return self._op_atr
     

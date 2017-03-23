@@ -6,7 +6,8 @@ DESIGN_FILE = '../mapped.json'
 OUTPUT_FILE = '../demo_placed.xml'
 
 POSITION_T = smt.BVXY
-PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor,
+PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
+PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, #pnr.dist_limit(1.5)
 
 
@@ -21,8 +22,12 @@ print("Placing design...", end=' ')
 if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
     print("success!")
 else:
-    print("failure")
-    sys.exit(1)
+    print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
+    if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
+        print("success!")
+    else:
+        print("failure")
+        sys.exit(1)
 
 print("Routing design...", end=' ')
 if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):

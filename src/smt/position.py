@@ -92,6 +92,26 @@ class PositionBase(metaclass=ABCMeta):
         pass
 
 
+    @abstractmethod
+    def encode(self, p):
+        '''
+        encode :: (int, int) -> z3.BitVec
+        '''
+        pass
+    
+    @abstractmethod
+    def encode_x(self, x):
+        '''
+        encode :: int -> z3.BitVec
+        '''
+        pass
+
+    @abstractmethod
+    def encode_y(self, y):
+        '''
+        encode :: int -> z3.BitVec
+        '''
+        pass
 
 class Base2H(PositionBase):
     '''
@@ -134,6 +154,11 @@ class Base2H(PositionBase):
     def get_coordinates(self, model):
         return (int(log2(model.eval(self.x).as_long())), int(log2(model.eval(self.y).as_long())))
 
+    def encode_x(self, x):
+        return z3.BitVecVal(2**x, self.fabric.cols)
+
+    def encode_y(self, y):
+        return z3.BitVecVal(2**y, self.fabric.rows)
 
 class Packed2H(Base2H):
     '''
@@ -154,6 +179,9 @@ class Packed2H(Base2H):
     @property
     def y(self):
         return z3.Extract(self.fabric.rows-1, 0, self.flat)
+
+    def encode(self, p)
+        return z3.Concat(self.encode_x(p[0]), self.encode_y(p[1]))
 
 class Unpacked2H(Base2H):
     '''
@@ -176,24 +204,30 @@ class Unpacked2H(Base2H):
     def y(self):
         return self._y
 
+    def encode(self, p)
+        return z3.Concat(self.encode_x(p[0]), self.encode_y(p[1]))
+
 
 class BVXY(PositionBase):
     def __init__(self, name, fabric):
         super().__init__(name, fabric)
         if 2**(self.fabric.cols.bit_length()-1) == self.fabric.cols:
             #adding extra bit to avoid overflow adjacency
-            self._x = z3.BitVec(self.name + '_x', 1+self.fabric.cols.bit_length())
-            self._is_x_pow2 = True
+            self._x_bits    = 1+self.fabric.cols.bit_length()
+            self._is_x_pow2 = True 
         else:
-            self._x = z3.BitVec(self.name + '_x', self.fabric.cols.bit_length())
+            self._x_bits    = self.fabric.cols.bit_length()
             self._is_x_pow2 = False
         if 2**(self.fabric.rows.bit_length()-1) == self.fabric.rows:
             #adding extra bit to avoid overflow adjacency
-            self._y = z3.BitVec(self.name + '_y', 1+self.fabric.rows.bit_length())
+            self._y_bits    = 1+self.fabric.rows.bit_length()
             self._is_y_pow2 = True
         else:
-            self._y = z3.BitVec(self.name + '_y', self.fabric.rows.bit_length())
+            self._y_bits    = self.fabric.rows.bit_length()
             self._is_y_pow2 = False
+    
+        self._x = z3.BitVec(self.name + '_x', self._x_bits)
+        self._y = z3.BitVec(self.name + '_y', self._y_bits)
 
     def delta_x(self, other):
         return [], zu.absolute_value(self.x - other.x)
@@ -229,12 +263,12 @@ class BVXY(PositionBase):
     def invariants(self):
         constraint = []
         if self._is_x_pow2:
-            ix = (self.fabric.cols-1).bit_length()
+            ix = self._x_bits - 1
             constraint.append(z3.Extract(ix, ix, self.x) == 0)
         else:
             constraint.append(z3.ULT(self.x, self.fabric.cols))
         if self._is_y_pow2:
-            iy = (self.fabric.rows-1).bit_length()
+            iy = self._y_bits - 1
             constraint.append(z3.Extract(iy, iy, self.y) == 0)
         else:
             constraint.append(z3.ULT(self.y, self.fabric.rows))
@@ -242,4 +276,13 @@ class BVXY(PositionBase):
 
     def get_coordinates(self, model):
         return (model.eval(self.x).as_long(), model.eval(self.y).as_long())
+
+    def encode(self, p):
+        return self.encode_x(p[0]), self.encode_y(p[1])
+    
+    def encode_x(self, x):
+        return z3.BitVecVal(x, self._x_bits)
+
+    def encode_y(self, y):
+        return z3.BitVecVal(y, self._y_bits)
 

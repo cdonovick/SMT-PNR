@@ -18,14 +18,13 @@ def init_positions(position_type):
         return solver.And(constraints)
     return initializer
 
-def assert_pinned(position_type):
-    def generator(fabric, design, state, vars, solver):
-        constraints = []
-        for module in design.modules:
-            if module in state:
-                constraints.append(vars[module][0] == position_type.encode(state[module][0]))
-        return solver.And(constraints)
-    return generator
+def assert_pinned(fabric, design, state, vars, solver):
+    constraints = []
+    for module in design.modules:
+        if module in state:
+            pos = vars[module]
+            constraints.append(pos == pos.encode(state[module][0]))
+    return solver.And(constraints)
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
@@ -48,6 +47,17 @@ def nearest_neighbor(fabric, design, state, vars, solver):
         constraints.append(solver.Or(c))
 
     return solver.And(constraints)
+
+def pin_IO(fabric, design, state, vars, solver):
+    constraints = []
+    for module in design.modules:
+        if module.op == 'io':
+            pos = vars[module]
+            c = [pos.x == pos.encode_x(0), 
+                 pos.y == pos.encode_y(0)]
+            constraints.append(solver.Or(c))
+    return solver.And(constraints)
+
 
 
 #################################### Routing Constraints ################################
