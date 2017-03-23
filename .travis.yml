@@ -45,6 +45,6 @@ install:
 
 script: 
     - cd ./src
-    - ./test.py
+    - ./test.py ../mapped.json ../demo_cgra4x4.xml ../demo_mapped.xml
 
 
