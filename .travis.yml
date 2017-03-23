@@ -40,6 +40,15 @@ install:
     - export PATH=$PATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/
     - export PYTHONPATH=$PYTHONPATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/python/
     - sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
+    # Build coreir
+    - git clone https://github.com/rdaly525/coreir.git 
+    - cd coreir
+    - make -C src
+    - make -C src ../build/coreir.so  # For bindings tests
+    - make -C tests
+    - pip install pytest
+    - pip install -e bindings/python
+    # Stuff needed for P&R
     - pip install pygraphviz
     - pip install lxml
 
