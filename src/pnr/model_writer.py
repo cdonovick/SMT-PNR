@@ -2,6 +2,7 @@ import lxml.etree as ET
 import os
 import re
 from fabric.fabricfuns import parse_name, mapSide
+from fabric import Side
 
 
 def write_to_xml(inpath, outpath, io_outpath):
@@ -29,7 +30,27 @@ def write_to_xml(inpath, outpath, io_outpath):
                         if (x, y, 'CB', snk, src.text) in r_state.I:
                             cb_used = True
                             mux_used = True
-                            ioroute[snk] = src.text
+                            direc, bus, side, iotrack = parse_name(src.text)
+                            #newx, ioy, newside = mapSide(x, y, side)
+                            #newside = Side((side.value + 2) % 4)
+                            
+                            if side.value == 0:
+                                ioside = Side(2)
+                                iox = x + 1
+                                ioy = y
+                            elif side.value == 1:
+                                ioside = Side(3)
+                                iox = x
+                                ioy = y + 1
+                            elif side.value == 2:
+                                ioside = Side(0)
+                                iox = x - 1
+                                ioy = y
+                            else:
+                                ioside = Side(1)
+                                iox = x
+                                ioy = y - 1
+                            ioroute[snk] = 'wire_' + str(ioy) + '_' + str(iox) + '_' + bus + '_S' + str(ioside.value) + '_T' + str(iotrack)
                         else:
                             mux.remove(src)
                     if not mux_used:
@@ -47,7 +68,11 @@ def write_to_xml(inpath, outpath, io_outpath):
                             sb_used = True
                             mux_used = True
                             if src.text == 'pe_out_res':
-                                ioroute['out'] = snk
+                                direc, bus, side, iotrack = parse_name(snk)
+                                ioside = side
+                                iox = x
+                                ioy = y
+                                ioroute['out'] = 'wire_' + str(y) + '_' + str(x) + '_' + bus + '_S' + str(side.value) + '_T' + str(iotrack)
                         else:
                             mux.remove(src)
                     if not mux_used:
@@ -69,31 +94,46 @@ def write_to_xml(inpath, outpath, io_outpath):
                 op_name = p_state.I[(x,y)][0].op
                 op_text = p_state.I[(x,y)][0].op_val
                 op = ET.SubElement(opcode, op_name)
+                print(op_name, y, x)
                 if op_name == 'io':
                     io = ET.SubElement(ioroot, 'io')
                     io.set('name', p_state.I[(x,y)][0].op_atr['name'])
                     iotype = p_state.I[(x,y)][0].op_atr['type']
+                    print(iotype, end=' ')
                     io.set('type', iotype)
                     iotile = ET.SubElement(io, 'tile')
                     iotile.text = tile_addr
                     if 'a' not in ioroute and 'out' not in ioroute:
                         raise RuntimeError('An invariant is broken...')
-                    if iotype == 'source':
-                        _, _, _, track = parse_name(ioroute['out'])
-                    else:
-                        _, _, _, track = parse_name(ioroute['a'])
 
-                    ioside = ET.SubElement(io, 'side')
+                    
+                    iowname = ET.SubElement(io, 'wire_name')
+                    
+                    if iotype == 'source':
+                        print(ioroute['out'])
+                        #_, _, side, track = parse_name(ioroute['out'])
+                        iowname.text = ioroute['out']
+                    else:
+                        print(ioroute['a'])
+                        #_, _, side, track = parse_name(ioroute['a'])
+                        iowname.text = ioroute['a']
+                        
+
+                    ioside_element = ET.SubElement(io, 'side')
 
                     #infer the side
-                    if x == 0:
-                        side = 'S2'
-                    else:
-                        side = 'S3'
+                    #if x == 0:
+                    #    edge_side = 'S2'
+                    #else:
+                    #    edge_side = 'S3'
                     
-                    ioside.text = side
-                    iotrack = ET.SubElement(io, 'track')
-                    iotrack.text = str(track)
+                    ioside_element.text = str(ioside.value)
+                    iotrack_element = ET.SubElement(io, 'track')
+                    iotrack_element.text = str(iotrack)
+                    iorow = ET.SubElement(io, 'row')
+                    iocol = ET.SubElement(io, 'col')
+                    iorow.text = str(ioy)
+                    iocol.text = str(iox)
                         
                 op.text = op_text
 
