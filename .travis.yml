@@ -50,6 +50,7 @@ install:
     - make -C tests
     - pip install pytest
     - pip install -e bindings/python
+    - cd $TRAVIS_BUILD_DIR
     # Stuff needed for P&R
     - pip install pygraphviz
     - pip install lxml
