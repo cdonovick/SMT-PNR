@@ -35,6 +35,8 @@ class PNR:
 
         
         if not self._place_solver.solve():
+            self._place_solver.reset()
+            self._place_vars = BiDict()
             return False
         
         model_reader(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)

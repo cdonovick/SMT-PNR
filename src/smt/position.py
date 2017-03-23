@@ -213,14 +213,14 @@ class BVXY(PositionBase):
         super().__init__(name, fabric)
         if 2**(self.fabric.cols.bit_length()-1) == self.fabric.cols:
             #adding extra bit to avoid overflow adjacency
-            self._x_bits    = 1+self.fabric.cols.bit_length()
+            self._x_bits    = self.fabric.cols.bit_length()
             self._is_x_pow2 = True 
         else:
             self._x_bits    = self.fabric.cols.bit_length()
             self._is_x_pow2 = False
         if 2**(self.fabric.rows.bit_length()-1) == self.fabric.rows:
             #adding extra bit to avoid overflow adjacency
-            self._y_bits    = 1+self.fabric.rows.bit_length()
+            self._y_bits    = self.fabric.rows.bit_length()
             self._is_y_pow2 = True
         else:
             self._y_bits    = self.fabric.rows.bit_length()
