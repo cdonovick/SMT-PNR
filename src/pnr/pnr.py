@@ -1,10 +1,10 @@
 from util.bimdict import BiMultiDict, BiDict
-from smt.solvers import Solver_z3, Solver_monosat 
+from smt.solvers import Solver_z3, Solver_multigraph
 import itertools as it
 
 
 _PLACE_SOLVER = Solver_z3
-_ROUTE_SOLVER = Solver_monosat
+_ROUTE_SOLVER = Solver_multigraph
 
 ''' Class for handling place & route '''
 class PNR:
