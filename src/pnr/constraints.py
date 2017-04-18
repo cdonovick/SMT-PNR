@@ -215,7 +215,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
                 # put in r_state because we need to map track to multiple edges
                 # i.e. need BiMultiDict
                 # Plus, we only use this in model_reader so it makes sense to have in r_state
-                r_state[track] = e
+                vars[e] = track
 
     # now enforce that each node is only used in one of the graphs
     # Note: all graphs have same nodes, so can get them from any graph

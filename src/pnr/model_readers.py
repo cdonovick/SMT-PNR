@@ -22,7 +22,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
         print(lst)
         for n1, n2 in zip(l, l[1:]):
             edge = graph.getEdge(n1, n2)
-            track = r_state.I[edge][0]
+            track = vars[edge]
             src_port = track.src
             dst_port = track.dst
             outname = track.names[1]
