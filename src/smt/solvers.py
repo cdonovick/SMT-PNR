@@ -55,47 +55,7 @@ class Solver_z3(Solver_base):
 class Solver_monosat(Solver_base):
     def __init__(self):
         super().__init__()
-        self.g = ms.Graph()
-
-
-    def solve(self):
-        ms.Assert(self.And(self.constraints))
-        self.sat = ms.Solve()
-        return self.sat
-
-    def reset(self):
-        super().reset()
-        self.g = ms.Graph()
-
-    def get_model(self):
-        if self.sat:
-            return self.g
-        elif self.sat is not None:
-            raise RuntimeError('Problem is unsat')
-        else:
-            raise RuntimeError('Solver has not been run')
-
-    def And(self, *pargs, **kwargs):
-        if pargs == ([],):
-           return True 
-
-        if not pargs and not kwargs:
-            return True
-        else:
-            return ms.And(*pargs, **kwargs)
-
-    def Or(self, *pargs, **kwargs):
-        if not pargs and not kwargs:
-            return True
-        else:
-            return ms.Or(*pargs, **kwargs)
-
-
-class Solver_multigraph(Solver_base):
-    def __init__(self):
-        super().__init__()
-        ms.Monosat().init('-route')
-        # ms.Monosat().init('-route -decide-theories') <-- need bigger fabrics to evaluate if this helps
+        ms.Monosat().init('-route')  # could also use -decide-theories
         self.graphs = []
 
     def solve(self):
@@ -110,7 +70,8 @@ class Solver_multigraph(Solver_base):
 
     def reset(self):
         super().reset()
-        ms.Monosat().init()
+        self.graphs = []
+        ms.Monosat().init('-route')
 
     def get_model(self):
         if self.sat:
@@ -122,7 +83,7 @@ class Solver_multigraph(Solver_base):
 
     def And(self, *pargs, **kwargs):
         if pargs == ([],):
-           return True 
+            return True
 
         if not pargs and not kwargs:
             return True
