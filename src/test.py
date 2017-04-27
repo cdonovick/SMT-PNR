@@ -13,13 +13,14 @@ OUTPUT_FILE = sys.argv[3]
 IO_OUTPUT_FILE = sys.argv[4]
 
 POSITION_T = smt.BVXY
-PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
-PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, pnr.dist_limit(1)
+PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, # pnr.pin_IO
+PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, # pnr.pin_IO
+ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, #pnr.dist_limit(1)
 
 
 print("Loading design: {}".format(DESIGN_FILE))
 d = design.Design(*design.core2graph.load_core(DESIGN_FILE))
+
 print("Loading fabric: {}".format(FABRIC_FILE))
 f = fabric.parseXML(FABRIC_FILE)
 
@@ -32,17 +33,19 @@ else:
     print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
     if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
         print("success!")
+        p.write_design(pnr.print_placement(d))
     else:
-        print("failure")
+        print("!!failure!!")
         sys.exit(1)
 
 print("Routing design...", end=' ')
 if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
     print("success!")
 else:
-    print("failure")
-    sys.exit(1)
+    print("!!!failure!!!")
 
-print("Writing design to {}".format(OUTPUT_FILE))
-print("Writing io settings to {}".format(IO_OUTPUT_FILE))
-p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
+
+#print("thing!!!!!!!!!!!!")
+#print("Writing design to {}".format(OUTPUT_FILE))
+#print("Writing io settings to {}".format(IO_OUTPUT_FILE))
+#p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
