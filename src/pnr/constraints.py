@@ -95,11 +95,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
                 m2_pos = p_state[m2][0]
                 pe_src = fabric[m2_pos].PE
 
-                c.append(~solver.g.reaches(vars[pe_src.getPort('out')], vars[pe_dst.getPort('a')]))
-                c.append(~solver.g.reaches(vars[pe_src.getPort('out')], vars[pe_dst.getPort('b')]))
-                
                 for port in ports:
-                    c.append(~graph.reaches(vars[pe1.getPort('out')], vars[pe2.getPort(port)]))
+                    c.append(~graph.reaches(vars[pe_src.getPort('out')], vars[pe_dst.getPort(port)]))
 
     return solver.And(c)
 
