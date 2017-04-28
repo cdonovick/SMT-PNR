@@ -1,6 +1,10 @@
 import z3
 import operator
 import functools as ft
+from smt_switch import functions
+
+And = functions.And()
+lshr = functions.bvlshr()
 
 
 def hamming_a(bv):
@@ -45,24 +49,24 @@ def hamming_d(bv):
         Further if hamming & (1{k}0{k}) == 0 then hamming & (0{k}1{k}) == hamming
         so don't bother masking at all.
     '''
-    bsize = bv.size()
+    bsize = bv.sort.width
     b_point = bsize.bit_length()
 
     s = 2**((bsize - 1).bit_length())
 
     max_exp = (s - 1).bit_length()
     mvals = [(2**i, build_grouped_mask(2**i, bsize).value) for i in range(max_exp)]
-    x = bv - (z3.LShR(bv, mvals[0][0]) & mvals[0][1])
-    x = (x & mvals[1][1]) + (z3.LShR(x, mvals[1][0]) & mvals[1][1])
+    x = bv - (lshr(bv, mvals[0][0]) & mvals[0][1])
+    x = (x & mvals[1][1]) + (lshr(x, mvals[1][0]) & mvals[1][1])
 
     for idx,i in enumerate(mvals[2:]):
-        x = (x + z3.LShR(x, i[0])) & i[1]
+        x = (x + lshr(x, i[0])) & i[1]
         if i[0] > b_point:
             break
 
     if len(mvals) >= 3:
         for i in mvals[idx+3:]:
-            x += z3.LShR(x, i[0])
+            x += lshr(x, i[0])
 
     return x & (2**b_point - 1)
 

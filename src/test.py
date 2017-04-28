@@ -2,6 +2,7 @@
 import sys
 import design, design.core2graph, fabric, pnr, smt
 from functools import partial
+
 import argparse
 parser = argparse.ArgumentParser(description='Run place and route')
 parser.add_argument('df', metavar='<DESIGN_FILE>', help='Mapped coreir file')
@@ -17,7 +18,7 @@ df = args.df
 ff = args.ff
 
 
-POSITION_T = smt.BVXY
+POSITION_T = partial(smt.Packed2H, solver=pnr.PLACE_SOLVER)
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
 PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, pnr.dist_limit(1)

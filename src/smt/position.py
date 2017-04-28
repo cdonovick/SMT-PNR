@@ -1,12 +1,20 @@
 from abc import ABCMeta, abstractmethod
-from math import log2, ceil
+from math import log2
 import smt.z3util as zu
 import z3
+from smt_switch import sorts
+from smt_switch import functions
+
+And = functions.And()
+Or = functions.Or()
+concat = functions.concat()
+
 
 class PositionBase(metaclass=ABCMeta):
-    def __init__(self, name, fabric):
+    def __init__(self, name, fabric, solver):
         self._name = name
         self._fabric = fabric
+        self._solver = solver
 
     @property
     def name(self):
@@ -17,11 +25,15 @@ class PositionBase(metaclass=ABCMeta):
         return self._fabric
 
     @property
+    def solver(self):
+        return self._solver
+
+    @property
     @abstractmethod
     def flat(self):
         '''
         flat :: -> z3.BitVec | a.flat == b.flat => a.x == b.x and a.y == b.y
-
+nn
         Return (x, y) in some form that such that z3.distinct can be called on it
         '''
         pass
@@ -118,17 +130,17 @@ class Base2H(PositionBase):
     Base class for 2 hot representations
     '''
 
-    def __init__(self, name, fabric):
-        super().__init__(name, fabric)
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
 
     def delta_x(self, other):
-        delta_x = z3.BitVec(self.name+'-'+other.name+'_delta_x', self.fabric.cols)
-        constraint = z3.Or(self.x == other.x << delta_x, other.x == self.x << delta_x)
+        delta_x = self.solver.declare_const(self.name+'-'+other.name+'_delta_x', sorts.BitVec(self.fabric.cols))
+        constraint = Or(self.x == other.x << delta_x, other.x == self.x << delta_x)
         return constraint, delta_x
 
     def delta_y(self, other):
-        delta_y = z3.BitVec(self.name+'-'+other.name+'_delta_y', self.fabric.rows)
-        constraint = z3.Or(self.y == other.y << delta_y, other.y == self.y << delta_y)
+        delta_y = self.solver.declare_const(self.name+'-'+other.name+'_delta_y', sorts.BitVec(self.fabric.rows))
+        constraint = Or(self.y == other.y << delta_y, other.y == self.y << delta_y)
         return constraint, delta_y
 
     def delta_x_fun(self, other):
@@ -136,7 +148,7 @@ class Base2H(PositionBase):
             if constant == 0:
                 return self.x == other.x
             else:
-                return z3.Or(self.x == other.x << constant, other.x == self.x << constant)
+                return Or(self.x == other.x << constant, other.x == self.x << constant)
         return delta_fun
 
     def delta_y_fun(self, other):
@@ -144,29 +156,29 @@ class Base2H(PositionBase):
             if constant == 0:
                 return self.y == other.y
             else:
-                return z3.Or(self.y == other.y << constant, other.y == self.y << constant)
+                return Or(self.y == other.y << constant, other.y == self.y << constant)
         return delta_fun
 
     @property
     def invariants(self):
-        return z3.And(zu.hamming(self.x) == 1, zu.hamming(self.y) == 1)
+        return And(zu.hamming(self.x) == 1, zu.hamming(self.y) == 1)
 
-    def get_coordinates(self, model):
-        return (int(log2(model.eval(self.x).as_long())), int(log2(model.eval(self.y).as_long())))
+    def get_coordinates(self):
+        return (int(log2(self.solver.get_value(self.x).as_int())), int(log2(self.solver.get_value(self.y).as_int())))
 
     def encode_x(self, x):
-        return z3.BitVecVal(2**x, self.fabric.cols)
+        return self.solver.theory_const(sorts.BitVec(self.fabric.cols), 2**x)
 
     def encode_y(self, y):
-        return z3.BitVecVal(2**y, self.fabric.rows)
+        return self.solver.theory_const(sorts.BitVec(self.fabric.rows), 2**y)
 
 class Packed2H(Base2H):
     '''
     2 Hot representation, packed into a single BitVec
     '''
-    def __init__(self, name, fabric):
-        super().__init__(name, fabric)
-        self._flat = z3.BitVec(self.name + '_flat', self.fabric.rows + self.fabric.cols)
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
+        self._flat = self.solver.declare_const(self.name + '_flat', sorts.BitVec(self.fabric.rows + self.fabric.cols))
 
     @property
     def flat(self):
@@ -174,27 +186,29 @@ class Packed2H(Base2H):
 
     @property
     def x(self):
-        return z3.Extract(self.fabric.rows + self.fabric.cols-1, self.fabric.rows, self.flat)
+        ext = functions.extract(self.fabric.rows + self.fabric.cols-1, self.fabric.rows)
+        return ext(self.flat)
 
     @property
     def y(self):
-        return z3.Extract(self.fabric.rows-1, 0, self.flat)
+        ext = functions.extract(self.fabric.rows-1, 0)
+        return ext(self.flat)
 
     def encode(self, p):
-        return z3.Concat(self.encode_x(p[0]), self.encode_y(p[1]))
+        return concat(self.encode_x(p[0]), self.encode_y(p[1]))
 
 class Unpacked2H(Base2H):
     '''
     2 Host representation, x and y in seperate BitVec
     '''
-    def __init__(self, name, fabric):
-        super().__init__(name, fabric)
-        self._x = z3.BitVec(self.name + '_x', self.fabric.cols)
-        self._y = z3.BitVec(self.name + '_y', self.fabric.rows)
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
+        self._x = self.solver.declare_const(self.name + '_x', sorts.BitVec(self.fabric.cols))
+        self._y = self.solver.declare_const(self.name + '_y', sorts.BitVec(self.fabric.rows))
 
     @property
     def flat(self):
-        return z3.Concat(self.x, self.y)
+        return concat(self.x, self.y)
 
     @property
     def x(self):
@@ -205,12 +219,12 @@ class Unpacked2H(Base2H):
         return self._y
 
     def encode(self, p):
-        return z3.Concat(self.encode_x(p[0]), self.encode_y(p[1]))
+        return concat(self.encode_x(p[0]), self.encode_y(p[1]))
 
 
 class BVXY(PositionBase):
-    def __init__(self, name, fabric):
-        super().__init__(name, fabric)
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
         if 2**(self.fabric.cols.bit_length()-1) == self.fabric.cols:
             #adding extra bit to avoid overflow adjacency
             self._x_bits    = self.fabric.cols.bit_length()
@@ -249,7 +263,7 @@ class BVXY(PositionBase):
 
     @property
     def flat(self):
-        return z3.Concat(self.x, self.y)
+        return concat(self.x, self.y)
 
     @property
     def x(self):
@@ -264,25 +278,28 @@ class BVXY(PositionBase):
         constraint = []
         if self._is_x_pow2:
             ix = self._x_bits - 1
-            constraint.append(z3.Extract(ix, ix, self.x) == 0)
+            ext = functions.extract(ix, ix)
+            constraint.append(ext(self.x) == 0)
         else:
+            # TODO: switch to solver-agnostic version
             constraint.append(z3.ULT(self.x, self.fabric.cols))
         if self._is_y_pow2:
             iy = self._y_bits - 1
-            constraint.append(z3.Extract(iy, iy, self.y) == 0)
+            ext = functions.extract(iy, iy)
+            constraint.append(ext(iy, iy, self.y) == 0)
         else:
+            # TODO: switch to solver-agnostic version
             constraint.append(z3.ULT(self.y, self.fabric.rows))
-        return z3.And(constraint)
+        return And(constraint)
 
-    def get_coordinates(self, model):
-        return (model.eval(self.x).as_long(), model.eval(self.y).as_long())
+    def get_coordinates(self):
+        return (self.solver.get_value(self.x).as_int(), self.solver.get_value(self.y).as_int())
 
     def encode(self, p):
         return self.encode_x(p[0]), self.encode_y(p[1])
-    
+
     def encode_x(self, x):
-        return z3.BitVecVal(x, self._x_bits)
+        return self.solver.theory_const(sorts.BitVec(self._x_bits), x)
 
     def encode_y(self, y):
-        return z3.BitVecVal(y, self._y_bits)
-
+        return self.solver.theory_const(sorts.BitVec(self._y_bits), y)
