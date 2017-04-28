@@ -1,5 +1,5 @@
 from util.bimdict import BiMultiDict, BiDict
-from smt.solvers import Solver_z3, Solver_monosat 
+from smt.solvers import Solver_z3, Solver_monosat
 import itertools as it
 
 

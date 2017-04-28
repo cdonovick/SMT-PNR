@@ -55,21 +55,27 @@ class Solver_z3(Solver_base):
 class Solver_monosat(Solver_base):
     def __init__(self):
         super().__init__()
-        self.g = ms.Graph()
-
+        ms.Monosat().init('-route')  # could also use -decide-theories
+        self.graphs = []
 
     def solve(self):
         ms.Assert(self.And(self.constraints))
         self.sat = ms.Solve()
         return self.sat
 
+    def add_graph(self):
+        g = ms.Graph()
+        self.graphs.append(g)
+        return g
+
     def reset(self):
         super().reset()
-        self.g = ms.Graph()
+        self.graphs = []
+        ms.Monosat().init('-route')
 
     def get_model(self):
         if self.sat:
-            return self.g
+            return self.graphs
         elif self.sat is not None:
             raise RuntimeError('Problem is unsat')
         else:
@@ -77,7 +83,7 @@ class Solver_monosat(Solver_base):
 
     def And(self, *pargs, **kwargs):
         if pargs == ([],):
-           return True 
+            return True
 
         if not pargs and not kwargs:
             return True
@@ -89,3 +95,9 @@ class Solver_monosat(Solver_base):
             return True
         else:
             return ms.Or(*pargs, **kwargs)
+
+    def false(self):
+        return ms.false()
+
+    def AssertAtMostOne(self, bools):
+        return ms.AssertAtMostOne(bools)
