@@ -87,14 +87,17 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
 
     # make sure modules that aren't connected are not connected
     for m1 in design.modules:
-        outputs = {x.dst for x in m1.outputs}
+        inputs = {x.src for x in m1.inputs}
         m1_pos = p_state[m1][0]
+        pe_dst = fabric[m1_pos].PE
         for m2 in design.modules:
-            if m2 != m1 and m2 not in outputs:
+            if m2 != m1 and m2 not in inputs:
                 m2_pos = p_state[m2][0]
-                pe1 = fabric[m1_pos].PE
-                pe2 = fabric[m2_pos].PE
+                pe_src = fabric[m2_pos].PE
 
+                c.append(~solver.g.reaches(vars[pe_src.getPort('out')], vars[pe_dst.getPort('a')]))
+                c.append(~solver.g.reaches(vars[pe_src.getPort('out')], vars[pe_dst.getPort('b')]))
+                
                 for port in ports:
                     c.append(~graph.reaches(vars[pe1.getPort('out')], vars[pe2.getPort(port)]))
 
