@@ -44,7 +44,7 @@ install:
     - cd coreir;
     - export COREIRCONFIG="g++-4.9";
     - export COREIRHOME=$PWD
-    - export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/bin
     - make install
     #- make -C src
     #- make -C src ../build/coreir.so  # For bindings tests
