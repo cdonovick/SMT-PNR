@@ -26,13 +26,11 @@ before_install:
 
 install:
     # Build monosat
-    - git clone https://github.com/sambayless/monosat.git 
-    - cd monosat
-    - cmake .
-    - make -j 2
-    - sudo make install
-    - cd src/monosat/api/python
-    - pip install -e .
+    - wget http://web.stanford.edu/~lenny/files/monosat_binary_03182017.tar.gz
+    - tar -xvf monosat_binary_03182017.tar.gz
+    - export PATH=$PATH:$PWD/monosat_binary/bin
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_binary/lib
+    - pip install -e monosat_binary/python
     - cd $TRAVIS_BUILD_DIR
     # Build z3
     - wget https://github.com/Z3Prover/z3/releases/download/z3-4.5.0/z3-4.5.0-x64-ubuntu-14.04.zip
@@ -43,13 +41,16 @@ install:
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
     - git clone https://github.com/rdaly525/coreir.git 
-    - cd coreir
-    - export CORECONFIG="g++-4.9";
-    - make -C src
-    - make -C src ../build/coreir.so  # For bindings tests
-    - make -C tests
-    - pip install pytest
-    - pip install -e bindings/python
+    - cd coreir;
+    - export COREIRCONFIG="g++-4.9";
+    - export COREIRHOME=$PWD
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/bin
+    - make install
+    #- make -C src
+    #- make -C src ../build/coreir.so  # For bindings tests
+    #- make -C tests
+    - pip install pytest;
+    - pip install -e bindings/python;
     - cd $TRAVIS_BUILD_DIR
     # Stuff needed for P&R
     - pip install pygraphviz
