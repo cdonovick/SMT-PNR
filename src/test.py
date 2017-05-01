@@ -45,8 +45,6 @@ if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
 else:
     print("!!!failure!!!")
 
-
-#print("thing!!!!!!!!!!!!")
-#print("Writing design to {}".format(OUTPUT_FILE))
-#print("Writing io settings to {}".format(IO_OUTPUT_FILE))
-#p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
+print("Writing design to {}".format(OUTPUT_FILE))
+print("Writing io settings to {}".format(IO_OUTPUT_FILE))
+p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
