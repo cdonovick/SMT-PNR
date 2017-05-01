@@ -95,7 +95,7 @@ def write_to_xml(inpath, outpath, io_outpath):
                 op_text = p_state.I[(x,y)][0].op_val
                 op = ET.SubElement(opcode, op_name)
                 print(op_name, y, x)
-                if op_name == 'io':
+                if op_name == 'io' and ('a' in ioroute or 'out' in ioroute):
                     io = ET.SubElement(ioroot, 'io')
                     io.set('name', p_state.I[(x,y)][0].op_atr['name'])
                     iotype = p_state.I[(x,y)][0].op_atr['type']
