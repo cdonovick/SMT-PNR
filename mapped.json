@@ -7,22 +7,22 @@
             "connections": [
               [
                 [
-                  "addinst",
+                  "const3",
                   "out"
                 ],
                 [
-                  "multinst",
+                  "addinst",
                   "in1"
                 ]
               ],
               [
                 [
-                  "const3",
+                  "multinst",
                   "out"
                 ],
                 [
-                  "multinst",
-                  "in0"
+                  "self",
+                  "out"
                 ]
               ],
               [
@@ -37,12 +37,22 @@
               ],
               [
                 [
+                  "addinst",
+                  "out"
+                ],
+                [
+                  "multinst",
+                  "in1"
+                ]
+              ],
+              [
+                [
                   "const3",
                   "out"
                 ],
                 [
-                  "addinst",
-                  "in1"
+                  "multinst",
+                  "in0"
                 ]
               ]
             ],
@@ -101,8 +111,38 @@
                   "out"
                 ],
                 [
+                  "multinst",
+                  "in0"
+                ]
+              ],
+              [
+                [
+                  "const3",
+                  "out"
+                ],
+                [
                   "addinst",
                   "in1"
+                ]
+              ],
+              [
+                [
+                  "addinst",
+                  "out"
+                ],
+                [
+                  "multinst",
+                  "in1"
+                ]
+              ],
+              [
+                [
+                  "multinst",
+                  "out"
+                ],
+                [
+                  "ioout",
+                  "in0"
                 ]
               ],
               [
@@ -113,26 +153,6 @@
                 [
                   "addinst",
                   "in0"
-                ]
-              ],
-              [
-                [
-                  "const3",
-                  "out"
-                ],
-                [
-                  "multinst",
-                  "in0"
-                ]
-              ],
-              [
-                [
-                  "addinst",
-                  "out"
-                ],
-                [
-                  "multinst",
-                  "in1"
                 ]
               ]
             ],
