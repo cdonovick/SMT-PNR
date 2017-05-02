@@ -127,12 +127,12 @@
               ],
               [
                 [
-                  "addinst",
+                  "ioin",
                   "out"
                 ],
                 [
-                  "multinst",
-                  "in1"
+                  "addinst",
+                  "in0"
                 ]
               ],
               [
@@ -147,12 +147,12 @@
               ],
               [
                 [
-                  "ioin",
+                  "addinst",
                   "out"
                 ],
                 [
-                  "addinst",
-                  "in0"
+                  "multinst",
+                  "in1"
                 ]
               ]
             ],
