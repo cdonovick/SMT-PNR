@@ -41,8 +41,7 @@ def load_core(file):
             src_op = 'io'
             out_edges = []
         else:
-            print(i.module_name())
-            raise ValueError('Unknown module type')
+            raise ValueError('Unknown module type: {}'.format(i.module_name()))
         
         src_port = PORT_TRANSLATION[src_port]
         
