@@ -26,11 +26,11 @@ before_install:
 
 install:
     # Build monosat
-    - wget http://web.stanford.edu/~lenny/files/monosat_binary_03182017.tar.gz
-    - tar -xvf monosat_binary_03182017.tar.gz
-    - export PATH=$PATH:$PWD/monosat_binary/bin
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_binary/lib
-    - pip install -e monosat_binary/python
+    - wget http://web.stanford.edu/~makaim/files/monosat_bin.tar.gz
+    - tar -xvf monosat_bin.tar.gz
+    - export PATH=$PATH:$PWD/monosat_bin
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_bin
+    - pip install -e monosat_bin/python
     - cd $TRAVIS_BUILD_DIR
     # Build z3
     - wget https://github.com/Z3Prover/z3/releases/download/z3-4.5.0/z3-4.5.0-x64-ubuntu-14.04.zip
