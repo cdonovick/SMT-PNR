@@ -58,7 +58,7 @@ install:
 
 script: 
     - cd ./src
-    - ./test.py ../mapped.json ../cgra4x4.xml ../placed.xml ../io.xml
+    - ./test.py ../mapped.json ../cgra4x4.xml --xml ../placed.xml ../io.xml --bitstream ../bitstream --print
 
 
 
