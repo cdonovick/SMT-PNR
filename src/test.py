@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 import sys
 import design, design.core2graph, fabric, pnr, smt
+from functools import partial
+import argparse
+parser = argparse.ArgumentParser(description='Run place and route')
+parser.add_argument('df', metavar='<DESIGN_FILE>', help='Mapped coreir file')
+parser.add_argument('ff', metavar='<FABRIC_FILE>', help='XML Fabric file')
+parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'), 
+    help='output CGRA configuration in XML file with IO info')
+parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', 
+        help='output CGRA configuration in bitstream')
+parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
+args = parser.parse_args()
 
-if len(sys.argv) != 5:
-    print('usage: {} <DESIGN_FILE> <FABRIC_FILE> <OUTPUT_FILE> <IO_OUTPUT_FILE>'.format(sys.argv[0]))
-    sys.exit(1)
+df = args.df
+ff = args.ff
 
-
-DESIGN_FILE = sys.argv[1] 
-FABRIC_FILE = sys.argv[2]
-OUTPUT_FILE = sys.argv[3]
-IO_OUTPUT_FILE = sys.argv[4]
 
 POSITION_T = smt.BVXY
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
@@ -19,11 +24,11 @@ ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, p
 # To use multigraph encoding:
 # ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
-print("Loading design: {}".format(DESIGN_FILE))
-d = design.Design(*design.core2graph.load_core(DESIGN_FILE))
+print("Loading design: {}".format(df))
+d = design.Design(*design.core2graph.load_core(df))
 
-print("Loading fabric: {}".format(FABRIC_FILE))
-f = fabric.parseXML(FABRIC_FILE)
+print("Loading fabric: {}".format(ff))
+f = fabric.parseXML(ff)
 
 p = pnr.PNR(f, d)
 
@@ -34,9 +39,8 @@ else:
     print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
     if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
         print("success!")
-        p.write_design(pnr.print_placement(d))
     else:
-        print("!!failure!!")
+        print("!!!failure!!!")
         sys.exit(1)
 
 print("Routing design...", end=' ')
@@ -44,7 +48,20 @@ if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
     print("success!")
 else:
     print("!!!failure!!!")
+    sys.exit(1)
 
-print("Writing design to {}".format(OUTPUT_FILE))
-print("Writing io settings to {}".format(IO_OUTPUT_FILE))
-p.write_design(pnr.write_to_xml(FABRIC_FILE, OUTPUT_FILE, IO_OUTPUT_FILE))
+if args.xml:
+    cf, io = args.xml
+    print("Writing design to: {}".format(cf))
+    print("Writing io settings to: {}".format(io))
+    p.write_design(pnr.write_to_xml(ff, cf, io))
+
+if args.bitstream:
+    bf = args.bitstream 
+    print("Writing bitsream to: {}".format(bf))
+    p.write_design(partial(pnr.bitstream_writer, ff, bf))
+
+if args.print:
+    p.write_design(pnr.print_placement(d))
+
+

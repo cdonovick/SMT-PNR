@@ -19,7 +19,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
         reaches = graph.reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(net.dst_port)])
         l = graph.getPath(reaches)
         lst = [graph.names[node] for node in l]
-        print(lst)
+#        print(lst)
         for n1, n2 in zip(l, l[1:]):
             edge = graph.getEdge(n1, n2)
             track = vars[edge]

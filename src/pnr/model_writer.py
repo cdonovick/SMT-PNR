@@ -94,12 +94,12 @@ def write_to_xml(inpath, outpath, io_outpath):
                 op_name = p_state.I[(x,y)][0].op
                 op_text = p_state.I[(x,y)][0].op_val
                 op = ET.SubElement(opcode, op_name)
-                print(op_name, y, x)
+                #print(op_name, y, x)
                 if op_name == 'io' and ('a' in ioroute or 'out' in ioroute):
                     io = ET.SubElement(ioroot, 'io')
                     io.set('name', p_state.I[(x,y)][0].op_atr['name'])
                     iotype = p_state.I[(x,y)][0].op_atr['type']
-                    print(iotype, end=' ')
+                    #print(iotype, end=' ')
                     io.set('type', iotype)
                     iotile = ET.SubElement(io, 'tile')
                     iotile.text = tile_addr
@@ -110,11 +110,11 @@ def write_to_xml(inpath, outpath, io_outpath):
                     iowname = ET.SubElement(io, 'wire_name')
                     
                     if iotype == 'source':
-                        print(ioroute['out'])
+                        #print(ioroute['out'])
                         #_, _, side, track = parse_name(ioroute['out'])
                         iowname.text = ioroute['out']
                     else:
-                        print(ioroute['a'])
+                        #print(ioroute['a'])
                         #_, _, side, track = parse_name(ioroute['a'])
                         iowname.text = ioroute['a']
                         
