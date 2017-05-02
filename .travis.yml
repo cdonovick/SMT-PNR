@@ -26,7 +26,7 @@ before_install:
 
 install:
     # Build monosat
-    - wget https://github.com/sambayless/monosat/releases/download/1.4.0/monosat_bin.tar.gz
+    - wget http://web.stanford.edu/~makaim/files/monosat_bin.tar.gz
     - tar -xvf monosat_bin.tar.gz
     - export PATH=$PATH:$PWD/monosat_bin
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_bin
