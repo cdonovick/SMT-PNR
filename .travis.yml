@@ -20,7 +20,7 @@ addons:
             - g++-4.9
             - build-essential
             - swig2.0
-            - libcln
+            - libcln-dev
 
 before_install:
     - export CXX="g++-4.9"
