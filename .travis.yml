@@ -43,7 +43,7 @@ install:
     #- tar -xzvf solver_binaries.tar.gz
     #- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/solver_binaries
     #- export PYTHONPATH=$PYTHONPATH:$PWD/solver_binaries
-    - ./get_solvers.sh
+    - . ./get_solvers.sh
     # Add smt-switch
     - git clone https://github.com/makaimann/smt-switch.git
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
