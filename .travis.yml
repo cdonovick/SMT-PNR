@@ -19,6 +19,7 @@ addons:
             - git
             - g++-4.9
             - build-essential
+            - swig2.0
 
 before_install:
     - export CXX="g++-4.9"
@@ -32,6 +33,14 @@ install:
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_bin
     - pip install -e monosat_bin/python
     - cd $TRAVIS_BUILD_DIR
+    # Get solver binaries
+    - wget http://web.stanford.edu/~makaim/files/solver_binaries.tar.gz
+    - tar -xvf solver_binaries.tar.gz
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/solver_binaries
+    - export PYTHONPATH=$PYTHONPATH:$PWD/solver_binaries
+    # Add smt-switch
+    - git clone https://github.com/makaimann/smt-switch.git
+    - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     # Build z3
     - wget https://github.com/Z3Prover/z3/releases/download/z3-4.5.0/z3-4.5.0-x64-ubuntu-14.04.zip
     - unzip z3-4.5.0-x64-ubuntu-14.04.zip
