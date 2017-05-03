@@ -22,6 +22,10 @@ addons:
             - swig2.0
             - libcln-dev
 
+cache:
+    directories:
+    - ./solver_binaries
+
 before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
@@ -35,10 +39,11 @@ install:
     - pip install -e monosat_bin/python
     - cd $TRAVIS_BUILD_DIR
     # Get solver binaries
-    - wget http://web.stanford.edu/~makaim/files/solver_binaries.tar.gz
-    - tar -xzvf solver_binaries.tar.gz
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/solver_binaries
-    - export PYTHONPATH=$PYTHONPATH:$PWD/solver_binaries
+    #- wget http://web.stanford.edu/~makaim/files/solver_binaries.tar.gz
+    #- tar -xzvf solver_binaries.tar.gz
+    #- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/solver_binaries
+    #- export PYTHONPATH=$PYTHONPATH:$PWD/solver_binaries
+    ./get_solvers.sh
     # Add smt-switch
     - git clone https://github.com/makaimann/smt-switch.git
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
