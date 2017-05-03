@@ -41,7 +41,6 @@ install:
     - echo "Debug"
     - swig2.0 -version
     - alias swig=swig2.0
-    - type swig
     # Add smt-switch
     - git clone https://github.com/makaimann/smt-switch.git
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
