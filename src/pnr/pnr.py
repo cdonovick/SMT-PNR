@@ -4,7 +4,7 @@ import itertools as it
 from smt_switch import solvers
 
 
-PLACE_SOLVER = solvers.Z3Solver()
+PLACE_SOLVER = solvers.CVC4Solver()
 _ROUTE_SOLVER = Solver_monosat()
 
 ''' Class for handling place & route '''
