@@ -31,19 +31,7 @@ before_install:
     - export CC="gcc-4.9"
 
 install:
-    # Build monosat
-    #- wget http://web.stanford.edu/~makaim/files/monosat_bin.tar.gz
-    #- tar -xvf monosat_bin.tar.gz
-    #- export PATH=$PATH:$PWD/monosat_bin
-    #- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_bin
-    #- pip install -e monosat_bin/python
-    #- cd $TRAVIS_BUILD_DIR
-    # Get solver binaries
-    #- wget http://web.stanford.edu/~makaim/files/solver_binaries.tar.gz
-    #- tar -xzvf solver_binaries.tar.gz
-    #- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/solver_binaries
-    #- export PYTHONPATH=$PYTHONPATH:$PWD/solver_binaries
-    - . ./get_smt_solvers.sh
+    - . ./util/get_smt_solvers.sh
     # Add smt-switch
     - git clone https://github.com/makaimann/smt-switch.git
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
