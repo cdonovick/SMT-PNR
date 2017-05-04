@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from math import log2
+import functools as ft
+import itertools as it
+from math import log2, ceil
 import smt.z3util as zu
 import z3
 from smt_switch import sorts
@@ -125,6 +127,16 @@ nn
         '''
         pass
 
+    def distinct(self, *others):
+        '''
+        distinct :: z3.BitVec* -> z3.Bool
+        '''
+        c = []
+        for other in others:
+            c.append(self.flat != other.flat)
+        return And(c)
+
+
 class Base2H(PositionBase):
     '''
     Base class for 2 hot representations
@@ -132,6 +144,33 @@ class Base2H(PositionBase):
 
     def __init__(self, name, fabric, solver):
         super().__init__(name, fabric, solver)
+
+    @property
+    @abstractmethod
+    def flat(self):
+        '''
+        flat :: -> z3.BitVec | a.flat == b.flat => a.x == b.x and a.y == b.y
+
+        Return (x, y) in some form that such that z3.distinct can be called on it
+        '''
+        pass
+
+    @property
+    @abstractmethod
+    def x(self):
+        '''
+        x :: -> z3.BitVec
+        '''
+        pass
+
+
+    @property
+    @abstractmethod
+    def y(self):
+        '''
+        y :: -> z3.BitVec
+        '''
+        pass
 
     def delta_x(self, other):
         delta_x = self.solver.declare_const(self.name+'-'+other.name+'_delta_x', sorts.BitVec(self.fabric.cols))
@@ -167,10 +206,83 @@ class Base2H(PositionBase):
         return (int(log2(self.solver.get_value(self.x).as_int())), int(log2(self.solver.get_value(self.y).as_int())))
 
     def encode_x(self, x):
-        return self.solver.theory_const(sorts.BitVec(self.fabric.cols), 2**x)
+        return self.solver.theory_const(sorts.BitVec(self.fabric.cols), 1 << x)
 
     def encode_y(self, y):
-        return self.solver.theory_const(sorts.BitVec(self.fabric.rows), 2**y)
+        return self.solver.theory_const(sorts.BitVec(self.fabric.rows), 1 << y)
+
+    @abstractmethod
+    def encode(self, p):
+        '''
+        encode :: (int, int) -> z3.BitVec
+        '''
+        pass
+
+
+class OneHot(Base2H):
+    def __init__(self, name, fabric):
+        super().__init__(name, fabric)
+        self._bv = self.solver.declare_const(self.name, sorts.BitVec(self.fabric.rows * self.fabric.cols))
+
+    @property
+    def flat(self):
+        '''
+        flat :: -> z3.BitVec | a.flat == b.flat => a.x == b.x and a.y == b.y
+
+        Return (x, y) in some form that such that z3.distinct can be called on it
+        '''
+        return self._bv
+
+    @property
+    def x(self):
+        '''
+        x :: -> z3.BitVec
+        '''
+        rows = []
+        for r in range(self.fabric.rows):
+            rows.append(functions.extract((r+1)*self.fabric.cols-1, r*self.fabric.cols)(self._bv))
+        x = ft.reduce(lambda a, b: a | b, rows)
+        #assert x.size() == self.fabric.cols
+        return x
+
+    @property
+    def y(self):
+        '''
+        y :: -> z3.BitVec
+        '''
+        cols = []
+        for c in range(self.fabric.cols):
+            col = [] 
+            for r in range(self.fabric.rows):
+                col.append(functions.extract(c+r*self.fabric.cols, c+r*self.fabric.cols)(self._bv))
+            cols.append(ft.reduce(z3.Concat, col))
+
+        y = ft.reduce(lambda a, b: a | b, cols)
+        #assert y.size() == self.fabric.rows
+        return y
+
+
+    @property
+    def invariants(self):
+        '''
+        invariants :: -> z3.Bool
+        '''
+        return zu.hamming(self._bv) == 1
+
+    def encode(self, p):
+        '''
+        encode :: (int, int) -> z3.BitVec
+        '''
+        return self.solver.theory_const(sorts.BitVec(self.fabric.cols*self.fabric.rows), 1 << (p[1]*self.fabric.cols + p[0]))
+
+    
+    def distinct(self, *other):
+        '''
+        distinct :: z3.BitVec* -> z3.Bool
+        '''
+        l = list(other)
+        n = len(l) + 1
+        return zu.hamming(ft.reduce(lambda acc, b: acc | b.flat, l, self.flat)) == n
 
 class Packed2H(Base2H):
     '''
@@ -220,7 +332,6 @@ class Unpacked2H(Base2H):
 
     def encode(self, p):
         return concat(self.encode_x(p[0]), self.encode_y(p[1]))
-
 
 class BVXY(PositionBase):
     def __init__(self, name, fabric, solver):

@@ -28,16 +28,21 @@ def assert_pinned(fabric, design, state, vars, solver):
     for module in design.modules:
         if module in state:
             pos = vars[module]
-            constraints.append(pos == pos.encode(state[module][0]))
+            constraints.append(pos.flat == pos.encode(state[module][0]))
     return And(constraints)
 
 def distinct(fabric, design, state, vars, solver):
-    constraints = []
-    for m1 in design.modules:
-        for m2 in design.modules:
-            if m1 != m2:
-                constraints.append(vars[m1].flat != vars[m2].flat)
-    return And(constraints)
+    i = iter(design.modules)
+    try:
+        #get the first module
+        m = next(i)
+    except StopIteration:
+        #if there are no modules return True
+        return True
+    v = vars[m]
+    vs = (vars[mi] for mi in i)
+    return v.distinct(*vs)
+
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []

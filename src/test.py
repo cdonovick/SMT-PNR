@@ -4,6 +4,7 @@ import design, design.core2graph, fabric, pnr, smt
 from functools import partial
 
 import argparse
+import time
 parser = argparse.ArgumentParser(description='Run place and route')
 parser.add_argument('df', metavar='<DESIGN_FILE>', help='Mapped coreir file')
 parser.add_argument('ff', metavar='<FABRIC_FILE>', help='XML Fabric file')
@@ -12,11 +13,22 @@ parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'),
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', 
         help='output CGRA configuration in bitstream')
 parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
+parser.add_argument('--pt', choices=['1h','p2', 'u2', 'i'], default='1h')
 args = parser.parse_args()
 
 df = args.df
 ff = args.ff
 
+if args.pt == '1h':
+    POSITION_T = smt.OneHot
+elif args.pt == 'p2':
+    POSITION_T = smt.Packed2H
+elif args.pt == 'u2':
+    POSITION_T = smt.Unpacked2H
+elif args.pt == 'i':
+    POSITION_T = smt.BVXY
+else:
+    assert(0)
 
 POSITION_T = partial(smt.Packed2H, solver=pnr.PLACE_SOLVER)
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
@@ -34,15 +46,22 @@ f = fabric.parseXML(ff)
 p = pnr.PNR(f, d)
 
 print("Placing design...", end=' ')
-if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
-    print("success!")
+t1 = time.time()
+if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader, args.pt):
+    t2 = time.time()
+    print("success! placement took {} ms".format((t2-t1) * 1000))
 else:
     print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
+    t1 = time.time()
     if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
-        print("success!")
+        t2 = time.time()
+        print("success! placement took {} ms".format((t2-t1) * 1000))
     else:
         print("!!!failure!!!")
         sys.exit(1)
+
+#p.write_design(pnr.print_placement(d))
+
 
 print("Routing design...", end=' ')
 if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):

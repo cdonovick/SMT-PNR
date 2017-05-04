@@ -50,8 +50,10 @@ def hamming_d(bv):
         so don't bother masking at all.
     '''
     bsize = bv.sort.width
-    b_point = bsize.bit_length()
+    if bsize < 3:
+        return hamming_c(bv)
 
+    b_point = bsize.bit_length()
     s = 2**((bsize - 1).bit_length())
 
     max_exp = (s - 1).bit_length()
@@ -70,7 +72,7 @@ def hamming_d(bv):
 
     return x & (2**b_point - 1)
 
-hamming = hamming_d
+hamming = hamming_c
 
 
 def absolute_value(bv):
@@ -114,6 +116,17 @@ def build_grouped_mask(k, n):
     return m
 
 
+def row_printer(r):
+    def _row_printer(it):
+        s = []
+        for idx,v in enumerate(it):
+            s.append(v)
+            if idx%r == r - 1:
+                s.append('\n')
+        return ''.join(map(str,s))
+    return _row_printer
+
+
 class Mask:
     '''
         Over engineered class for building bit masks
@@ -146,7 +159,8 @@ class Mask:
                 raise ValueError('value must be composed of bits')
         return v, size+1
 
-    def __init__(self, value=None, size=None, truncate=True):
+    def __init__(self, value=None, size=None, truncate=True, pprinter=None):
+        self.pprinter = pprinter
         if isinstance(value, type(self)):
             val_size = value.size
             value = value.value
@@ -203,41 +217,31 @@ class Mask:
     @property
     def hamming(self): return sum(i for i in self)
 
-    def to_formatted_string(self, init_f=None, pre_f=None, elem_f=None, post_f=None, final_f=None):
-        if pre_f is None:
-            pre_f = lambda *x: ''
-
-        if elem_f is None:
-            elem_f = lambda size, value, idx, v: str(v)
-
-        if post_f is None:
-            post_f = lambda *x: ''
-
-        s = []
-        if init_f is not None:
-            s.append(init_f(self.size, self.value))
-
-        for idx, v in enumerate(self):
-            s.append(pre_f(self.size, self.value, idx, v))
-            s.append(elem_f(self.size, self.value, idx, v))
-            s.append(post_f(self.size, self.value, idx, v))
-
-        if final_f is not None:
-            s.append(final_f(self.size, self.value))
-
-        return ''.join(s)
 
     def __iter__(self): return Mask.mask_iter(self)
 
     def __getitem__(self, idx):
-        if idx >= self.size:
-            raise IndexError()
-        else:
-            return (self.value >> (self.size - idx - 1)) & 1
+        if isinstance(idx, slice):
+            return Mask(list(self)[idx])
+
+        if idx >= self.size or idx < -self.size:
+            raise IndexError("Mask index out of range")
+
+        if idx < 0:
+            idx = idx % self.size
+
+        return (self.value >> (self.size - idx - 1)) & 1
 
     def __setitem__(self, idx, value):
-        if idx >= self.size:
-            raise IndexError()
+        if isinstance(idx, slice):
+            raise KeyError("slice indexing is not supported")
+
+        if idx >= self.size or idx < -self.size:
+            raise IndexError("Mask index out of range")
+
+        if idx < 0:
+            idx = idx % self.size
+
         if value in Mask._zero_vals:
             self.value &= ~(1 << (self.size-idx-1))
         elif value in Mask._one_vals:
@@ -246,7 +250,13 @@ class Mask:
             raise ValueError()
 
 
-    def __repr__(self): return ''.join('1' if i == 1 else '0' for i in self)
+    def __repr__(self): 
+        if self.pprinter is None:
+            return ''.join('1' if i == 1 else '0' for i in self)
+        else:
+            return self.pprinter(iter(self))
+
+
 
     def __hash__(self): return 7*hash(self.value) + 13*hash(self.size)
     def __int__(self):  return int(self.value)
