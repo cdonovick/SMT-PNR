@@ -11,6 +11,7 @@ do
     if [ ! -d "`pwd`/smt_solvers/$solver_dir" ]; then
         echo "Missing at least $solver_dir and possibly more"
         echo "Retrieving solvers"
+        rm -rf ./smt_solvers
         wget http://web.stanford.edu/~makaim/files/smt_solvers.tar.gz
         tar -xzvf ./smt_solvers.tar.gz
         all_solvers=false
