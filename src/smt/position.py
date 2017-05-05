@@ -282,14 +282,12 @@ class BVXY(PositionBase):
             ext = functions.extract(ix, ix)
             constraint.append(ext(self.x) == 0)
         else:
-            # TODO: switch to solver-agnostic version
             constraint.append(bvult(self.x, self.fabric.cols))
         if self._is_y_pow2:
             iy = self._y_bits - 1
             ext = functions.extract(iy, iy)
             constraint.append(ext(self.y) == 0)
         else:
-            # TODO: switch to solver-agnostic version
             constraint.append(bvult(self.y, self.fabric.rows))
         return And(constraint)
 
