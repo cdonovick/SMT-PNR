@@ -55,14 +55,14 @@ if args.xml:
     cf, io = args.xml
     print("Writing design to: {}".format(cf))
     print("Writing io settings to: {}".format(io))
-    p.write_design(pnr.write_to_xml(ff, cf, io))
+    p.write_design(pnr.write_xml(ff, cf, io))
 
 if args.bitstream:
     bf = args.bitstream 
     print("Writing bitsream to: {}".format(bf))
-    p.write_design(partial(pnr.bitstream_writer, ff, bf))
+    p.write_design(pnr.write_bitstream(ff, bf))
 
 if args.print:
-    p.write_design(pnr.print_placement(d))
-
+    print("\nPlacement info:")
+    p.write_design(pnr.write_debug(d))
 
