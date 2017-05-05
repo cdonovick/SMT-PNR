@@ -240,8 +240,8 @@ class BVXY(PositionBase):
             self._y_bits    = self.fabric.rows.bit_length()
             self._is_y_pow2 = False
     
-        self._x = z3.BitVec(self.name + '_x', self._x_bits)
-        self._y = z3.BitVec(self.name + '_y', self._y_bits)
+        self._x = solver.declare_const(self.name + '_x', sorts.BitVec(self._x_bits))
+        self._y = solver.declare_const(self.name + '_y', sorts.BitVec(self._y_bits))
 
     def delta_x(self, other):
         return [], zu.absolute_value(self.x - other.x)
@@ -275,21 +275,20 @@ class BVXY(PositionBase):
 
     @property
     def invariants(self):
+        bvult = functions.bvult()
         constraint = []
         if self._is_x_pow2:
             ix = self._x_bits - 1
             ext = functions.extract(ix, ix)
             constraint.append(ext(self.x) == 0)
         else:
-            # TODO: switch to solver-agnostic version
-            constraint.append(z3.ULT(self.x, self.fabric.cols))
+            constraint.append(bvult(self.x, self.fabric.cols))
         if self._is_y_pow2:
             iy = self._y_bits - 1
             ext = functions.extract(iy, iy)
-            constraint.append(ext(iy, iy, self.y) == 0)
+            constraint.append(ext(self.y) == 0)
         else:
-            # TODO: switch to solver-agnostic version
-            constraint.append(z3.ULT(self.y, self.fabric.rows))
+            constraint.append(bvult(self.y, self.fabric.rows))
         return And(constraint)
 
     def get_coordinates(self):
