@@ -19,25 +19,28 @@ addons:
             - git
             - g++-4.9
             - build-essential
+            - swig2.0
+            - libcln-dev
+
+cache:
+    directories:
+    - ./smt_solvers
 
 before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
 
 install:
-    # Build monosat
-    - wget http://web.stanford.edu/~makaim/files/monosat_bin.tar.gz
-    - tar -xvf monosat_bin.tar.gz
-    - export PATH=$PATH:$PWD/monosat_bin
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/monosat_bin
-    - pip install -e monosat_bin/python
-    - cd $TRAVIS_BUILD_DIR
+    - . ./util/get_smt_solvers.sh
+    # Add smt-switch
+    - git clone https://github.com/makaimann/smt-switch.git
+    - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     # Build z3
-    - wget https://github.com/Z3Prover/z3/releases/download/z3-4.5.0/z3-4.5.0-x64-ubuntu-14.04.zip
-    - unzip z3-4.5.0-x64-ubuntu-14.04.zip
-    - export PATH=$PATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/
-    - export PYTHONPATH=$PYTHONPATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/python/
-    - sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
+    #- wget https://github.com/Z3Prover/z3/releases/download/z3-4.5.0/z3-4.5.0-x64-ubuntu-14.04.zip
+    #- unzip z3-4.5.0-x64-ubuntu-14.04.zip
+    #- export PATH=$PATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/
+    #- export PYTHONPATH=$PYTHONPATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/python/
+    #- sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
     - git clone https://github.com/rdaly525/coreir.git 

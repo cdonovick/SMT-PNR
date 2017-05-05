@@ -1,6 +1,11 @@
 '''
 Constraint generators
 '''
+from smt_switch import functions
+
+And = functions.And()
+Or = functions.Or()
+
 
 def init_positions(position_type):
     '''
@@ -15,7 +20,7 @@ def init_positions(position_type):
                 vars[module] = p
                 constraints.append(p.invariants)
 
-        return solver.And(constraints)
+        return And(constraints)
     return initializer
 
 def assert_pinned(fabric, design, state, vars, solver):
@@ -24,7 +29,7 @@ def assert_pinned(fabric, design, state, vars, solver):
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
-    return solver.And(constraints)
+    return And(constraints)
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
@@ -32,7 +37,7 @@ def distinct(fabric, design, state, vars, solver):
         for m2 in design.modules:
             if m1 != m2:
                 constraints.append(vars[m1].flat != vars[m2].flat)
-    return solver.And(constraints)
+    return And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []
@@ -42,11 +47,11 @@ def nearest_neighbor(fabric, design, state, vars, solver):
         c = []
         dx = vars[src].delta_x_fun(vars[dst])
         dy = vars[src].delta_y_fun(vars[dst])
-        c.append(solver.And(dx(0), dy(1)))
-        c.append(solver.And(dx(1), dy(0)))
-        constraints.append(solver.Or(c))
+        c.append(And(dx(0), dy(1)))
+        c.append(And(dx(1), dy(0)))
+        constraints.append(Or(c))
 
-    return solver.And(constraints)
+    return And(constraints)
 
 def pin_IO(fabric, design, state, vars, solver):
     constraints = []
@@ -55,8 +60,8 @@ def pin_IO(fabric, design, state, vars, solver):
             pos = vars[module]
             c = [pos.x == pos.encode_x(0), 
                  pos.y == pos.encode_y(0)]
-            constraints.append(solver.Or(c))
-    return solver.And(constraints)
+            constraints.append(Or(c))
+    return And(constraints)
 
 
 

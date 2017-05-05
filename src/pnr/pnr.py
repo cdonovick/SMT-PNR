@@ -1,10 +1,11 @@
 from util.bimdict import BiMultiDict, BiDict
 from smt.solvers import Solver_z3, Solver_monosat
 import itertools as it
+from smt_switch import solvers
 
 
-_PLACE_SOLVER = Solver_z3
-_ROUTE_SOLVER = Solver_monosat
+PLACE_SOLVER = solvers.Z3Solver()
+_ROUTE_SOLVER = Solver_monosat()
 
 ''' Class for handling place & route '''
 class PNR:
@@ -18,8 +19,11 @@ class PNR:
         self._place_vars = BiDict()
         self._route_vars = BiDict()
         
-        self._place_solver = _PLACE_SOLVER() 
-        self._route_solver = _ROUTE_SOLVER()
+        self._place_solver = PLACE_SOLVER
+        self._route_solver = _ROUTE_SOLVER
+
+        # set options
+        self._place_solver.set_option('produce-models', 'true')
 
     def pin_module(self, module, placement):
         self._place_state[module] = placement
@@ -34,8 +38,10 @@ class PNR:
             self._place_solver.add(c)
 
         
-        if not self._place_solver.solve():
+        if not self._place_solver.check_sat():
             self._place_solver.reset()
+            # set options
+            self._place_solver.set_option('produce-models', 'true')
             self._place_vars = BiDict()
             return False
         

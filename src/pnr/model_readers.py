@@ -1,8 +1,7 @@
 
 def place_model_reader(fabric, design, state, vars, solver):
-    m = solver.get_model()
     for module, var in vars.items():
-        state[module] = var.get_coordinates(m)
+        state[module] = var.get_coordinates()
 
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
