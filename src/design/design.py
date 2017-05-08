@@ -19,7 +19,7 @@ class Design(NamedIDObject):
     @property
     def nets(self):
         return self._nets
-    
+
 
     def _gen_graph(self, adj_dict, op_dict):
         mods = dict()
@@ -30,8 +30,8 @@ class Design(NamedIDObject):
                 self._modules.add(src)
             else:
                 src = mods[src_name]
-            
-            
+
+
             for dst_name, dst_port, width in adj_list:
                 if dst_name not in mods:
                     dst = Module(dst_name, *op_dict[dst_name])

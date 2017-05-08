@@ -12,6 +12,7 @@ parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'),
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', 
         help='output CGRA configuration in bitstream')
 parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
+parser.add_argument('--print_route', action='store_true', help='print routing information to stdout')
 args = parser.parse_args()
 
 df = args.df
@@ -21,9 +22,9 @@ ff = args.ff
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
 PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, pnr.dist_limit(1)
+# ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, pnr.dist_limit(1)
 # To use multigraph encoding:
-# ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
+ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
 print("Loading design: {}".format(df))
 d = design.Design(*design.core2graph.load_core(df))
@@ -66,3 +67,6 @@ if args.print:
     print("\nPlacement info:")
     p.write_design(pnr.write_debug(d))
 
+if args.print_route:
+    print("\nRouting info:")
+    p.write_design(pnr.write_route_debug(d))

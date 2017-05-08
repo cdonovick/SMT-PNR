@@ -10,7 +10,7 @@ from fabric.fabricfuns import parse_name, mapSide
 from fabric import Side
 from util import smart_open
 
-__all__ = ['write_debug', 'write_bitstream', 'write_xml']
+__all__ = ['write_debug', 'write_route_debug', 'write_bitstream', 'write_xml']
 
 # -------------------------------------------------
 # write_bitsream consants 
@@ -172,6 +172,22 @@ def _write_debug(design, output, p_state, r_state):
         for net in design.nets:
             f.write("{} -> {}\n".format(net.src.name, net.dst.name))
         f.write("\n")
+
+def write_route_debug(design, output=sys.stdout):
+    return partial(_write_route_debug, design, output)
+
+def _write_route_debug(design, output, p_state, r_state):
+    '''
+       Debug printer four routing
+       Nodes are currently named with the wire names from input file
+       which is unfortunately verbose...
+    '''
+    with smart_open(output) as f:
+        for net in design.nets:
+            f.write('{} -> {}:\n'.format(net.src.name, net.dst.name))
+            f.write(str(r_state[(net, 'debug')]))
+            f.write("\n")
+
 
 def write_xml(inpath, outpath, io_outpath):
     return partial(_write_xml, inpath, outpath, io_outpath)

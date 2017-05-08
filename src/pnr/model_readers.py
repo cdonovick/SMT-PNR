@@ -5,7 +5,9 @@ def place_model_reader(fabric, design, state, vars, solver):
 
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
-    model = solver.get_model()
+    sources = fabric.sources
+    sinks = fabric.sinks
+    
     for net in design.nets:
         src = net.src
         dst = net.dst
@@ -13,18 +15,18 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
         src_pos = p_state[src][0]
         dst_pos = p_state[dst][0]
-        src_pe = fabric[src_pos].PE
-        dst_pe = fabric[dst_pos].PE
-        reaches = graph.reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(net.dst_port)])
+        src_pe = sources[src_pos + (net.src_port,)]
+        dst_pe = sinks[dst_pos + (net.dst_port,)]
+        reaches = graph.reaches(vars[src_pe], vars[dst_pe])
         l = graph.getPath(reaches)
-        lst = [graph.names[node] for node in l]
-#        print(lst)
+        path = tuple(graph.names[node] for node in l)
+        # record for debug printing
+        r_state[(net, 'debug')] = path
         for n1, n2 in zip(l, l[1:]):
             edge = graph.getEdge(n1, n2)
             track = vars[edge]
             src_port = track.src
-            dst_port = track.dst
-            outname = track.names[1]
-            inname = track.names[0]
-            state = (src_port.x, src_port.y, track.element.typestr, outname, inname)
+            outname = track.wire_names[1]
+            inname = track.wire_names[0]
+            state = (src_port.x, src_port.y, track.parent, outname, inname)
             r_state[net] = state

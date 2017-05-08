@@ -254,7 +254,7 @@ def connect_pe(root, BUS, params):
                     for src in mux.findall('src'):
                         port_name = src.text
                         direc, bus, side, track = parse_name(port_name)
-                        srcport = SB[(x, y, side, direc)]
+                        srcport = SB[(x, y, side, direc)][track]
                         dstport = PE[(x, y, snk)]  # same port that was created above
                         wire_names = (port_name, snk)
                         tracks.append(Track(srcport, dstport, wire_names, 'CB'))
