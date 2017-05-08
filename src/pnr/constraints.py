@@ -200,6 +200,9 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
         Handles exclusivity constraints inherently
     '''
 
+    # NOTE: Currently broken for fanout
+    # Making nets contain whole tree of connections will fix this issue
+
     # create graphs for each net
     node_dict = dict()  # used to keep track of nodes in each graph
     for net in design.nets:
