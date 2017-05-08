@@ -10,7 +10,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
         src = net.src
         dst = net.dst
         graph = vars[net]
-        
+
         src_pos = p_state[src][0]
         dst_pos = p_state[dst][0]
         src_pe = fabric[src_pos].PE
