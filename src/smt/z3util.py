@@ -94,7 +94,8 @@ def absolute_value(bv):
         else bv == 0^(bv + 0) == mask^(bv + mask)
         hence for all bv, absolute_value(bv) == mask ^ (bv + mask)
     '''
-    mask = bv >> (bv.size() - 1)
+    bsize = bv.sort.width
+    mask = bv >> (bsize - 1)
     return mask ^ (bv + mask)
 
 
