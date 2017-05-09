@@ -16,7 +16,7 @@ def init_positions(position_type):
         constraints = []
         for module in design.modules:
             if module not in vars:
-                p = position_type(module.name, fabric)
+                p = position_type(module.name, fabric, solver)
                 vars[module] = p
                 constraints.append(p.invariants)
 
@@ -32,17 +32,14 @@ def assert_pinned(fabric, design, state, vars, solver):
     return And(constraints)
 
 def distinct(fabric, design, state, vars, solver):
-    i = iter(design.modules)
-    try:
-        #get the first module
-        m = next(i)
-    except StopIteration:
-        #if there are no modules return True
-        return True
-    v = vars[m]
-    vs = (vars[mi] for mi in i)
-    return v.distinct(*vs)
+    constraints = []
+    seen = set()
+    positions = {vars[m] for m in design.modules}
 
+    for pos in positions:
+        seen.add(pos)
+        constraints.append(pos.distinct(positions - seen))
+    return And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []

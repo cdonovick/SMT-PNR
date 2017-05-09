@@ -8,12 +8,12 @@ lshr = functions.bvlshr()
 
 
 def hamming_a(bv):
-    s = bv.size()
+    s = bv.sort.width
     return z3.Sum([(bv >> i) & 1 for i in range(s)])
 
 # faster than a
 def hamming_b(bv):
-    s = bv.size().bit_length()
+    s = bv.sort.width.bit_length()
     return z3.Sum([z3.ZeroExt(s, z3.Extract(i,i,bv)) for i in range(bv.size())])
 
 # faster than b
@@ -31,7 +31,7 @@ def hamming_c(bv):
     '''
 
     #Next power of 2 bits
-    bsize = bv.size()
+    bsize = bv.sort.width
     s = 2**((bsize - 1).bit_length())
 
     max_exp = (s - 1).bit_length()
@@ -72,7 +72,7 @@ def hamming_d(bv):
 
     return x & (2**b_point - 1)
 
-hamming = hamming_c
+hamming = hamming_d
 
 
 def absolute_value(bv):

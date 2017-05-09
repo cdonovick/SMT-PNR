@@ -1,6 +1,5 @@
 from util.bimdict import BiMultiDict, BiDict
-from smt.solvers import Solver_z3, Solver_monosat
-import z3
+from smt.solvers import Solver_monosat
 import itertools as it
 from smt_switch import solvers
 
@@ -32,7 +31,7 @@ class PNR:
     def pin_net(self, net, placement):
         pass
 
-    def place_design(self, funcs, model_reader, ff=None):
+    def place_design(self, funcs, model_reader):
         constraints = []
         for f in funcs:
             c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)

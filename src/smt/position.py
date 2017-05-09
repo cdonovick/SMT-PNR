@@ -4,6 +4,7 @@ import itertools as it
 from math import log2, ceil
 import smt.z3util as zu
 import z3
+from util import IDObject
 from smt_switch import sorts
 from smt_switch import functions
 
@@ -12,8 +13,9 @@ Or = functions.Or()
 concat = functions.concat()
 
 
-class PositionBase(metaclass=ABCMeta):
+class PositionBase(IDObject, metaclass=ABCMeta):
     def __init__(self, name, fabric, solver):
+        super().__init__()
         self._name = name
         self._fabric = fabric
         self._solver = solver
@@ -127,7 +129,7 @@ nn
         '''
         pass
 
-    def distinct(self, *others):
+    def distinct(self, others):
         '''
         distinct :: z3.BitVec* -> z3.Bool
         '''
@@ -220,8 +222,8 @@ class Base2H(PositionBase):
 
 
 class OneHot(Base2H):
-    def __init__(self, name, fabric):
-        super().__init__(name, fabric)
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
         self._bv = self.solver.declare_const(self.name, sorts.BitVec(self.fabric.rows * self.fabric.cols))
 
     @property
@@ -255,7 +257,7 @@ class OneHot(Base2H):
             col = [] 
             for r in range(self.fabric.rows):
                 col.append(functions.extract(c+r*self.fabric.cols, c+r*self.fabric.cols)(self._bv))
-            cols.append(ft.reduce(z3.Concat, col))
+            cols.append(ft.reduce(concat, col))
 
         y = ft.reduce(lambda a, b: a | b, cols)
         #assert y.size() == self.fabric.rows
@@ -276,13 +278,27 @@ class OneHot(Base2H):
         return self.solver.theory_const(sorts.BitVec(self.fabric.cols*self.fabric.rows), 1 << (p[1]*self.fabric.cols + p[0]))
 
     
-    def distinct(self, *other):
+    def distinct(self, others):
         '''
         distinct :: z3.BitVec* -> z3.Bool
         '''
-        l = list(other)
-        n = len(l) + 1
-        return zu.hamming(ft.reduce(lambda acc, b: acc | b.flat, l, self.flat)) == n
+        return super().distinct(others)
+
+class OneHotB(OneHot):
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
+
+    def distinct(self, others):
+        n = len(others) + 1
+        return zu.hamming(ft.reduce(lambda acc, b: acc | b.flat, others, self.flat)) == n 
+
+class OneHotC(OneHot):
+    def __init__(self, name, fabric, solver):
+        super().__init__(name, fabric, solver)
+
+    def distinct(self, others):
+        n = len(others) + 1
+        return And(zu.hamming(ft.reduce(lambda acc, b: acc | b.flat, others, self.flat)) == n, super().distinct(others)) 
 
 class Packed2H(Base2H):
     '''

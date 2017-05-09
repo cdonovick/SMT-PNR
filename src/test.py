@@ -2,7 +2,6 @@
 import sys
 import design, design.core2graph, fabric, pnr, smt
 from functools import partial
-
 import argparse
 import time
 parser = argparse.ArgumentParser(description='Run place and route')
@@ -13,7 +12,7 @@ parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'),
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', 
         help='output CGRA configuration in bitstream')
 parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
-parser.add_argument('--pt', choices=['1h','p2', 'u2', 'i'], default='1h')
+parser.add_argument('--pt', default='1h', help='Position encoding')
 args = parser.parse_args()
 
 df = args.df
@@ -21,6 +20,10 @@ ff = args.ff
 
 if args.pt == '1h':
     POSITION_T = smt.OneHot
+elif args.pt == '1hb':
+    POSITION_T = smt.OneHotB
+elif args.pt == '1hc':
+    POSITION_T = smt.OneHotC
 elif args.pt == 'p2':
     POSITION_T = smt.Packed2H
 elif args.pt == 'u2':
@@ -30,7 +33,6 @@ elif args.pt == 'i':
 else:
     assert(0)
 
-POSITION_T = partial(smt.Packed2H, solver=pnr.PLACE_SOLVER)
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
 PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, pnr.dist_limit(1)
@@ -47,7 +49,7 @@ p = pnr.PNR(f, d)
 
 print("Placing design...", end=' ')
 t1 = time.time()
-if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader, args.pt):
+if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
     t2 = time.time()
     print("success! placement took {} ms".format((t2-t1) * 1000))
 else:
