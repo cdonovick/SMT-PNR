@@ -179,13 +179,11 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
     for track in fabric.tracks:
         src = track.src
         dst = track.dst
-        src_name = track.wire_names[0]
-        dst_name = track.wire_names[1]
-        # naming scheme is (row, col)wire_name
+        # naming scheme is (x, y)Side_direction[track]
         if src not in vars:
-            vars[src] = graph.addNode(str((y, x)) + src_name)
+            vars[src] = graph.addNode(src.name)
         if dst not in vars:
-            vars[dst] = graph.addNode(str((y, x)) + dst_name)
+            vars[dst] = graph.addNode(dst.name)
 
         # create a monosat edge
         e = graph.addEdge(vars[src], vars[dst])
@@ -233,18 +231,15 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
         src = track.src
         dst = track.dst
 
-        src_name = track.wire_names[0]
-        dst_name = track.wire_names[1]
-        
-        # naming scheme is (row, col)wire_name
+        # naming scheme is (x, y)Side_direction[track]
         if src not in vars:
             for net in design.nets:
-                u = vars[net].addNode(str((y, x)) + src_name)
+                u = vars[net].addNode(src.name)
                 node_dict[net][u] = solver.false()
             vars[src] = u
         if dst not in vars:
             for net in design.nets:
-                v = vars[net].addNode(str((y, x)) + dst_name)
+                v = vars[net].addNode(dst.name)
                 node_dict[net][v] = solver.false()
             vars[dst] = v
 

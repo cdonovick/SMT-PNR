@@ -26,7 +26,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             edge = graph.getEdge(n1, n2)
             track = vars[edge]
             src_port = track.src
-            outname = track.wire_names[1]
-            inname = track.wire_names[0]
+            outname = track.track_names[1]
+            inname = track.track_names[0]
             state = (src_port.x, src_port.y, track.parent, outname, inname)
             r_state[net] = state
