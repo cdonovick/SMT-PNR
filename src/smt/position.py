@@ -4,21 +4,18 @@ import smt.z3util as zu
 import z3
 from smt_switch import sorts
 from smt_switch import functions
+from util import NamedIDObject
 
 And = functions.And()
 Or = functions.Or()
 concat = functions.concat()
 
 
-class PositionBase(metaclass=ABCMeta):
+class PositionBase(NamedIDObject, metaclass=ABCMeta):
     def __init__(self, name, fabric, solver):
-        self._name = name
+        super().__init__(name, lambda obj : '{}_{}'.format(obj.id, obj.name))
         self._fabric = fabric
         self._solver = solver
-
-    @property
-    def name(self):
-        return self._name
 
     @property
     def fabric(self):

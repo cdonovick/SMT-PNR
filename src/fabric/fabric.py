@@ -70,8 +70,11 @@ class Track(NamedIDObject):
     def parent(self):
         return self._parent
 
-    def __repr__(self):
-        return self._name
+
+#    def __repr__(self):
+#        return '{} --> {}'.format(self._names[0], self._names[1])
+
+
 
 
 class Fabric:
