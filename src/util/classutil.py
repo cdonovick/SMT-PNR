@@ -15,15 +15,31 @@ class IDObject:
     def __hash__(self):
         return hash(self._id)
 
+    def __repr__(self):
+        return "<{}.{} : {}>".format(
+                self.__class__.__module__,
+                self.__class__.__name__,
+                self.id,
+                )
 
     @property
     def id(self):
         return self._id
 
 class NamedIDObject(IDObject):
-    def __init__(self, name):
+    def __init__(self, name, formatter=None):
         super().__init__()
-        self._name = '{}_{}'.format(name, self.id)
+        self._name = '{}'.format(name)
+        if formatter is not None:
+            self._name = formatter(self)
+
+    def __repr__(self):
+        return "<{}.{} : '{}' : {}>".format(
+                self.__class__.__module__,
+                self.__class__.__name__,
+                self.name,
+                self.id,
+                )
 
     @property
     def name(self):

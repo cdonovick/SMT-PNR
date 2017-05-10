@@ -1,4 +1,6 @@
-from collections import defaultdict, Iterable
+from collections import defaultdict, Iterable, OrderedDict
+
+__all__ = ['BiMultiDict', 'BiDict', 'SortedDict']
 
 class BiMultiDict:
     def __init__(self, d=dict()):
@@ -29,6 +31,9 @@ class BiMultiDict:
                 del self._i[val]
 
         del self._d[key]
+
+    def __contains__(self, key):
+        return key in self._d
 
     def __iter__(self):
         return iter(self.keys())
@@ -100,6 +105,9 @@ class BiDict:
     def __iter__(self):
         return iter(self.keys())
 
+    def __contains__(self, key):
+        return key in self._d
+
     def __repr__(self):
         c = []
         for k,v in self.items():
@@ -111,16 +119,13 @@ class BiDict:
         return len(self._d)
 
     def keys(self):
-        for k in self._d.keys():
-            yield k
+        yield from self._d.keys()
 
     def items(self):
-        for k,v in self._d.items():
-            yield (k,v)
+        yield from self._d.items()
 
     def values(self):
-        for v in self._i:
-            yield v 
+        yield from self._i.keys()
 
     @property
     def I(self):
@@ -137,3 +142,52 @@ class BiDict:
         for k,vs in self._i.items():
             for v in vs:
                 assert k in self._d[v]
+
+class SortedDict:
+    def __init__(self, d=dict()):
+        self._d = OrderedDict()
+        self._sorted = True
+        for k,v in d.items():
+            self[k] = v
+
+    def __getitem__(self, key):
+        return self._d[key]
+
+    def __setitem__(self, key, val):
+        self._sorted = False
+        self._d[key] = val
+
+    def __delitem__(self, key):
+        del self._d[key]
+
+    def __iter__(self):
+        yield from self.keys
+
+    def __contains__(self, key):
+        return key in self._d
+
+    def __repr__(self):
+        c = []
+        for k,v in self.items():
+            c.append('{}:{}'.format(k,v))
+        s = '{' + ', '.join(c) + '}'
+        return s
+
+    def __len__(self):
+        return len(self._d)
+
+    def keys(self):
+        for k, _ in self.items():
+            yield k
+
+    def items(self):
+        if not self._sorted:
+            self._d = OrderedDict(sorted(self._d.items(), key=lambda t: t[0]))
+            self._sorted = True
+
+        yield from self._d.items()
+
+    def values(self):
+        for _, v in self.items:
+            yield v
+

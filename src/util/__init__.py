@@ -1,3 +1,3 @@
 from .classutil import *
-from .bimdict import *
+from .dictutil import *
 from .smart_handler import *

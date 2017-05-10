@@ -1,4 +1,5 @@
 import coreir
+from util import SortedDict
 
 PORT_TRANSLATION = {
         'in0' : 'a',
@@ -9,7 +10,7 @@ PORT_TRANSLATION = {
 
 
 def load_core(file):
-    mods = dict()
+    mods = SortedDict()
     ops = dict()
 
     c = coreir.Context()

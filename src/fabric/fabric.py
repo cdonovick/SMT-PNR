@@ -239,8 +239,8 @@ class Track(IDObject):
     def enable(self):
         self._element._enabled_tracks[self._names[0]] = self._names[1]
 
-    def __repr__(self):
-        return '{} --> {}'.format(self._names[0], self._names[1])
+#    def __repr__(self):
+#        return '{} --> {}'.format(self._names[0], self._names[1])
 
 
 class Tile:

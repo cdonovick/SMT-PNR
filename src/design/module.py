@@ -42,8 +42,5 @@ class Module(NamedIDObject):
         self._outputs[port] = dst
 
         
-    def __repr__(self):
-        return self.name
-        #return 'name: {}, inputs: {}, outputs: {}'.format(self.name, {x.src.name for x in self.inputs.values()}, {x.dst.name for x in self.outputs.values()})
 
 

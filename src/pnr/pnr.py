@@ -1,4 +1,4 @@
-from util.bimdict import BiMultiDict, BiDict
+from util import BiMultiDict, BiDict
 from smt.solvers import Solver_z3, Solver_monosat
 import itertools as it
 from smt_switch import solvers
