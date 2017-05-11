@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 from .fabricfuns import Side, getSide, mapSide, parse_name
 from util import IDObject
-
+import json
     
 class Element:
     '''
@@ -322,9 +322,17 @@ class Fabric:
     def width(self):
         return self._width
 
+    @width.setter
+    def width(self, val):
+        self._width = val
+
     @property
     def height(self):
         return self._height
+
+    @height.setter
+    def height(self, val):
+        self._height = val
 
     @property
     def rows(self):
@@ -339,6 +347,16 @@ class Fabric:
         return self._Tiles
 
 
+def parseJSON(filepath):
+    fab = Fabric()
+
+    with open(filepath, 'r') as f:
+        json_dict = json.load(f)
+
+    fab.width = json_dict['border']['width']
+    fab.height = json_dict['border']['height']
+
+    return fab
 
 def parseXML(filepath):
     '''

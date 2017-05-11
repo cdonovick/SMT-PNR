@@ -5,37 +5,67 @@
 
 # Place PCB using MILP
 
+import json
 import argparse
-import design, fabric, pnr, smt
+import design, fabric, pnr, smt, design.json2graph
 
 from functools import partial
+from design.module import RectShape
 
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Place PCB design.')
     parser.add_argument('infile')
+    parser.add_argument('outfile')
     parser.add_argument('--solver', type=str, default='gurobi')
-    parser.add_argument('--limit', type=float, default=None)
     args = parser.parse_args()
 
-    POSITION_T = partial(smt.MILP, solver=pnr.MILP_SOLVER(args.solver))
-    PLACE_CONSTRAINTS = [pnr.init_positions(POSITION_T), 
-                         pnr.distinct, 
-                         pnr.inBorder]
-    if args.limit is not None:
-        PLACE_CONSTRAINTS.append(pnr.semiPerim(args.limit))
+    place_solver = pnr.SolverMILP(args.solver)
 
     d = design.Design(*design.json2graph.load_json(args.infile))
     f = fabric.parseJSON(args.infile) 
 
-    p = pnr.PNR(f, d)
+    board = RectShape(f.width, f.height)
+
+    PLACEMENT_T = partial(smt.PcbPlacement, solver=place_solver)
+    PLACE_CONSTRAINTS = [
+                         pnr.initPlacement(PLACEMENT_T),
+                         pnr.assertPinned,
+                         pnr.noOverlap,
+                         pnr.inShape(board)
+                        ]
+
+
+    place_solver.BigM = max(f.width, f.height)
+
+    p = pnr.PNR(f, d, place_solver=place_solver)
 
     if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
-        print("success!")
+        print('Success!')
     else:
         raise Exception('Could not place design.')
 
-    p.write_design(pnr.write_json(args.infile))
+    # Organize placements by module name
+    placements = {}
+    for module, placement in p.place_state.items():
+        name = module.name.split('_')[0]
+        placements[name] = placement
+    print(placements)
+    
+    # Load original design from JSON
+    with open(args.infile, 'r') as f:
+        json_dict = json.load(f)
 
+    # Update certain entries in the dictionary
+    for module in json_dict['modules']:
+        name = module['reference']
+        module['x'], module['y'] = placements[name].position
+        print(placements[name].rotation)
+        module['theta'] = placements[name].rotation
+    
+    # Write design to file
+    with open(args.outfile, 'w') as f:
+        json.dump(json_dict, f, indent=2, sort_keys=True)
+    
 if __name__ == '__main__':
     main()
