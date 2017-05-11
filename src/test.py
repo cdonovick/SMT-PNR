@@ -32,7 +32,7 @@ print("Loading design: {}".format(df))
 d = design.Design(*design.core2graph.load_core(df))
 
 print("Loading fabric: {}".format(ff))
-f = fabric.parse_xml(ff)
+f = fabric.parseXML(ff)
 
 p = pnr.PNR(f, d)
 

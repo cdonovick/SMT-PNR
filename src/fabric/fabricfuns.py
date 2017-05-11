@@ -8,7 +8,7 @@ class Side(Enum):
     S = 1
     E = 0
     W = 2
-    PE = 4 #no side
+    NS = 4 #no side
 
 def getSide(side_str):
     '''
