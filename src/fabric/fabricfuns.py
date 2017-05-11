@@ -8,7 +8,7 @@ class Side(Enum):
     S = 1
     E = 0
     W = 2
-    NS = 4 #no side
+    PE = 4 #no side
 
 def getSide(side_str):
     '''
@@ -32,9 +32,9 @@ def mapSide(x, y, side):
        Given a location and a side, returns the receiving tile location and receiving side
     '''
     if side is Side.N:
-        return x, y+1, Side.S
+        return x, y-1, Side.S
     elif side is Side.S:
-        return x, y-1, Side.N
+        return x, y+1, Side.N
     elif side is Side.E:
         return x+1, y, Side.W
     elif side is Side.W:
