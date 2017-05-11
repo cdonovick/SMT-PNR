@@ -1,22 +1,21 @@
 import lxml.etree as ET
-from util import NamedIDObject
-from .fabricfuns import Side, mapSide, parse_name
+import monosat as ms
+import re
+from collections import defaultdict
+from .fabricfuns import Side, getSide, mapSide, parse_name
+from util import IDObject
 
-
-class Port(NamedIDObject):
+    
+class Element:
     '''
-       Represents a port on a fabric
-       x         : x coordinate
-       y         : y coordinate
-       side      : side of tile it's on
-       track     : track number (or port name for PE)
-       direction : in or out (i or o)
+       Interface for PE, CB or SB
     '''
-    def __init__(self, x, y, side, track, direction='i'):
-        # naming scheme is (x, y)Side_direction[track]
-        super().__init__('({}, {}){}_{}[{}]'.format(x, y, side.name, direction, str(track)))
+    def __init__(self, x, y, typestr, ports):
         self._x = x
         self._y = y
+        self._typestr = typestr
+        self._ports = ports
+        self._enabled_tracks = {}
 
     @property
     def x(self):
@@ -27,28 +26,199 @@ class Port(NamedIDObject):
         return self._y
 
     @property
-    def loc(self):
-        return (self._x, self._y)
+    def typestr(self):
+        return self._typestr
 
-    def __repr__(self):
-        return self.name
+    @property
+    def ports(self):
+        '''
+            Returns all input ports
+        '''
+        return iter(self._ports.values())
 
 
-class Track(NamedIDObject):
+class PE(Element):
     '''
-       Holds two ports describing a single track between them
-       Note: only ports for inputs are described (except for ports off the edge)
-             This is because output ports always map to the same input port of
-             neighboring tiles thus its redundant to have both (and unnecessarily
-             inflates the graph)
+       Holds the ports for PEs
     '''
-    def __init__(self, src, dst, width, track_names, parent):
-        super().__init__('{}-{}->{}'.format(src, width, dst))
+    def __init__(self, x, y, opcode=None):
+        super().__init__(x, y, 'PE', dict())
+        self._opcode = opcode
+        #ports added by parsing input
+        #instantiate out port (not explicitly defined in input format)
+        self._ports['out'] = Port(Side.NS, None, x, y)
+
+    @property
+    def opcode(self):
+        return self._opcode
+
+    @opcode.setter
+    def opcode(self, op):
+        self._opcode = op
+
+    def addPort(self, k, port):
+        self._ports[k] = port
+
+    def getPort(self, k):
+        if k in self._ports and self._ports[k] is not None:
+            return self._ports[k]
+        elif self._ports[k] is None:
+            raise ValueError('Tried to get an uninstantiated port')
+        else:
+            raise ValueError('Expected one of {} but received {}'.format(self._ports.keys(), k))
+    
+
+class CB(Element):
+    '''
+       Represents a connection box
+    '''
+    def __init__(self, x, y):
+        super().__init__(x, y, 'CB', [])
+
+
+    def addPort(self, port):
+        self._ports.append(port)
+
+
+    @property
+    def ports(self):
+        return iter(self._ports)
+    
+
+
+class SB(Element):
+    '''
+       Represents a switch box 
+    '''
+    def __init__(self, x, y, trk_count):
+        super().__init__(x, y, 'SB', dict())
+        self._ports[Side.N.value] = [Port(Side.N, t, x, y) for t in range(0, trk_count)]
+        self._ports[Side.S.value] = [Port(Side.S, t, x, y) for t in range(0, trk_count)]
+        self._ports[Side.E.value] = [Port(Side.E, t, x, y) for t in range(0, trk_count)]
+        self._ports[Side.W.value] = [Port(Side.W, t, x, y) for t in range(0, trk_count)]
+        self._out_ports = dict()
+        self._out_ports[Side.N.value] = None
+        self._out_ports[Side.S.value] = None
+        self._out_ports[Side.E.value] = None
+        self._out_ports[Side.W.value] = None
+
+
+    def addPort(self, port):
+        self._ports[port.side.value][port.track] = port
+
+        
+    def getPort(self, side, track):
+        if not isinstance(side, Side):
+            raise ValueError('Expected a Side but received {}'.format(type(side)))
+        
+        if side.value in self._ports:
+            if self._ports[side.value][track] is not None:
+                return self._ports[side.value][track]
+            else:
+                raise ValueError('Trying to retrieve an uninstantiated port')
+                
+        else:
+            raise ValueError('Expected Side value to be one of {} but received {}'.format(self._ports.keys(), side))
+
+    def getPorts(self, side):
+        if side.value in self._ports:
+            return self._ports[side.value]
+        else:
+            raise ValueError('Expected a Side but received {}'.format(type(side)))
+
+    def getOutputPort(self, side, track):
+        if not isinstance(side, Side):
+            raise ValueError('Expected a Side but received {}'.format(type(side)))
+        
+        if side.value in self._ports:
+            if self._out_ports[side.value][track] is not None:
+                return self._out_ports[side.value][track]
+            else:
+                raise ValueError('Trying to retrieve an uninstantiated port')
+                
+        else:
+            raise ValueError('Expected Side value to be one of {} but received {}'.format(self._ports.keys(), side))
+
+    def getOutputPorts(self, side):
+        if side.value in self._out_ports:
+            return self._out_ports[side.value]
+        else:
+            raise ValueError('Expected a Side but received {}'.format(type(side)))
+
+    def setOutputPorts(self, side, ports):
+        self._out_ports[side.value] = ports
+
+    @property
+    def ports(self):
+        c = []
+        for ports in self._ports.values():
+            c = c + ports
+        return iter(c)
+                
+
+class Port(IDObject):
+    '''
+       Holds a side and track number for a particular switch box
+       Connecting two nodes from different tiles makes a single track
+    '''
+    def __init__(self, side, track, x, y):
+        super().__init__()
+        self._side = side
+        self._track = track
+        self._x = x
+        self._y = y
+        if isinstance(side, str):
+            self._type_string = side
+        elif isinstance(side, Side):
+            self._type_string = side.name
+        else:
+            raise ValueError('Received invalid side type. Expected string or Side '
+            'and received {} of type {}'.format(side, type(side)))
+
+    def addEdges(self, g):
+        if self._msnode:
+            for node in self._nodes:
+                self._edges.append(g.addEdge(self._msnode, node.msnode))
+        else:
+            raise ValueError('MonoSAT node not created, cannot add edges.')
+
+
+    @property
+    def side(self):
+        return self._side
+
+    @property
+    def track(self):
+        return self._track
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def type_string(self):
+        return self._type_string
+
+
+class Track(IDObject):
+    '''
+       Holds two nodes describing a single track between switch boxes
+       Note: Not directly modeling output nodes of a SB, so this maps an input node
+             from one Tile to an input node of another Tile
+
+       ex// instead of (0,0)W_i[0] --> (0,0)E_o[0] --> (1,0)W_i[0]
+            it's just  (0,0)W_i[0] --> (1,0)W_i[0]
+    '''
+    def __init__(self, src, dst, names, element):
+        super().__init__()
         self._src = src
         self._dst = dst
-        self._width = width
-        self._track_names = track_names
-        self._parent = parent
+        self._names = names
+        self._element = element
 
     @property
     def src(self):
@@ -59,262 +229,255 @@ class Track(NamedIDObject):
         return self._dst
 
     @property
-    def width(self):
-        return self._width
+    def names(self):
+        return self._names
 
     @property
-    def track_names(self):
-        return self._track_names
+    def element(self):
+        return self._element
+
+    def enable(self):
+        self._element._enabled_tracks[self._names[0]] = self._names[1]
+
+    def __repr__(self):
+        return '{} --> {}'.format(self._names[0], self._names[1])
+
+
+class Tile:
+    '''
+       Class that holds PE's, CBs, SBs and nodes that define SB interconnect
+    '''
+    def __init__(self, x, y, trk_count):
+        self._x = x
+        self._y = y
+        self._trk_count = trk_count
+        self._tracks = []
+        self._PE = PE(x, y)
+        self._SB = SB(x, y, trk_count)
+        self._CB = dict()
+        
+        self._PE_used = False
+
+    def addTrack(self, src, snk, names, element):
+        self._tracks.append(Track(src, snk, names, element))
+
+    def enablePE(self):
+        self._PE_used = True
+        for port in self._CB['a'].ports:
+            src = '{}_i[{}]'.format(port.side.name, str(port.track))
+            self.addTrack(port, self._PE.getPort('a'), (src, 'PE_a'), self._CB['a'])
+        for port in self._CB['b'].ports:
+            src = '{}_i[{}]'.format(port.side.name, str(port.track))
+            self.addTrack(port, self._PE.getPort('b'), (src, 'PE_b'), self._CB['b'])
 
     @property
-    def parent(self):
-        return self._parent
-
-
-#    def __repr__(self):
-#        return '{} --> {}'.format(self._names[0], self._names[1])
-
-
-
-
-class Fabric:
-    def __init__(self, rows, cols, sources, sinks, routable, tracks):
-        self._rows = rows
-        self._cols = cols
-        self._sources = sources
-        self._sinks = sinks
-        self._routable = routable
-        self._tracks = tracks
+    def x(self):
+        return self._x
 
     @property
-    def rows(self):
-        return self._rows
+    def y(self):
+        return self._y
 
     @property
-    def cols(self):
-        return self._cols
-
-    @property
-    def height(self):
-        ''' alias for rows'''
-        return self._rows
-
-    @property
-    def width(self):
-        ''' alias for cols'''
-        return self._cols
-
-    @property
-    def sources(self):
-        return self._sources
-
-    @property
-    def sinks(self):
-        return self._sinks
-
-    @property
-    def routable(self):
-        return self._routable
+    def trk_count(self):
+        return self._trk_count
 
     @property
     def tracks(self):
         return self._tracks
 
+    @property
+    def PE(self):
+        return self._PE
 
-def parse_xml(filepath):
+    @property
+    def CB(self):
+        return self._CB
+
+    @property
+    def SB(self):
+        return self._SB
+
+
+class Fabric:
+    '''
+       Class describing physical fabric as collection of Tiles
+    '''
+    def __init__(self):
+        self._Tiles = dict()
+        self._width = 0
+        self._height = 0
+
+    def __getitem__(self, xy_loc):
+        return self._Tiles[xy_loc]
+
+    def __setitem__(self, xy_loc, tile):
+        self._Tiles[xy_loc] = tile
+        if xy_loc[0] > self._width:
+            self._width = xy_loc[0] + 1
+        if xy_loc[1] > self._height:
+            self._height = xy_loc[1] + 1
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    @property
+    def rows(self):
+        return self._height
+
+    @property
+    def cols(self):
+        return self._width
+    
+    @property
+    def Tiles(self):
+        return self._Tiles
+
+
+
+def parseXML(filepath):
+    '''
+       Reads an input file and outputs a fabric
+    '''
     N = Side.N
     S = Side.S
     E = Side.E
     W = Side.W
-    sides = [N, S, E, W]
-
+    
     tree = ET.parse(filepath)
     root = tree.getroot()
 
-    rows, cols, num_tracks = pre_process(root)
-
-    params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks, 'sides': sides,
-              'sinks16': dict(), 'sources16': dict(), 'routable16': dict()}
-
-    SB, PE = generate_layer('16', params)
-    params['SB16'] = SB
-    params['PE16'] = PE
-
-    connect_tiles('16', params)
-
-    params['tracks16'] = list()
-
-    connect_pe(root, '16', params)
-
-    connect_sb(root, '16', params)
-
-    return Fabric(rows, cols, params['sources16'], params['sinks16'],
-                  params['routable16'], params['tracks16'])
-
-
-def pre_process(root):
-    rows = 0
-    cols = 0
-    num_tracks = dict()
-    for tile in root:
-        # Not assuming tiles are in order
-        # Although one would hope they are
-        r = int(tile.get('row'))
-        c = int(tile.get('col'))
-        if r > rows:
-            rows = r
-        if c > cols:
-            cols = c
-        tracks = tile.get('tracks').split()
-        for track in tracks:
-            tr = track.split(':')
-            # still indexing as x, y for now
-            # i.e. col, row
-            # note: removing BUS from parsed name -- kinda Hacky
-            num_tracks[(c, r, tr[0][3:])] = int(tr[1])
-
-    # rows and cols are the number not the index
-    return rows + 1, cols + 1, num_tracks
-
-
-def generate_layer(bus_width, params):
-    SB = dict()
-    PE = dict()
-    for x in range(0, params['cols']):
-        for y in range(0, params['rows']):
-            PE[(x, y)] = dict()
-            for side in params['sides']:
-                ports = [Port(x, y, side, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
-                SB[(x, y, side, 'in')] = ports
-
-    sources = params['sources' + bus_width]
-
-    # add inputs from the edges as sources
-    for y in range(0, params['rows']):
-        # for x = 0 and all y
-        for t in range(0, params['num_tracks'][(0, y, bus_width)]):
-            sources[(0, y, t)] = SB[(0, y, Side.W, 'in')]
-
-        # for x = cols-1 and all y
-        for t in range(0, params['num_tracks'][(params['cols'] - 1, y, bus_width)]):
-            sources[(params['cols'], y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')]
-
-    for x in range(0, params['cols']):
-        # for y = 0 and all x
-        for t in range(0, params['num_tracks'][(x, 0, bus_width)]):
-            sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')]
-
-        # for y = rows-1 and all x
-        for t in range(0, params['num_tracks'][(x, params['rows'] - 1, bus_width)]):
-            sources[(x, params['rows'], t)] = SB[(x, params['rows'] - 1, Side.S, 'in')]
-
-    return SB, PE
-
-
-def connect_tiles(bus_width, params):
-    rows = params['rows']
-    cols = params['cols']
-    SB = params['SB' + bus_width]
-    num_tracks = params['num_tracks']
-    sinks = params['sinks' + bus_width]
-    routable = params['routable' + bus_width]
-
-    for x in range(0, cols):
-        for y in range(0, rows):
-            for side in params['sides']:
-                # Given a location and a side, mapSide returns the
-                # receiving tile location and side
-                adj_x, adj_y, adj_side = mapSide(x, y, side)
-
-                # check if that switch box exists
-                if (adj_x, adj_y, adj_side, 'in') in SB:
-                    # make the first SB's outputs equal to
-                    # the second SB's inputs
-                    # i.e. no point in having redundant ports/nodes for routing
-                    common_track_number = min([num_tracks[(x, y, bus_width)], num_tracks[(adj_x, adj_y, bus_width)]])
-                    SB[(x, y, side, 'out')] = SB[(adj_x, adj_y, adj_side, 'in')][0:common_track_number]
-                    # add these ports to routable
-                    for t in range(0, common_track_number):
-                        routable[(adj_x, adj_y, adj_side)] = SB[(adj_x, adj_y, adj_side, 'in')][t]
-                # otherwise make ports for off the edge
-                else:
-                    ports = []
-                    for t in range(0, num_tracks[(x, y, bus_width)]):
-                        p = Port(x, y, side, t, 'o')
-                        ports.append(p)
-                        sinks[(x, y, t)] = p
-
-                    SB[(x, y, side, 'out')] = ports
-
-    return True
-
-
-def connect_pe(root, bus_width, params):
-    PE = params['PE' + bus_width]
-    SB = params['SB' + bus_width]
-    tracks = params['tracks' + bus_width]
-    sinks = params['sinks' + bus_width]
-    sources = params['sources' + bus_width]
-    for tile in root:
-        y = int(tile.get('row'))
-        x = int(tile.get('col'))
-        # Hacky! Hardcoding the PE output port
-        port = Port(x, y, Side.PE, 'out', 'o')
-        PE[(x, y, 'out')] = port
-        sources[(x, y, 'out')] = port
-        for cb in tile.findall('cb'):
-            if cb.get('bus') == 'BUS' + bus_width:
-                for mux in cb.findall('mux'):
-                    snk = mux.get('snk')
-                    port = Port(x, y, Side.PE, snk, 'i')
-                    PE[(x, y, snk)] = port
-                    sinks[(x, y, snk)] = port
-                    for src in mux.findall('src'):
-                        port_name = src.text
-                        direc, bus, side, track = parse_name(port_name)
-                        srcport = SB[(x, y, side, direc)][track]
-                        dstport = PE[(x, y, snk)]  # same port that was created above
-                        track_names = (port_name, snk)
-                        tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'CB'))
-
-    return True
-
-
-def connect_sb(root, bus_width, params):
-    SB = params['SB' + bus_width]
-    PE = params['PE' + bus_width]
-    tracks = params['tracks' + bus_width]
+    fab = Fabric()
+    #Initialize tiles
     for tile in root:
         x = int(tile.get('row'))
         y = int(tile.get('col'))
-        for sb in tile.findall('sb'):
-            if sb.get('bus') == 'BUS' + bus_width:
-                for mux in sb.findall('mux'):
-                    snk_name = mux.get('snk')
-                    snk_direc, _, snk_side, snk_track = parse_name(snk_name)
-                    for src in mux.findall('src'):
-                        port_name = src.text
-                        track_names = (port_name, snk_name)
-                        dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
-                        # input is from PE
-                        if port_name[0:2] == 'pe':
-                            srcport = PE[(x, y, 'out')]
-                            tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
-                        # input is from another side of the SB
-                        else:
-                            src_direc, _, src_side, src_track = parse_name(port_name)
-                            srcport = SB[(x, y, src_side, src_direc)][src_track]
-                            tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
-                # now connect feedthroughs
-                for ft in sb.findall('ft'):
-                    snk_name = ft.get('snk')
-                    # since it's a feedthrough, there should be exactly one source
-                    src_name = ft.find('src').text
-                    snk_direc, _, snk_side, snk_track = parse_name(snk_name)
-                    src_direc, _, src_side, src_track = parse_name(src_name)
-                    track_names = (src_name, snk_name)
-                    srcport = SB[(x, y, src_side, src_direc)][src_track]
-                    dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
-                    tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
+        tracks = tile.get('tracks').split()
+        num_tracks = {}
+        for track in tracks:
+            tr = track.split(':')
+            num_tracks[tr[0]] = tr[1]
+        fab[(x,y)] = Tile(x, y, int(num_tracks['BUS16']))
 
-    return True
+
+    #make input/output connections
+    #i.e. E_o[0] --> W_i[0]
+    #Note coordinate system has origin in upper left corner
+    width = fab.width
+    height = fab.height
+    for x in range(width):
+        for y in range(height):
+            tile = fab[(x,y)]
+            if y < height-1:
+                tile.SB.setOutputPorts(S, fab[(x, y+1)].SB.getPorts(N))
+            else:
+                #off the board: instantiate ports for pins
+                tile.SB.setOutputPorts(S, [Port(N, t, x, y+1) for t in range(tile.trk_count)])
+
+            if y > 0:
+                tile.SB.setOutputPorts(N, fab[(x, y-1)].SB.getPorts(S))
+            else:
+                tile.SB.setOutputPorts(N, [Port(S, t, x, y-1) for t in range(tile.trk_count)])
+                
+            if x < width-1:
+                tile.SB.setOutputPorts(E, fab[(x+1, y)].SB.getPorts(W))
+            else:
+                tile.SB.setOutputPorts(E, [Port(E, t, x+1, y) for t in range(tile.trk_count)])
+
+            if x > 0:
+                tile.SB.setOutputPorts(W, fab[(x-1, y)].SB.getPorts(E))
+            else:
+                tile.SB.setOutputPorts(W, [Port(W, t, x-1, y) for t in range(tile.trk_count)])
+        
+    for tile in root:
+        tile_addr = int(tile.get('tile_addr'))
+        y = int(tile.get('row'))
+        x = int(tile.get('col'))
+        t = fab[(x,y)]
+        for cb in tile.findall('cb'):
+            feature_address = int(cb.get('feature_address'))
+            sel_width = int(cb.find('sel_width').text)
+            if cb.get('bus') == 'BUS16':
+                for mux in cb.findall('mux'):
+                    snk = mux.get('snk')
+                    t.PE.addPort(snk, Port(Side.NS, None, x, y))
+                    for src in mux.findall('src'):
+                        sel = int(src.get('sel'))
+                        port = src.text
+                        direc, bus, side, track = parse_name(port)
+                        t.CB[snk] = CB(x,y)
+                        t.CB[snk].addPort(t.SB.getPort(side, track))
+                        t.addTrack(t.SB.getPort(side, track), t.PE.getPort(snk), (port, snk), t.CB[snk])
+                    
+
+        #not reading opcode yet (only writing it)
+
+        #not reading pe features yet (assuming homogenous for now)
+
+
+        for sb in tile.findall('sb'):
+            feature_address = int(sb.get('feature_address'))
+            sel_width = int(sb.find('sel_width').text)
+            if sb.get('bus') == 'BUS16':
+                for mux in sb.findall('mux'):
+                    snk = mux.get('snk')
+                    snk_direc, snk_bus, snk_side, snk_track = parse_name(snk)
+                    for src in mux.findall('src'):
+                        sel = int(src.get('sel'))
+                        port = src.text
+                        if port[0:2] == 'pe':
+                            t.addTrack(t.PE.getPort('out'), t.SB.getOutputPort(snk_side, snk_track), (port, snk), t.SB)
+                        else:
+                            src_direc, src_bus, src_side, src_track = parse_name(port)
+                            t.addTrack(t.SB.getPort(src_side, src_track), t.SB.getOutputPort(snk_side, snk_track), (port, snk), t.SB)
+                        
+
+                    for ft in sb.findall('ft'):
+                        snk = ft.get('snk')
+                        #since it's a feedthrough, there should be exactly one source
+                        src = ft.find('src').text
+                        snk_direc, snk_bus, snk_side, snk_track = parse_name(snk)
+                        src_direc, src_bus, src_side, src_track = parse_name(src)
+                        t.addTrack(t.SB.getPort(src_side, src_track), t.SB.getOutputPort(snk_side, snk_track), (src, snk), t.SB)
+
+    return fab
+                
+
+
+#deprecated -- will be switched to PNR object
+def build_msgraph(fab, g, used_PEs):
+    msnodes = dict()
+    edge2track = dict()
+    #add msnodes for all the used PEs first (because special naming scheme)
+    for x in range(fab.width):
+        for y in range(fab.height):
+            if (x, y) in used_PEs:
+                #fab[(x, y)].enablePE() #adds tracks for PE input and output
+                msnodes[fab[(x, y)].PE.getPort('a')] = g.addNode('({},{})PE_a'.format(x, y))
+                msnodes[fab[(x, y)].PE.getPort('b')] = g.addNode('({},{})PE_b'.format(x, y))
+                msnodes[fab[(x, y)].PE.getPort('out')] = g.addNode('({},{})PE_out'.format(x, y))
+
+    for tile in fab.Tiles.values(): 
+        for track in tile.tracks:
+            src = track.src
+            dst = track.dst
+            if src not in msnodes:
+                msnodes[src] = g.addNode('({},{}){}_i[{}]'.format(str(src.x), str(src.y), src.side.name, str(src.track)))
+            if dst not in msnodes:
+                msnodes[dst] = g.addNode('({},{}){}_i[{}]'.format(str(dst.x), str(dst.y), dst.side.name, str(dst.track)))
+
+            #print('{}-->{}'.format(g.names[msnodes[src]], g.names[msnodes[dst]]))
+            e = g.addEdge(msnodes[src], msnodes[dst])
+            edge2track[e.lit] = track
+    return msnodes, edge2track
+
+
+
+
+
+

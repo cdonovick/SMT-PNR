@@ -77,9 +77,6 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     # TODO: don't hardcode these -- get from coreir?
     ports = {'a', 'b'}
 
-    sources = fabric.sources
-    sinks = fabric.sinks
-
     # for connected modules, make sure it's not connected to wrong inputs
     # TODO: Fix this so doesn't assume only connected to one input port
     # there might be weird cases where you want to drive multiple inputs
@@ -87,20 +84,24 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     for net in design.nets:
         src_pos = p_state[net.src][0]
         dst_pos = p_state[net.dst][0]
+        src_pe = fabric[src_pos].PE
+        dst_pe = fabric[dst_pos].PE
 
         for port in ports - set(net.dst_port):
-            c.append(~vars[net].reaches(vars[sources[src_pos + (net.src_port,)]], vars[sinks[dst_pos + (port,)]]))
+            c.append(~vars[net].reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(port)]))
 
     # make sure modules that aren't connected are not connected
     for m1 in design.modules:
         inputs = {x.src for x in m1.inputs}
         m1_pos = p_state[m1][0]
+        pe_dst = fabric[m1_pos].PE
         for m2 in design.modules:
             if m2 != m1 and m2 not in inputs:
                 m2_pos = p_state[m2][0]
+                pe_src = fabric[m2_pos].PE
 
                 for port in ports:
-                    c.append(~graph.reaches(vars[sources[m2_pos + ('out',)]], vars[sinks[m1_pos + (port,)]]))
+                    c.append(~graph.reaches(vars[pe_src.getPort('out')], vars[pe_dst.getPort(port)]))
 
     return solver.And(c)
 
@@ -111,14 +112,12 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         Works with build_msgraph, excl_constraints and dist_limit
     '''
     reaches = []
-    sources = fabric.sources
-    sinks = fabric.sinks
     for net in design.nets:
         src_pos = p_state[net.src][0]
         dst_pos = p_state[net.dst][0]
-        src_pe = sources[src_pos + (net.src_port,)]
-        dst_pe = sinks[dst_pos + (net.dst_port,)]
-        reaches.append(vars[net].reaches(vars[src_pe], vars[dst_pe]))
+        src_pe = fabric[src_pos].PE
+        dst_pe = fabric[dst_pos].PE
+        reaches.append(vars[net].reaches(vars[src_pe.getPort(net.src_port)], vars[dst_pe.getPort(net.dst_port)]))
 
     return solver.And(reaches)
 
@@ -134,22 +133,20 @@ def dist_limit(dist_factor):
 
     def dist_constraints(fabric, design, p_state, r_state, vars, solver):
         constraints = []
-        sources = fabric.sources
-        sinks = fabric.sinks
         for net in design.nets:
             src_pos = p_state[net.src][0]
             dst_pos = p_state[net.dst][0]
-            src_pe = sources[src_pos + (net.src_port,)]
-            dst_pe = sinks[dst_pos + (net.dst_port,)]
+            src_pe = fabric[src_pos].PE
+            dst_pe = fabric[dst_pos].PE 
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
             # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
             # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
             # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
             # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
             # You can adjust it with dist_factor
-            constraints.append(vars[net].distance_leq(vars[src_pe],
-                                                      vars[dst_pe],
-                                                      3*dist_factor*manhattan_dist + 1))
+            constraints.append(vars[net].distance_leq(vars[src_pe.getPort(net.src_port)],
+                                                     vars[dst_pe.getPort(net.dst_port)],
+                                                     3*dist_factor*manhattan_dist + 1))
         return solver.And(constraints)
     return dist_constraints
 
@@ -164,30 +161,26 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
     graph = solver.graphs[0]  # only one graph in this encoding
 
-    sources = fabric.sources
-    sinks = fabric.sinks
-
     # add msnodes for all the used PEs first (because special naming scheme)
-    # Hacky! Hardcoding port names
     for x in range(fabric.width):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
-                vars[sinks[(x, y, 'a')]] = graph.addNode('({},{})PE_a'.format(x, y))
-                vars[sinks[(x, y, 'b')]] = graph.addNode('({},{})PE_b'.format(x, y))
-                vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
+                vars[fabric[(x, y)].PE.getPort('a')] = graph.addNode('({},{})PE_a'.format(x, y))
+                vars[fabric[(x, y)].PE.getPort('b')] = graph.addNode('({},{})PE_b'.format(x, y))
+                vars[fabric[(x, y)].PE.getPort('out')] = graph.addNode('({},{})PE_out'.format(x, y))
 
-    for track in fabric.tracks:
-        src = track.src
-        dst = track.dst
-        # naming scheme is (x, y)Side_direction[track]
-        if src not in vars:
-            vars[src] = graph.addNode(src.name)
-        if dst not in vars:
-            vars[dst] = graph.addNode(dst.name)
+    for tile in fabric.Tiles.values():
+        for track in tile.tracks:
+            src = track.src
+            dst = track.dst
+            if src not in vars:
+                vars[src] = graph.addNode('({},{}){}_i[{}]'.format(str(src.x), str(src.y), src.side.name, str(src.track)))
+            if dst not in vars:
+                vars[dst] = graph.addNode('({},{}){}_i[{}]'.format(str(dst.x), str(dst.y), dst.side.name, str(dst.track)))
 
-        # create a monosat edge
-        e = graph.addEdge(vars[src], vars[dst])
-        vars[e] = track  # we need to recover the track in model_reader
+            # create a monosat edge
+            e = graph.addEdge(vars[src], vars[dst])
+            vars[e] = track  # we need to recover the track in model_reader
 
     return solver.And([])
 
@@ -198,60 +191,53 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
         Handles exclusivity constraints inherently
     '''
 
-    # NOTE: Currently broken for fanout
-    # Making nets contain whole tree of connections will fix this issue
-
     # create graphs for each net
     node_dict = dict()  # used to keep track of nodes in each graph
     for net in design.nets:
         vars[net] = solver.add_graph()
         node_dict[net] = dict()
 
-    sources = fabric.sources
-    sinks = fabric.sinks
-
     # add msnodes for all the used PEs first (because special naming scheme)
     for x in range(fabric.width):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
                 for net in design.nets:
-                    a = vars[net].addNode('({},{})PE_a'.format(y, x))
-                    b = vars[net].addNode('({},{})PE_b'.format(y, x))
-                    out = vars[net].addNode('({},{})PE_out'.format(y, x))
+                    a = vars[net].addNode('({},{})PE_a'.format(x, y))
+                    b = vars[net].addNode('({},{})PE_b'.format(x, y))
+                    out = vars[net].addNode('({},{})PE_out'.format(x, y))
                     node_dict[net][a] = solver.false()
                     node_dict[net][b] = solver.false()
                     node_dict[net][out] = solver.false()
                 # add each node to vars as well
                 # only need to add it once (not for each net/graph)
-                vars[sinks[(x, y, 'a')]] = a
-                vars[sinks[(x, y, 'b')]] = b
-                vars[sources[(x, y, 'out')]] = out
+                vars[fabric[(x, y)].PE.getPort('a')] = a
+                vars[fabric[(x, y)].PE.getPort('b')] = b
+                vars[fabric[(x, y)].PE.getPort('out')] = out 
 
-    for track in fabric.tracks:
-        src = track.src
-        dst = track.dst
+    for tile in fabric.Tiles.values(): 
+        for track in tile.tracks:
+            src = track.src
+            dst = track.dst
 
-        # naming scheme is (x, y)Side_direction[track]
-        if src not in vars:
+            if src not in vars:
+                for net in design.nets:
+                    u = vars[net].addNode('({},{}){}_i[{}]'.format(str(src.x), str(src.y), src.side.name, str(src.track)))
+                    node_dict[net][u] = solver.false()
+                vars[src] = u
+            if dst not in vars:
+                for net in design.nets:
+                    v = vars[net].addNode('({},{}){}_i[{}]'.format(str(dst.x), str(dst.y), dst.side.name, str(dst.track)))
+                    node_dict[net][v] = solver.false()
+                vars[dst] = v
+
             for net in design.nets:
-                u = vars[net].addNode(src.name)
-                node_dict[net][u] = solver.false()
-            vars[src] = u
-        if dst not in vars:
-            for net in design.nets:
-                v = vars[net].addNode(dst.name)
-                node_dict[net][v] = solver.false()
-            vars[dst] = v
-
-        # keep track of whether a node is 'active' based on connected edges
-        for net in design.nets:
-            e = vars[net].addEdge(vars[src], vars[dst])
-            node_dict[net][vars[src]] = solver.Or(node_dict[net][vars[src]], e)
-            node_dict[net][vars[dst]] = solver.Or(node_dict[net][vars[dst]], e)
-            # put in r_state because we need to map track to multiple edges
-            # i.e. need BiMultiDict
-            # Plus, we only use this in model_reader so it makes sense to have in r_state
-            vars[e] = track
+                e = vars[net].addEdge(vars[src], vars[dst])
+                node_dict[net][vars[src]] = solver.Or(node_dict[net][vars[src]], e)
+                node_dict[net][vars[dst]] = solver.Or(node_dict[net][vars[dst]], e)
+                # put in r_state because we need to map track to multiple edges
+                # i.e. need BiMultiDict
+                # Plus, we only use this in model_reader so it makes sense to have in r_state
+                vars[e] = track
 
     # now enforce that each node is only used in one of the graphs
     # Note: all graphs have same nodes, so can get them from any graph
