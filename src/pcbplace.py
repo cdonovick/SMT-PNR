@@ -50,7 +50,6 @@ def main():
     for module, placement in p.place_state.items():
         name = module.name.split('_')[0]
         placements[name] = placement
-    print(placements)
     
     # Load original design from JSON
     with open(args.infile, 'r') as f:
@@ -59,8 +58,8 @@ def main():
     # Update certain entries in the dictionary
     for module in json_dict['modules']:
         name = module['reference']
-        module['x'], module['y'] = placements[name].position
-        print(placements[name].rotation)
+        module['x'] = placements[name].position[0]
+        module['y'] = placements[name].position[1]
         module['theta'] = placements[name].rotation
     
     # Write design to file

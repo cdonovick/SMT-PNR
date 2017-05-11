@@ -196,12 +196,12 @@ class PositionReal:
 
     def equals(self, p):
         def toReal(val):
-            self.solver.theory_const(self.solver.Real, val)
+            return self.solver.theory_const(self.solver.Real, val)
         
         constraints = self.solver.EmptyConstraint()
         
         constraints.add(self.solver.Equals(self.x, toReal(p[0])))
-        constraints.add(self.solver.Equals(self.x, toReal(p[1])))
+        constraints.add(self.solver.Equals(self.y, toReal(p[1])))
 
         return constraints
 
