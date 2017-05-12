@@ -20,27 +20,30 @@ def main():
     parser.add_argument('--solver', type=str, default='gurobi')
     args = parser.parse_args()
 
+    # Instantiate the placement problem
+    f = fabric.parseJSON(args.infile) 
+    d = design.Design(*design.json2graph.load_json(args.infile))
     place_solver = pnr.SolverMILP(args.solver)
 
-    d = design.Design(*design.json2graph.load_json(args.infile))
-    f = fabric.parseJSON(args.infile) 
+    p = pnr.PNR(f, d, 
+                place_solver=place_solver, 
+                placement_type=smt.PcbPlacement)
 
-    board = RectShape(f.width, f.height)
-
-    PLACEMENT_T = partial(smt.PcbPlacement, solver=place_solver)
-    PLACE_CONSTRAINTS = [
-                         pnr.initPlacement(PLACEMENT_T),
-                         pnr.assertPinned,
-                         pnr.noOverlap,
-                         pnr.inShape(board)
+    # Define the placement constraints
+    place_constraints = [
+                         pnr.invariants,
+                         pnr.pinned,
+                         pnr.distinct,
+                         pnr.inFabric
                         ]
 
-
+    # TODO: infer this automatically
     place_solver.BigM = max(f.width, f.height)
 
-    p = pnr.PNR(f, d, place_solver=place_solver)
+    # Try to place the design
+    result = p.place_design(place_constraints, pnr.place_model_reader)
 
-    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+    if result:
         print('Success!')
     else:
         raise Exception('Could not place design.')

@@ -3,6 +3,7 @@ import monosat as ms
 import re
 from collections import defaultdict
 from .fabricfuns import Side, getSide, mapSide, parse_name
+from design.module import RectShape
 from util import IDObject
 import json
     
@@ -341,6 +342,10 @@ class Fabric:
     @property
     def cols(self):
         return self._width
+
+    @property
+    def shape(self):
+        return RectShape(self.width, self.height)
     
     @property
     def Tiles(self):

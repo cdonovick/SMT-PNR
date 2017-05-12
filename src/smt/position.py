@@ -42,30 +42,21 @@ class PlacementBase:
     def hasLayer(self):
         return self.layer is not None
 
-    @property
     def invariants(self):
-        constraints = self.solver.EmptyConstraint()
-
         if self.hasPosition:
-            constraints.add(self.position.invariants)
+            self.position.invariants()
         if self.hasRotation:
-            constraints.add(self.rotation.invariants)
+            self.rotation.invariants()
         if self.hasLayer:
-            constraints.add(self.layer.invariants)
-
-        return constraints
+            self.layer.invariants()
 
     def equals(self, position=None, rotation=None, layer=None):
-        constraints = self.solver.EmptyConstraint()
-
         if position is not None:
-            constraints.add(self.position.equals(position))
+            self.position.equals(position)
         if rotation is not None:
-            constraints.add(self.rotation.equals(rotation))
+            self.rotation.equals(rotation)
         if layer is not None:
-            constraints.add(self.layer.equals(layer))
-
-        return constraints
+            self.layer.equals(layer)
     
     def decode(self):
         if self.hasPosition:
@@ -99,46 +90,34 @@ class PcbPlacement(PlacementBase):
                          position=position, rotation=rotation,
                          layer=layer)
 
-    def distinct(self, other):
+    def distinct(self, other, shape1, shape2):
+        exprs = [ self.xmax(shape1) - other.xmin(shape2),
+                 other.xmax(shape2) -  self.xmin(shape1),
+                  self.ymax(shape1) - other.ymin(shape2),
+                 other.ymax(shape2) -  self.ymin(shape1)]
+        self.solver.at_least_one_nonpos(exprs)
 
-        def constraint(shape1, shape2):
-            opts = [self.solver.Minus( self.xmax(shape1), other.xmin(shape2)),
-                    self.solver.Minus(other.xmax(shape2),  self.xmin(shape1)),
-                    self.solver.Minus( self.ymax(shape1), other.ymin(shape2)),
-                    self.solver.Minus(other.ymax(shape2),  self.ymin(shape1))]
-            return self.solver.AtLeastOneNegative(opts)
-
-        return constraint
-
-    def inShape(self, outside):
+    def inShape(self, outside, inside):
         
         def toReal(val):
             return self.solver.theory_const(self.solver.Real, val)
 
-        def constraint(inside):
-            obj = self.solver.EmptyConstraint()
-
-            obj.add(self.solver.LTE(toReal(outside.xmin), self.xmin(inside)))
-            obj.add(self.solver.LTE(self.xmax(inside), toReal(outside.xmax)))
-
-            obj.add(self.solver.LTE(toReal(outside.ymin), self.ymin(inside)))
-            obj.add(self.solver.LTE(self.ymax(inside), toReal(outside.ymax)))
-
-            return obj
-        
-        return constraint
+        self.solver.add(toReal(outside.xmin) <=     self.xmin(inside))
+        self.solver.add(   self.xmax(inside) <=  toReal(outside.xmax))
+        self.solver.add(toReal(outside.ymin) <=     self.ymin(inside))
+        self.solver.add(   self.ymax(inside) <=  toReal(outside.ymax))
 
     def xmin(self, shape):
-        return self.solver.Plus(self.position.x, self.shapeLUT(shape, 'xmin'))
+        return self.position.x + self.shapeLUT(shape, 'xmin')
 
     def xmax(self, shape):
-        return self.solver.Plus(self.position.x, self.shapeLUT(shape, 'xmax'))
+        return self.position.x + self.shapeLUT(shape, 'xmax')
 
     def ymin(self, shape):
-        return self.solver.Plus(self.position.y, self.shapeLUT(shape, 'ymin'))
+        return self.position.y + self.shapeLUT(shape, 'ymin')
 
     def ymax(self, shape):
-        return self.solver.Plus(self.position.y, self.shapeLUT(shape, 'ymax'))
+        return self.position.y + self.shapeLUT(shape, 'ymax')
 
     def shapeLUT(self, shape, prop):
 
@@ -156,7 +135,7 @@ class PcbPlacement(PlacementBase):
             key = self.rotation.rot(deg)
             lut[key] = rotPos
             
-        return self.solver.LUT(lut)
+        return self.solver.lut_expr(lut)
 
 class PositionReal:
     def __init__(self, name, fabric, solver):
@@ -186,24 +165,19 @@ class PositionReal:
     def y(self):
         return self._y
 
-    @property
     def invariants(self):
-        return self.solver.EmptyConstraint()
+        pass
 
     def decode(self):
-        return (self.solver.get_value(self.x).as_real(),
-                self.solver.get_value(self.y).as_real())
+        return (self.solver.get_value(self.x),
+                self.solver.get_value(self.y))
 
     def equals(self, p):
         def toReal(val):
             return self.solver.theory_const(self.solver.Real, val)
         
-        constraints = self.solver.EmptyConstraint()
-        
-        constraints.add(self.solver.Equals(self.x, toReal(p[0])))
-        constraints.add(self.solver.Equals(self.y, toReal(p[1])))
-
-        return constraints
+        self.solver.add(self.x == toReal(p[0]))
+        self.solver.add(self.y == toReal(p[1]))
 
 class Rotation4:
     def __init__(self, name, fabric, solver):
@@ -237,26 +211,21 @@ class Rotation4:
     def allBits(self):
         return [self.rot(deg) for deg in [0, 90, 180, 270]]
 
-    @property
     def invariants(self):
-        return self.solver.ExactlyOne(self.allBits)
+        self.solver.exactly_one(self.allBits)
 
     def decode(self):
         for deg in [0, 90, 180, 270]:
-            if self.solver.get_value(self.rot(deg)).as_bool():
+            if self.solver.get_value(self.rot(deg)):
                 return radians(deg)
         raise Exception('Invalid angle.')
 
     def equals(self, theta):
-        constraints = self.solver.EmptyConstraint()
-
         for deg in [0, 90, 180, 270]:
             if deg == round(degrees(theta)):
-                constraints.add(self.solver.IsTrue(self.rot(deg)))
+                self.solver.is_true(self.rot(deg))
             else:
-                constraints.add(self.solver.IsFalse(self.rot(deg)))
-
-        return constraints
+                self.solver.is_false(self.rot(deg))
 
 class Layer2:
     def __init__(self, name, fabric, solver):
@@ -281,18 +250,17 @@ class Layer2:
     def layer(self):
         return self._layer
 
-    @property
     def invariants(self):
-        return self.solver.EmptyConstraint()
+        pass
 
     def equals(self, other):
         if other:
-            return self.solver.IsTrue(self.layer)
+            self.solver.is_true(self.layer)
         else:
-            return self.solver.IsFalse(self.layer)
+            self.solver.is_false(self.layer)
 
     def decode(self):
-        return self.solver.get_value(self.layer).as_bool()
+        return self.solver.get_value(self.layer)
 
 class PositionBase(metaclass=ABCMeta):
     def __init__(self, name, fabric, solver):

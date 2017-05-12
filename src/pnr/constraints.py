@@ -7,57 +7,32 @@ from itertools import combinations
 And = functions.And()
 Or = functions.Or()
 
-def initPlacement(placement_type):
+def invariants(fabric, design, state, vars, solver):
+    for module in design.modules:
+        p = vars[module]
+        p.invariants()
 
-    def initializer(fabric, design, state, vars, solver):
-        constraints = solver.EmptyConstraint()
-
-        for module in design.modules:
-            p = placement_type(module.name, fabric)
-            vars[module] = p
-            constraints.add(p.invariants)
-
-        return constraints
-
-    return initializer
-
-def assertPinned(fabric, design, state, vars, solver):
-    constraints = solver.EmptyConstraint()
-
+def pinned(fabric, design, state, vars, solver):
     for module in design.modules:
         if module.pinned:
             p = vars[module]
-            constraints.add(p.equals(position=(module.x, module.y),
-                                     rotation=module.theta,
-                                     layer=module.mirror))
+            p.equals(position=(module.x, module.y),
+                     rotation=module.theta,
+                     layer=module.mirror)
 
-    return constraints
-
-def noOverlap(fabric, design, state, vars, solver):
-    constraints = solver.EmptyConstraint()
-
+def distinct(fabric, design, state, vars, solver):
     for m1, m2 in combinations(design.modules, 2):
         bothPinned = m1.pinned and m2.pinned
         if not bothPinned:
             p1 = vars[m1]
             p2 = vars[m2]
-            constraints.add(p1.distinct(p2)(m1.shape, m2.shape))
+            p1.distinct(p2, m1.shape, m2.shape)
 
-    return constraints
-
-def inShape(outerShape):
-
-    def constraint(fabric, design, state, vars, solver):
-        constraints = solver.EmptyConstraint()
-    
-        for module in design.modules:
-            if not module.pinned:
-                p = vars[module]
-                constraints.add(p.inShape(outerShape)(module.shape))
-
-        return constraints
-
-    return constraint
+def inFabric(fabric, design, state, vars, solver):
+    for module in design.modules:
+        if not module.pinned:
+            p = vars[module]
+            p.inShape(fabric.shape, module.shape)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []
