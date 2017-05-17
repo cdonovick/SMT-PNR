@@ -1,10 +1,15 @@
 '''
 Constraint generators
 '''
+from functools import partial
 from smt_switch import functions
 
 And = functions.And()
 Or = functions.Or()
+
+def _is_placeable(x) : return x.type_ in ('PE', 'IO')
+
+_f_placable = partial(filter, _is_placeable)
 
 
 def init_positions(position_type):
@@ -14,18 +19,17 @@ def init_positions(position_type):
     '''
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in design.modules:
+        for module in _f_placable(design.modules):
             if module not in vars:
                 p = position_type(module.name, fabric)
                 vars[module] = p
                 constraints.append(p.invariants)
-
         return And(constraints)
     return initializer
 
 def assert_pinned(fabric, design, state, vars, solver):
     constraints = []
-    for module in design.modules:
+    for module in _f_placable(design.modules):
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
@@ -33,8 +37,8 @@ def assert_pinned(fabric, design, state, vars, solver):
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
-    for m1 in design.modules:
-        for m2 in design.modules:
+    for m1 in _f_placable(design.modules):
+        for m2 in _f_placable(design.modules):
             if m1 != m2:
                 constraints.append(vars[m1].flat != vars[m2].flat)
     return And(constraints)
@@ -44,6 +48,8 @@ def nearest_neighbor(fabric, design, state, vars, solver):
     for net in design.nets:
         src = net.src
         dst = net.dst
+        if not (_is_placeable(src) and _is_placeable(dst)):
+            continue
         c = []
         dx = vars[src].delta_x_fun(vars[dst])
         dy = vars[src].delta_y_fun(vars[dst])
@@ -55,12 +61,11 @@ def nearest_neighbor(fabric, design, state, vars, solver):
 
 def pin_IO(fabric, design, state, vars, solver):
     constraints = []
-    for module in design.modules:
-        if module.op == 'io':
-            pos = vars[module]
-            c = [pos.x == pos.encode_x(0), 
-                 pos.y == pos.encode_y(0)]
-            constraints.append(Or(c))
+    for module in filter(lambda m: m.type_ == 'IO', design.modules):
+        pos = vars[module]
+        c = [pos.x == pos.encode_x(0),
+             pos.y == pos.encode_y(0)]
+        constraints.append(Or(c))
     return And(constraints)
 
 
@@ -126,7 +131,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
 def dist_limit(dist_factor):
     '''
        Enforce a global distance constraint. Works with single or multi graph encoding
-       dist_factor is intepreted as manhattan distance on a placement grid 
+       dist_factor is intepreted as manhattan distance on a placement grid
        (i.e. distance between adjacent PEs is 1)
     '''
     if not isinstance(dist_factor, int):
@@ -194,7 +199,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
 def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
     '''
-        An alternative monosat encoding which builds a graph for each net. 
+        An alternative monosat encoding which builds a graph for each net.
         Handles exclusivity constraints inherently
     '''
 

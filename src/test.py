@@ -7,12 +7,13 @@ import argparse
 parser = argparse.ArgumentParser(description='Run place and route')
 parser.add_argument('df', metavar='<DESIGN_FILE>', help='Mapped coreir file')
 parser.add_argument('ff', metavar='<FABRIC_FILE>', help='XML Fabric file')
-parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'), 
+parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'),
     help='output CGRA configuration in XML file with IO info')
-parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', 
+parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>',
         help='output CGRA configuration in bitstream')
 parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
 parser.add_argument('--print_route', action='store_true', help='print routing information to stdout')
+parser.add_argument('--coreir-libs', nargs='+', help='coreir libraries to load', dest='libs', default=())
 args = parser.parse_args()
 
 df = args.df
@@ -29,7 +30,8 @@ ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, p
 # ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
 print("Loading design: {}".format(df))
-d = design.Design(*design.core2graph.load_core(df))
+modules, nets = design.core2graph.load_core(df, *args.libs)
+d = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(ff))
 f = fabric.parse_xml(ff)
@@ -47,12 +49,12 @@ else:
         print("!!!failure!!!")
         sys.exit(1)
 
-print("Routing design...", end=' ')
-if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
-    print("success!")
-else:
-    print("!!!failure!!!")
-    sys.exit(1)
+#print("Routing design...", end=' ')
+#if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
+#    print("success!")
+#else:
+#    print("!!!failure!!!")
+#    sys.exit(1)
 
 if args.xml:
     cf, io = args.xml
@@ -61,9 +63,9 @@ if args.xml:
     p.write_design(pnr.write_xml(ff, cf, io))
 
 if args.bitstream:
-    bf = args.bitstream 
+    bf = args.bitstream
     print("Writing bitsream to: {}".format(bf))
-    p.write_design(pnr.write_bitstream(ff, bf))
+    p.write_design(pnr.write_bitstream(ff, bf, True))
 
 if args.print:
     print("\nPlacement info:")
