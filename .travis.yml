@@ -23,6 +23,7 @@ addons:
             - libcln-dev
 
 cache:
+    apt: true
     directories:
     - ./smt_solvers
 

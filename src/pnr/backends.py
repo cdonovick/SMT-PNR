@@ -9,6 +9,7 @@ import lxml.etree as ET
 from fabric.fabricfuns import parse_name, mapSide
 from fabric import Side
 from util import smart_open
+from smt.z3util import Mask
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream', 'write_xml']
 
@@ -56,6 +57,16 @@ _pe_reg = {
     'b'   : 0xf1,
 }
 
+_load_reg = {
+    'a' : 17,
+    'b' : 19,
+}
+
+_read_wire = {
+    'a' : 16,
+    'b' : 18,
+}
+
 def write_bitstream(cgra_xml, bitstream):
     return partial(_write_bitstream, cgra_xml, bitstream)
 
@@ -90,18 +101,19 @@ def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
 
 
     def _proc_pe(pe):
-        data = defaultdict(int)
+        data = defaultdict(lambda : Mask(size=_bit_widths['data']))
+
         if (x, y) in p_state.I:
             op_name = p_state.I[(x,y)][0].op
             op_text = p_state.I[(x,y)][0].op_val
             if op_name == 'const':
                 #set op to add
-                data[_pe_reg['op']] = _op_codes['add']
-                data[_pe_reg['a']]  = int(op_text)
-                data[_pe_reg['b']]  = 0
+                data[_pe_reg['op']] |= _op_codes['add']
+                data[_pe_reg['a']]  |= int(op_text)
+                data[_pe_reg['b']]  |= 0
             elif op_name == 'io':
                 iotype = p_state.I[(x,y)][0].op_atr['type']
-                data[_pe_reg['op']] = _op_codes[iotype]
+                data[_pe_reg['op']] |= _op_codes[iotype]
                 if iotype == 'source':
                     data[_pe_reg['a']]  = 0xffffffff
                     data[_pe_reg['b']]  = 0xffffffff
@@ -109,11 +121,13 @@ def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
                     data[_pe_reg['b']]  = 0xffffffff
             else:
                 data[_pe_reg['op']] = _op_codes[op_name]
+                data[_pe_reg['a']][_read_wire['a']] = 1
+                data[_pe_reg['b']][_read_wire['b']] = 1
         return data
 
     def _write(data, tile_address, feature_address, bs):
         for reg,d in data.items():
-            bs.write(_format_line(tile_address, feature_address, reg, d) + '\n')
+            bs.write(_format_line(tile_address, feature_address, reg, int(d)) + '\n')
 
     def _format_line(tile, feature, reg, data):
         ts = _format_elem(tile, _bit_widths['tile'])
