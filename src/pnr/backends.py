@@ -59,13 +59,13 @@ _pe_reg = {
 
 
 _load_reg = {
-    'a'   : 1,
-    'b'   : 3,
+    'a'   : 17,
+    'b'   : 19,
 }
 
 _read_wire = {
-    'a'   : 0,
-    'b'   : 2,
+    'a'   : 16,
+    'b'   : 18,
 }
 
 def write_bitstream(cgra_xml, bitstream, annotate):
@@ -110,32 +110,32 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
 
             if mod.type_ == 'PE':
                 data[_pe_reg['op']] |= _op_codes[mod.config]
-                comment[_pe_reg['op']][(26,31)] = 'op = {}'.format(mod.config)
+                comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
                 for port in ('a', 'b'):
                     src = mod.inputs[port].src
 
                     if src.type_ == 'Const':
                         data[_pe_reg[port]] |= src.config # load 'a' reg with const
-                        comment[_pe_reg[port]][(16,31)] = 'load `{}` reg with const: {}'.format(port, src.config)
-
+                        comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
+                        comment[_pe_reg['op']][31-_read_wire[port]] = 'read from reg `{}`'.format(port)
                     elif src.type_ == 'Reg':
                         data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                        comment[_pe_reg[port]][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
-
+                        comment[_pe_reg['op']][31-_load_reg[port]] = 'load `{}` reg with wire'.format(port)
+                        comment[_pe_reg['op']][31-_read_wire[port]] = 'read from reg `{}`'.format(port)
                     else:
                         data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                        comment[_pe_reg['op']][_read_wire[port]]  = 'read `{}` from wire'.format(port)
+                        comment[_pe_reg['op']][31-_read_wire[port]]  = 'read from wire `{}`'.format(port)
 
             elif mod.type_ == 'IO':
                 data[_pe_reg['op']] = _op_codes[mod.config]
 
                 if mod.config == 'i':
-                    comment[_pe_reg['op']][(26, 31)] = 'op = input'
+                    comment[_pe_reg['op']][(4, 0)] = 'op = input'
                     data[_pe_reg['a']]  = 0xffffffff
                     data[_pe_reg['b']]  = 0xffffffff
                 else:
-                    comment[_pe_reg['op']][(26, 31)] = 'op = output'
+                    comment[_pe_reg['op']][(4, 0)] = 'op = output'
                     data[_pe_reg['b']]  = 0xffffffff
 
 
