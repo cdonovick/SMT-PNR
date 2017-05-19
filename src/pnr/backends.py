@@ -57,34 +57,19 @@ _pe_reg = {
     'b'   : 0xf1,
 }
 
-<<<<<<< fc86b2d1bf51b951af807ab9cef478cba74715a2
+
 _load_reg = {
-    'a' : 17,
-    'b' : 19,
+    'a'   : 17,
+    'b'   : 19,
 }
 
 _read_wire = {
-    'a' : 16,
-    'b' : 18,
-}
-
-def write_bitstream(cgra_xml, bitstream):
-    return partial(_write_bitstream, cgra_xml, bitstream)
-=======
-
-_load_reg = {
-    'a'   : 1,
-    'b'   : 3,
-}
-
-_read_wire = {
-    'a'   : 0,
-    'b'   : 2,
+    'a'   : 16,
+    'b'   : 18,
 }
 
 def write_bitstream(cgra_xml, bitstream, annotate):
     return partial(_write_bitstream, cgra_xml, bitstream, annotate)
->>>>>>> Begin reworking design
 
 
 def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
@@ -140,33 +125,37 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
 
             if mod.type_ == 'PE':
                 data[_pe_reg['op']] |= _op_codes[mod.config]
-                comment[_pe_reg['op']][(26,31)] = 'op = {}'.format(mod.config)
+                comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
                 for port in ('a', 'b'):
                     src = mod.inputs[port].src
 
                     if src.type_ == 'Const':
                         data[_pe_reg[port]] |= src.config # load 'a' reg with const
-                        comment[_pe_reg[port]][(16,31)] = 'load `{}` reg with const: {}'.format(port, src.config)
-
+                        comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
+                        comment[_pe_reg['op']][31-_read_wire[port]] = 'read from reg `{}`'.format(port)
                     elif src.type_ == 'Reg':
                         data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                        comment[_pe_reg[port]][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
-
+                        comment[_pe_reg['op']][31-_load_reg[port]] = 'load `{}` reg with wire'.format(port)
+                        comment[_pe_reg['op']][31-_read_wire[port]] = 'read from reg `{}`'.format(port)
                     else:
                         data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                        comment[_pe_reg['op']][_read_wire[port]]  = 'read `{}` from wire'.format(port)
+                        comment[_pe_reg['op']][31-_read_wire[port]]  = 'read from wire `{}`'.format(port)
 
             elif mod.type_ == 'IO':
                 data[_pe_reg['op']] = _op_codes[mod.config]
 
                 if mod.config == 'i':
+<<<<<<< b2d1291660bb0768d10909b2655968b11c28e4e2
                     comment[_pe_reg['op']][(26, 31)] = 'op = input'
 >>>>>>> Begin reworking design
+=======
+                    comment[_pe_reg['op']][(4, 0)] = 'op = input'
+>>>>>>> Fix indexing
                     data[_pe_reg['a']]  = 0xffffffff
                     data[_pe_reg['b']]  = 0xffffffff
                 else:
-                    comment[_pe_reg['op']][(26, 31)] = 'op = output'
+                    comment[_pe_reg['op']][(4, 0)] = 'op = output'
                     data[_pe_reg['b']]  = 0xffffffff
 
 
