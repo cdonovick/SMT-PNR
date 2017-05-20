@@ -46,6 +46,7 @@ _op_codes = {
     'not'       : 0x15,
     #mult->mull
     'mult'      : 0x0b,
+    #mul->mull
     'mul'       : 0x0b,
     'i'         : 0xf0,
     'o'         : 0xff,
@@ -59,13 +60,25 @@ _pe_reg = {
 
 
 _load_reg = {
-    'a'   : 17,
-    'b'   : 19,
+    'a'   : 14,
+    'b'   : 12,
+    'c'   : 10,
+    'd'   : 8,
 }
 
 _read_wire = {
-    'a'   : 16,
-    'b'   : 18,
+    'a'   : 15,
+    'b'   : 13,
+    'c'   : 11,
+    'd'   : 9,
+}
+
+_op_fields = {
+    'wire_a'  : (15,15)
+    'load_a'  : (14,14)
+    'wire_b'  : (13,13)
+    'load_b'  : (12,12)
+    'op_code' : (4,0)
 }
 
 def write_bitstream(cgra_xml, bitstream, annotate):
@@ -102,29 +115,15 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
 
 
     def _proc_pe(pe):
-        data = defaultdict(lambda : Mask(size=_bit_widths['data']))
-<<<<<<< fc86b2d1bf51b951af807ab9cef478cba74715a2
-
-        if (x, y) in p_state.I:
-            op_name = p_state.I[(x,y)][0].op
-            op_text = p_state.I[(x,y)][0].op_val
-            if op_name == 'const':
-                #set op to add
-                data[_pe_reg['op']] |= _op_codes['add']
-                data[_pe_reg['a']]  |= int(op_text)
-                data[_pe_reg['b']]  |= 0
-            elif op_name == 'io':
-                iotype = p_state.I[(x,y)][0].op_atr['type']
-                data[_pe_reg['op']] |= _op_codes[iotype]
-                if iotype == 'source':
-=======
+        data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
+        mask = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
         if (x, y) in p_state.I:
             mod = p_state.I[(x,y)][0]
-
             if mod.type_ == 'PE':
                 data[_pe_reg['op']] |= _op_codes[mod.config]
+
                 comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
                 for port in ('a', 'b'):
@@ -133,25 +132,20 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                     if src.type_ == 'Const':
                         data[_pe_reg[port]] |= src.config # load 'a' reg with const
                         comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
-                        comment[_pe_reg['op']][31-_read_wire[port]] = 'read from reg `{}`'.format(port)
+                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
                     elif src.type_ == 'Reg':
                         data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                        comment[_pe_reg['op']][31-_load_reg[port]] = 'load `{}` reg with wire'.format(port)
-                        comment[_pe_reg['op']][31-_read_wire[port]] = 'read from reg `{}`'.format(port)
+                        comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
+                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
                     else:
                         data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                        comment[_pe_reg['op']][31-_read_wire[port]]  = 'read from wire `{}`'.format(port)
+                        comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
 
             elif mod.type_ == 'IO':
                 data[_pe_reg['op']] = _op_codes[mod.config]
 
                 if mod.config == 'i':
-<<<<<<< b2d1291660bb0768d10909b2655968b11c28e4e2
-                    comment[_pe_reg['op']][(26, 31)] = 'op = input'
->>>>>>> Begin reworking design
-=======
                     comment[_pe_reg['op']][(4, 0)] = 'op = input'
->>>>>>> Fix indexing
                     data[_pe_reg['a']]  = 0xffffffff
                     data[_pe_reg['b']]  = 0xffffffff
                 else:
@@ -166,20 +160,9 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
             if comment:
                 suffix =  _format_comment(comment[reg])
             else:
-<<<<<<< fc86b2d1bf51b951af807ab9cef478cba74715a2
-                data[_pe_reg['op']] |= _op_codes[op_name]
-                data[_pe_reg['op']][_read_wire['a']] |= 1
-                data[_pe_reg['op']][_read_wire['b']] |= 1
-        return data
-
-    def _write(data, tile_address, feature_address, bs):
-        for reg,d in data.items():
-            bs.write(_format_line(tile_address, feature_address, reg, int(d)) + '\n')
-=======
                 suffix = ''
             bs.write(_format_line(tile_address, feature_address, reg, int(data[reg])) + suffix)
 
->>>>>>> Begin reworking design
 
     def _format_line(tile, feature, reg, data):
         ts = _format_elem(tile, _bit_widths['tile'])
