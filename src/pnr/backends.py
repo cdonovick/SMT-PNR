@@ -120,7 +120,7 @@ def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
                 else:
                     data[_pe_reg['b']]  = 0xffffffff
             else:
-                data[_pe_reg['op']] = _op_codes[op_name]
+                data[_pe_reg['op']] |= _op_codes[op_name]
                 data[_pe_reg['op']][_read_wire['a']] = 1
                 data[_pe_reg['op']][_read_wire['b']] = 1
         return data
