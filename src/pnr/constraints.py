@@ -86,7 +86,7 @@ def pin_IO(fabric, design, state, vars, solver):
 
 #################################### Routing Constraints ################################
 
-def excl_constraints(fabric, design, p_state, r_state, vars, solver):
+def excl_constraints(fabriclayer, design, p_state, r_state, vars, solver):
     '''
         Exclusivity constraints for single graph encoding
         Works with build_msgraph, reachability and dist_limit
@@ -96,8 +96,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     # TODO: don't hardcode these -- get from coreir?
     ports = {'a', 'b'}
 
-    sources = fabric[16].sources
-    sinks = fabric[16].sinks
+    sources = fabriclayer.sources
+    sinks = fabriclayer.sinks
 
     # for connected modules, make sure it's not connected to wrong inputs
     # TODO: Fix this so doesn't assume only connected to one input port
@@ -160,14 +160,14 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     return solver.And(c)
 
 
-def reachability(fabric, design, p_state, r_state, vars, solver):
+def reachability(fabriclayer, design, p_state, r_state, vars, solver):
     '''
         Enforce reachability for nets in single graph encoding
         Works with build_msgraph, excl_constraints and dist_limit
     '''
     reaches = []
-    sources = fabric[16].sources
-    sinks = fabric[16].sinks
+    sources = fabriclayer.sources
+    sinks = fabriclayer.sinks
     for net in design.nets:
         src = net.src
         dst = net.dst
@@ -212,10 +212,10 @@ def dist_limit(dist_factor):
     if not isinstance(dist_factor, int):
         raise ValueError('Expected integer distance factor. Received {}'.format(type(dist_factor)))
 
-    def dist_constraints(fabric, design, p_state, r_state, vars, solver):
+    def dist_constraints(fabriclayer, design, p_state, r_state, vars, solver):
         constraints = []
-        sources = fabric[16].sources
-        sinks = fabric[16].sinks
+        sources = fabriclayer.sources
+        sinks = fabriclayer.sinks
         for net in design.nets:
             src = net.src
             dst = net.dst
@@ -258,7 +258,7 @@ def dist_limit(dist_factor):
     return dist_constraints
 
 
-def build_msgraph(fabric, design, p_state, r_state, vars, solver):
+def build_msgraph(fabriclayer, design, p_state, r_state, vars, solver):
     # to comply with multigraph, add graph for each net
     # note: in this case, all point to the same graph
     # this allows us to reuse constraints such as dist_limit and use the same model_reader
@@ -268,19 +268,19 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
     graph = solver.graphs[0]  # only one graph in this encoding
 
-    sources = fabric[16].sources
-    sinks = fabric[16].sinks
+    sources = fabriclayer.sources
+    sinks = fabriclayer.sinks
 
     # add msnodes for all the used PEs first (because special naming scheme)
     # Hacky! Hardcoding port names
-    for x in range(fabric.width):
-        for y in range(fabric.height):
+    for x in range(fabriclayer.width):
+        for y in range(fabriclayer.height):
             if (x, y) in p_state.I:
                 vars[sinks[(x, y, 'a')]] = graph.addNode('({},{})PE_a'.format(x, y))
                 vars[sinks[(x, y, 'b')]] = graph.addNode('({},{})PE_b'.format(x, y))
                 vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
 
-    for track in fabric[16].tracks:
+    for track in fabriclayer.tracks:
         src = track.src
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
@@ -296,7 +296,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
     return solver.And([])
 
 
-def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
+def build_net_graphs(fabriclayer, design, p_state, r_state, vars, solver):
     '''
         An alternative monosat encoding which builds a graph for each net.
         Handles exclusivity constraints inherently
@@ -314,12 +314,12 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
         vars[net] = solver.add_graph()
         node_dict[net] = dict()
 
-    sources = fabric[16].sources
-    sinks = fabric[16].sinks
+    sources = fabriclayer.sources
+    sinks = fabriclayer.sinks
 
     # add msnodes for all the used PEs first (because special naming scheme)
-    for x in range(fabric.width):
-        for y in range(fabric.height):
+    for x in range(fabriclayer.width):
+        for y in range(fabriclayer.height):
             if (x, y) in p_state.I:
                 for net in design.nets:
                     src = net.src
@@ -335,7 +335,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
                 vars[sinks[(x, y, 'b')]] = b
                 vars[sources[(x, y, 'out')]] = out
 
-    for track in fabric[16].tracks:
+    for track in fabriclayer.tracks:
         src = track.src
         dst = track.dst
 
