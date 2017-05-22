@@ -8,8 +8,8 @@ def place_model_reader(fabric, design, state, vars, solver):
 
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
-    sources = fabric.sources
-    sinks = fabric.sinks
+    sources = fabric[16].sources
+    sinks = fabric[16].sinks
     
     for net in design.nets:
         src = net.src

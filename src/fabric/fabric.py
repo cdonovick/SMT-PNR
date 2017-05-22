@@ -70,18 +70,45 @@ class Track(NamedIDObject):
     def parent(self):
         return self._parent
 
-    def __repr__(self):
-        return self._name
+#    def __repr__(self):
+#        return '{} --> {}'.format(self._names[0], self._names[1])
 
 
-class Fabric:
-    def __init__(self, rows, cols, sources, sinks, routable, tracks):
-        self._rows = rows
-        self._cols = cols
+class FabricLayer:
+    def __init__(self, sources, sinks, routable, tracks):
         self._sources = sources
         self._sinks = sinks
         self._routable = routable
         self._tracks = tracks
+
+    @property
+    def sources(self):
+        return self._sources
+
+    @property
+    def sinks(self):
+        return self._sinks
+
+    @property
+    def routable(self):
+        return self._routable
+
+    @property
+    def tracks(self):
+        return self._tracks
+
+
+class Fabric:
+    def __init__(self, parsed_params):
+        self._rows = parsed_params['rows']
+        self._cols = parsed_params['cols']
+        self._layers = dict()
+        for bus_width in parsed_params['bus_widths']:
+            fl = FabricLayer(parsed_params['sources' + bus_width],
+                             parsed_params['sinks' + bus_width],
+                             parsed_params['routable' + bus_width],
+                             parsed_params['tracks' + bus_width])
+            self._layers[int(bus_width)] = fl
 
     @property
     def rows(self):
@@ -101,21 +128,8 @@ class Fabric:
         ''' alias for cols'''
         return self._cols
 
-    @property
-    def sources(self):
-        return self._sources
-
-    @property
-    def sinks(self):
-        return self._sinks
-
-    @property
-    def routable(self):
-        return self._routable
-
-    @property
-    def tracks(self):
-        return self._tracks
+    def __getitem__(self, bus_width):
+        return self._layers[bus_width]
 
 
 def parse_xml(filepath):
@@ -128,31 +142,34 @@ def parse_xml(filepath):
     tree = ET.parse(filepath)
     root = tree.getroot()
 
-    rows, cols, num_tracks = pre_process(root)
+    rows, cols, num_tracks, bus_widths = pre_process(root)
 
-    params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks, 'sides': sides,
-              'sinks16': dict(), 'sources16': dict(), 'routable16': dict()}
+    params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks,
+              'bus_widths': bus_widths, 'sides': sides}
 
-    SB, PE = generate_layer('16', params)
-    params['SB16'] = SB
-    params['PE16'] = PE
+    for bus_width in bus_widths:
+        params['sinks' + bus_width] = dict()
+        params['sources' + bus_width] = dict()
+        params['routable' + bus_width] = dict()
 
-    connect_tiles('16', params)
+        SB, PE = generate_layer(bus_width, params)
+        params['SB' + bus_width] = SB
+        params['PE' + bus_width] = PE
 
-    params['tracks16'] = list()
+        connect_tiles(bus_width, params)
+        params['tracks' + bus_width] = list()
 
-    connect_pe(root, '16', params)
+        connect_pe(root, bus_width, params)
+        connect_sb(root, bus_width, params)
 
-    connect_sb(root, '16', params)
-
-    return Fabric(rows, cols, params['sources16'], params['sinks16'],
-                  params['routable16'], params['tracks16'])
+    return Fabric(params)
 
 
 def pre_process(root):
     rows = 0
     cols = 0
     num_tracks = dict()
+    bus_widths = set()
     for tile in root:
         # Not assuming tiles are in order
         # Although one would hope they are
@@ -169,9 +186,10 @@ def pre_process(root):
             # i.e. col, row
             # note: removing BUS from parsed name -- kinda Hacky
             num_tracks[(c, r, tr[0][3:])] = int(tr[1])
+            bus_widths.add(tr[0][3:])
 
     # rows and cols are the number not the index
-    return rows + 1, cols + 1, num_tracks
+    return rows + 1, cols + 1, num_tracks, bus_widths
 
 
 def generate_layer(bus_width, params):

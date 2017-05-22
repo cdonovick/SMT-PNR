@@ -96,8 +96,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     # TODO: don't hardcode these -- get from coreir?
     ports = {'a', 'b'}
 
-    sources = fabric.sources
-    sinks = fabric.sinks
+    sources = fabric[16].sources
+    sinks = fabric[16].sinks
 
     # for connected modules, make sure it's not connected to wrong inputs
     # TODO: Fix this so doesn't assume only connected to one input port
@@ -166,8 +166,8 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         Works with build_msgraph, excl_constraints and dist_limit
     '''
     reaches = []
-    sources = fabric.sources
-    sinks = fabric.sinks
+    sources = fabric[16].sources
+    sinks = fabric[16].sinks
     for net in design.nets:
         src = net.src
         dst = net.dst
@@ -214,8 +214,8 @@ def dist_limit(dist_factor):
 
     def dist_constraints(fabric, design, p_state, r_state, vars, solver):
         constraints = []
-        sources = fabric.sources
-        sinks = fabric.sinks
+        sources = fabric[16].sources
+        sinks = fabric[16].sinks
         for net in design.nets:
             src = net.src
             dst = net.dst
@@ -268,8 +268,8 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
     graph = solver.graphs[0]  # only one graph in this encoding
 
-    sources = fabric.sources
-    sinks = fabric.sinks
+    sources = fabric[16].sources
+    sinks = fabric[16].sinks
 
     # add msnodes for all the used PEs first (because special naming scheme)
     # Hacky! Hardcoding port names
@@ -280,7 +280,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
                 vars[sinks[(x, y, 'b')]] = graph.addNode('({},{})PE_b'.format(x, y))
                 vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
 
-    for track in fabric.tracks:
+    for track in fabric[16].tracks:
         src = track.src
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
@@ -314,8 +314,8 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
         vars[net] = solver.add_graph()
         node_dict[net] = dict()
 
-    sources = fabric.sources
-    sinks = fabric.sinks
+    sources = fabric[16].sources
+    sinks = fabric[16].sinks
 
     # add msnodes for all the used PEs first (because special naming scheme)
     for x in range(fabric.width):
@@ -335,7 +335,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
                 vars[sinks[(x, y, 'b')]] = b
                 vars[sources[(x, y, 'out')]] = out
 
-    for track in fabric.tracks:
+    for track in fabric[16].tracks:
         src = track.src
         dst = track.dst
 
