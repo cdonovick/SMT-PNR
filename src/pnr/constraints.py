@@ -106,18 +106,54 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
     # there might be weird cases where you want to drive multiple inputs
     # of dst module with one output
     for net in design.nets:
-        src_pos = p_state[net.src][0]
-        dst_pos = p_state[net.dst][0]
+        src = net.src
+        dst = net.dst
+        src_port = net.src_port
+        dst_port = net.dst_port
+        # contract nets with unplaced modules
+        # Note: This results in repeated constraints
+        if not _is_placeable(src):
+            assert len(src.inputs) <= 1
+            if src.inputs:
+                srcnet = next(iter(src.inputs.values()))
+                src = srcnet.src
+                src_port = srcnet.src_port
+            else:
+                continue
 
-        for port in ports - set(net.dst_port):
-            c.append(~vars[net].reaches(vars[sources[src_pos + (net.src_port,)]], vars[sinks[dst_pos + (port,)]]))
+        if not _is_placeable(dst):
+            assert len(dst.outputs) <= 1
+            if dst.outputs:
+                dstnet = next(iter(dst.outputs.values()))
+                dst = dstnet.dst
+                dst_port = dstnet.dst_port
+            else:
+                continue
+
+        src_pos = p_state[src][0]
+        dst_pos = p_state[dst][0]
+
+        for port in ports - set(dst_port):
+            c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
 
     # make sure modules that aren't connected are not connected
     for m1 in design.modules:
-        inputs = {x.src for x in m1.inputs}
+        inputs = {x.src for x in m1.inputs.values()}
+        contracted_inputs = set()
+        for src in inputs:
+            if not _is_placeable(src):
+                assert len(src.inputs) <= 1
+                if src.inputs:
+                    srcnet = next(iter(src.inputs.values()))
+                    src = srcnet.src
+                else:
+                    continue
+            # add the (potentially contracted) src
+            contracted_inputs.add(src)
+
         m1_pos = p_state[m1][0]
         for m2 in design.modules:
-            if m2 != m1 and m2 not in inputs:
+            if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
 
                 for port in ports:
@@ -135,10 +171,35 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
     sources = fabric.sources
     sinks = fabric.sinks
     for net in design.nets:
-        src_pos = p_state[net.src][0]
-        dst_pos = p_state[net.dst][0]
-        src_pe = sources[src_pos + (net.src_port,)]
-        dst_pe = sinks[dst_pos + (net.dst_port,)]
+        src = net.src
+        dst = net.dst
+        src_port = net.src_port
+        dst_port = net.dst_port
+        # contract nets with unplaced modules
+        # Note: This results in repeated constraints
+        if not _is_placeable(src):
+            assert len(src.inputs) <= 1
+            if src.inputs:
+                srcnet = next(iter(src.inputs.values()))
+                src = srcnet.src
+                src_port = srcnet.src_port
+            else:
+                continue
+
+        if not _is_placeable(dst):
+            assert len(dst.outputs) <= 1
+            if dst.outputs:
+                dstnet = next(iter(dst.outputs.values()))
+                dst = dstnet.dst
+                dst_port = dstnet.dst_port
+            else:
+                continue
+
+        src_pos = p_state[src][0]
+        dst_pos = p_state[dst][0]
+        src_pe = sources[src_pos + (src_port,)]
+        dst_pe = sinks[dst_pos + (dst_port,)]
+        
         reaches.append(vars[net].reaches(vars[src_pe], vars[dst_pe]))
 
     return solver.And(reaches)
@@ -158,10 +219,34 @@ def dist_limit(dist_factor):
         sources = fabric.sources
         sinks = fabric.sinks
         for net in design.nets:
-            src_pos = p_state[net.src][0]
-            dst_pos = p_state[net.dst][0]
-            src_pe = sources[src_pos + (net.src_port,)]
-            dst_pe = sinks[dst_pos + (net.dst_port,)]
+            src = net.src
+            dst = net.dst
+            src_port = net.src_port
+            dst_port = net.dst_port
+            # contract nets with unplaced modules
+            # Note: This results in repeated constraints
+            if not _is_placeable(src):
+                assert len(src.inputs) <= 1
+                if src.inputs:
+                    srcnet = next(iter(src.inputs.values()))
+                    src = srcnet.src
+                    src_port = srcnet.src_port
+                else:
+                    continue
+
+            if not _is_placeable(dst):
+                assert len(dst.outputs) <= 1
+                if dst.outputs:
+                    dstnet = next(iter(dst.outputs.values()))
+                    dst = dstnet.dst
+                    dst_port = dstnet.dst_port
+                else:
+                    continue
+
+            src_pos = p_state[src][0]
+            dst_pos = p_state[dst][0]
+            src_pe = sources[src_pos + (src_port,)]
+            dst_pe = sinks[dst_pos + (dst_port,)]
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
             # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
             # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
@@ -222,6 +307,9 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
     # NOTE: Currently broken for fanout
     # Making nets contain whole tree of connections will fix this issue
 
+    # NOTE 2: Also broken by new unplaceable module changes. Nets don't
+    # correspond to layers any more (or at least until the nets are the whole tree)
+
     # create graphs for each net
     node_dict = dict()  # used to keep track of nodes in each graph
     for net in design.nets:
@@ -266,6 +354,25 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
 
         # keep track of whether a node is 'active' based on connected edges
         for net in design.nets:
+            src = net.src
+            dst = net.dst
+            # contract nets with unplaced modules
+            # Note: This results in repeated constraints
+            if not _is_placeable(src):
+                assert len(src.inputs) <= 1
+                if src.inputs:
+                    srcnet = next(iter(src.inputs.values()))
+                    src = srcnet.src
+                else:
+                    continue
+
+            if not _is_placeable(dst):
+                assert len(dst.outputs) <= 1
+                if dst.outputs:
+                    dstnet = next(iter(dst.outputs.values()))
+                    dst = dstnet.dst
+                else:
+                    continue
             e = vars[net].addEdge(vars[src], vars[dst])
             node_dict[net][vars[src]] = solver.Or(node_dict[net][vars[src]], e)
             node_dict[net][vars[dst]] = solver.Or(node_dict[net][vars[dst]], e)
