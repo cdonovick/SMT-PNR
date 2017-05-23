@@ -1,0 +1,256 @@
+{
+  "namespaces": {
+    "_G": {
+      "modules": {
+        "addmult": {
+          "def": {
+            "connections": [
+              [
+                [
+                  "ai",
+                  "in",
+                  "0"
+                ],
+                [
+                  "self",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "ai",
+                  "in",
+                  "1"
+                ],
+                [
+                  "ci",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "self",
+                  "out"
+                ],
+                [
+                  "mi",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "mi",
+                  "in",
+                  "1"
+                ],
+                [
+                  "ai",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "ci",
+                  "out"
+                ],
+                [
+                  "mi",
+                  "in",
+                  "0"
+                ]
+              ]
+            ],
+            "instances": {
+              "ai": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "stdlib",
+                  "add"
+                ]
+              },
+              "ci": {
+                "configargs": {
+                  "value": 140
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "stdlib",
+                  "const"
+                ]
+              },
+              "mi": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "stdlib",
+                  "mul"
+                ]
+              }
+            }
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "in",
+                [
+                  "Array",
+                  16,
+                  "BitIn"
+                ]
+              ],
+              [
+                "out",
+                [
+                  "Array",
+                  16,
+                  "Bit"
+                ]
+              ]
+            ]
+          ]
+        },
+        "addmult_mapped": {
+          "def": {
+            "connections": [
+              [
+                [
+                  "ci",
+                  "out"
+                ],
+                [
+                  "mi",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "ci",
+                  "out"
+                ],
+                [
+                  "ai",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "ioin",
+                  "out"
+                ],
+                [
+                  "ai",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "mi",
+                  "data",
+                  "out"
+                ],
+                [
+                  "ioout",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "ai",
+                  "data",
+                  "out"
+                ],
+                [
+                  "mi",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ]
+            ],
+            "instances": {
+              "ai": {
+                "configargs": {
+                  "op": "add"
+                },
+                "genargs": {
+                  "numin": 2,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "PE"
+                ]
+              },
+              "ci": {
+                "configargs": {
+                  "value": 140
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Const"
+                ]
+              },
+              "ioin": {
+                "configargs": {
+                  "mode": "i"
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "IO"
+                ]
+              },
+              "ioout": {
+                "configargs": {
+                  "mode": "o"
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "IO"
+                ]
+              },
+              "mi": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "genargs": {
+                  "numin": 2,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "PE"
+                ]
+              }
+            }
+          },
+          "type": "Any"
+        }
+      }
+    }
+  },
+  "top": [
+    "_G",
+    "addmult_mapped"
+  ]
+}
