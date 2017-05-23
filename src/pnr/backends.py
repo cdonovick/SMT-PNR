@@ -58,7 +58,6 @@ _pe_reg = {
     'b'   : 0xf1,
 }
 
-
 _load_reg = {
     'a'   : 14,
     'b'   : 12,
@@ -82,7 +81,7 @@ _op_fields = {
 }
 
 def write_bitstream(cgra_xml, bitstream, annotate):
-    return partial(_write_bitstream, cgra_xml, bitstream, annotate)
+    return partial(_write_bitstream, annotate, cgra_xml, bitstream)
 
 
 def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
@@ -123,7 +122,6 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
             mod = p_state.I[(x,y)][0]
             if mod.type_ == 'PE':
                 data[_pe_reg['op']] |= _op_codes[mod.config]
-
                 comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
                 for port in ('a', 'b'):
