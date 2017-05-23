@@ -137,7 +137,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
             c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
 
     # make sure modules that aren't connected are not connected
-    for m1 in design.modules:
+    for m1 in _f_placable(design.modules):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -152,7 +152,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver):
             contracted_inputs.add(src)
 
         m1_pos = p_state[m1][0]
-        for m2 in design.modules:
+        for m2 in _f_placable(design.modules):
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
 
@@ -324,9 +324,10 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
                 for net in design.nets:
-                    a = vars[net].addNode('({},{})PE_a'.format(y, x))
-                    b = vars[net].addNode('({},{})PE_b'.format(y, x))
-                    out = vars[net].addNode('({},{})PE_out'.format(y, x))
+                    src = net.src
+                    dst = net.dst
+                    # currently broken because have two nets for one connection
+                    # if there's an unplaceable node
                     node_dict[net][a] = solver.false()
                     node_dict[net][b] = solver.false()
                     node_dict[net][out] = solver.false()
@@ -373,6 +374,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver):
                     dst = dstnet.dst
                 else:
                     continue
+
             e = vars[net].addEdge(vars[src], vars[dst])
             node_dict[net][vars[src]] = solver.Or(node_dict[net][vars[src]], e)
             node_dict[net][vars[dst]] = solver.Or(node_dict[net][vars[dst]], e)

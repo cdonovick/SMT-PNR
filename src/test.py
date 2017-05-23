@@ -12,7 +12,7 @@ parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'),
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>',
         help='output CGRA configuration in bitstream')
 parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
-parser.add_argument('--print_route', action='store_true', help='print routing information to stdout')
+parser.add_argument('--print-route', action='store_true', dest='print_route', help='print routing information to stdout')
 parser.add_argument('--coreir-libs', nargs='+', help='coreir libraries to load', dest='libs', default=())
 args = parser.parse_args()
 
@@ -49,12 +49,12 @@ else:
         print("!!!failure!!!")
         sys.exit(1)
 
-#print("Routing design...", end=' ')
-#if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
-#    print("success!")
-#else:
-#    print("!!!failure!!!")
-#    sys.exit(1)
+print("Routing design...", end=' ')
+if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
+    print("success!")
+else:
+    print("!!!failure!!!")
+    sys.exit(1)
 
 if args.xml:
     cf, io = args.xml
