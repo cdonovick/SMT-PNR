@@ -73,15 +73,15 @@ _read_wire = {
 }
 
 _op_fields = {
-    'wire_a'  : (15,15)
-    'load_a'  : (14,14)
-    'wire_b'  : (13,13)
-    'load_b'  : (12,12)
-    'op_code' : (4,0)
+    'wire_a'  : (15,15),
+    'load_a'  : (14,14),
+    'wire_b'  : (13,13),
+    'load_b'  : (12,12),
+    'op_code' : (4,0),
 }
 
 def write_bitstream(cgra_xml, bitstream, annotate):
-    return partial(_write_bitstream, annotate, cgra_xml, bitstream)
+    return partial(_write_bitstream, cgra_xml, bitstream, annotate)
 
 
 def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):

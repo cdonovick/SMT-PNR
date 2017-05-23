@@ -31,6 +31,9 @@ class BiMultiDict(MutableMapping):
                 del self._i[val]
 
         del self._d[key]
+    
+    def __contains__(self, key):
+        return key in self._d
 
     def __iter__(self):
         yield from self._d.keys()
