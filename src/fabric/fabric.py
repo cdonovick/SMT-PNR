@@ -75,33 +75,8 @@ class Track(NamedIDObject):
 #        return '{} --> {}'.format(self._names[0], self._names[1])
 
 
-class FabricDims(metaclass=ABCMeta):
-    def __init__(self, rows, cols):
-        self._rows = rows
-        self._cols = cols
-
-    @property
-    def rows(self):
-        return self._rows
-
-    @property
-    def cols(self):
-        return self._cols
-
-    @property
-    def height(self):
-        ''' alias for rows'''
-        return self._rows
-
-    @property
-    def width(self):
-        ''' alias for cols'''
-        return self._cols
-
-
-class FabricLayer(FabricDims):
-    def __init__(self, rows, cols, sources, sinks, routable, tracks):
-        super().__init__(rows, cols)
+class FabricLayer:
+    def __init__(self, sources, sinks, routable, tracks):
         self._sources = sources
         self._sinks = sinks
         self._routable = routable
@@ -124,17 +99,35 @@ class FabricLayer(FabricDims):
         return self._tracks
 
 
-class Fabric(FabricDims):
+class Fabric:
     def __init__(self, parsed_params):
-        super().__init__(parsed_params['rows'], parsed_params['cols'])
+        self._rows = parsed_params['rows']
+        self._cols = parsed_params['cols']
         self._layers = dict()
         for bus_width in parsed_params['bus_widths']:
-            fl = FabricLayer(self.rows, self.cols,
-                             parsed_params['sources' + bus_width],
+            fl = FabricLayer(parsed_params['sources' + bus_width],
                              parsed_params['sinks' + bus_width],
                              parsed_params['routable' + bus_width],
                              parsed_params['tracks' + bus_width])
             self._layers[int(bus_width)] = fl
+
+    @property
+    def rows(self):
+        return self._rows
+
+    @property
+    def cols(self):
+        return self._cols
+
+    @property
+    def height(self):
+        ''' alias for rows'''
+        return self._rows
+
+    @property
+    def width(self):
+        ''' alias for cols'''
+        return self._cols
 
     def __getitem__(self, bus_width):
         return self._layers[bus_width]
