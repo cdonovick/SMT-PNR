@@ -48,8 +48,24 @@ def nearest_neighbor(fabric, design, state, vars, solver):
     for net in design.nets:
         src = net.src
         dst = net.dst
-        if not (_is_placeable(src) and _is_placeable(dst)):
-            continue
+        if not _is_placeable(src):
+            assert len(src.inputs) <= 1
+            if src.inputs:
+                print(src)
+                src = next(iter(src.inputs.values()))
+                print(src)
+            else:
+                continue
+
+        if not _is_placeable(dst):
+            assert len(dst.outputs) <= 1
+            if dst.outputs:
+                print(dst)
+                dst = next(iter(dst.outputs.values()))
+                print(dst)
+            else:
+                continue
+
         c = []
         dx = vars[src].delta_x_fun(vars[dst])
         dy = vars[src].delta_y_fun(vars[dst])
