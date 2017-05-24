@@ -48,7 +48,7 @@ install:
     - cd coreir;
     - export COREIRCONFIG="g++-4.9";
     - export COREIRHOME=$PWD
-    - esport COREIR=$PWD
+    - export COREIR=$PWD
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/bin:$PWD/lib
     - make install py
     #- make -C src
@@ -61,8 +61,7 @@ install:
 script: 
     - cd ./src
     - ./test.py ../new_coremapped.json ../cgra4x4.xml 
-      --xml ../placed.xml ../io.xml 
       --bitstream ../bitstream 
       --print --print-route 
-      --cgralibs stdlib cgralib
+      --coreir-libs stdlib cgralib
 
