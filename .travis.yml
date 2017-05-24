@@ -44,7 +44,7 @@ install:
     #- sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
-    - git clone -b dev -- https://github.com/rdaly525/coreir.git
+    - git clone -b master -- https://github.com/rdaly525/coreir.git
     - cd coreir;
     - export COREIRCONFIG="g++-4.9";
     - export COREIRHOME=$PWD
