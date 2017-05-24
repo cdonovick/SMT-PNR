@@ -51,18 +51,16 @@ def nearest_neighbor(fabric, design, state, vars, solver):
         if not _is_placeable(src):
             assert len(src.inputs) <= 1
             if src.inputs:
-                print(src)
-                src = next(iter(src.inputs.values()))
-                print(src)
+                src = next(iter(src.inputs.values())).src
+                assert _is_placeable(src)
             else:
                 continue
 
         if not _is_placeable(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
-                print(dst)
-                dst = next(iter(dst.outputs.values()))
-                print(dst)
+                dst = next(iter(dst.outputs.values())).dst
+                assert _is_placeable(dst)
             else:
                 continue
 
@@ -199,7 +197,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         dst_pos = p_state[dst][0]
         src_pe = sources[src_pos + (src_port,)]
         dst_pe = sinks[dst_pos + (dst_port,)]
-        
+
         reaches.append(vars[net].reaches(vars[src_pe], vars[dst_pe]))
 
     return solver.And(reaches)

@@ -72,13 +72,6 @@ _read_wire = {
     'd'   : 9,
 }
 
-_op_fields = {
-    'wire_a'  : (15,15),
-    'load_a'  : (14,14),
-    'wire_b'  : (13,13),
-    'load_b'  : (12,12),
-    'op_code' : (4,0),
-}
 
 def write_bitstream(cgra_xml, bitstream, annotate):
     return partial(_write_bitstream, cgra_xml, bitstream, annotate)
@@ -90,16 +83,28 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
     # -------------------------------------------------
     def _proc_cb(cb):
         data = defaultdict(int)
+        comment = defaultdict(dict)
+        for tag in cb.findall('sel_width'):
+            sel_w = int(tag.text)
+
+
+
         for mux in cb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
                 if (x, y, 'CB', snk, src.text) in r_state.I:
                     # reg == 0 for all cb
                     data[0] = int(src.get('sel'))
-        return data
+                    comment[0][(sel_w-1, 0)] = 'connect wire {} ({}) to {}'.format(data[0], src.text, snk)
+
+        return data, comment
 
     def _proc_sb(sb):
         data = defaultdict(int)
+        comment = defaultdict(dict)
+        for tag in cb.findall('sel_width'):
+            sel_w = int(tag.text)
+
         for mux in sb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
@@ -110,7 +115,9 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                     reg = configl // 32
                     offset = configl % 32
                     data[reg] |= int(src.get('sel')) << offset
-        return data
+                    comment[reg][(sel_w + offset - 1, offset)] = 'connect wire {} ({}) to {}'.format(src.get('sel'), src.text, snk)
+
+        return data,comment
 
 
     def _proc_pe(pe):
@@ -153,9 +160,9 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
 
         return data, comment
 
-    def _write(data, tile_address, feature_address, bs, comment=None):
+    def _write(data, tile_address, feature_address, bs, comment):
         for reg in data:
-            if comment:
+            if annotate:
                 suffix =  _format_comment(comment[reg])
             else:
                 suffix = ''
@@ -194,23 +201,18 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 x = int(tile.get('col'))
                 for cb in tile.findall('cb'):
                     feature_address = int(cb.get('feature_address'))
-                    data = _proc_cb(cb)
-                    _write(data, tile_address, feature_address, bs)
-
+                    data,comment = _proc_cb(cb)
+                    _write(data, tile_address, feature_address, bs, comment)
 
                 for sb in tile.findall('sb'):
                     feature_address = int(sb.get('feature_address'))
-                    data = _proc_sb(sb)
-                    _write(data, tile_address, feature_address, bs)
+                    data,comment = _proc_sb(sb)
+                    _write(data, tile_address, feature_address, bs, comment)
 
                 for pe in tile.findall('pe'):
                     feature_address = int(pe.get('feature_address'))
                     data,comment = _proc_pe(pe)
-
-                    if annotate:
-                        _write(data, tile_address, feature_address, bs, comment)
-                    else:
-                        _write(data, tile_address, feature_address, bs)
+                    _write(data, tile_address, feature_address, bs, comment)
 
 
 
