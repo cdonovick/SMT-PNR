@@ -4,6 +4,11 @@ language: python
 
 python: 3.5
 
+cache:
+    apt: true
+    directories:
+    - ./smt_solvers
+
 addons:
     apt:
         sources:
@@ -21,11 +26,6 @@ addons:
             - build-essential
             - swig2.0
             - libcln-dev
-
-cache:
-    apt: true
-    directories:
-    - ./smt_solvers
 
 before_install:
     - export CXX="g++-4.9"
@@ -58,9 +58,9 @@ install:
     # Stuff needed for P&R
     - pip install lxml
 
-script: 
+script:
     - cd ./src
-    - ./test.py ../new_coremapped.json ../cgra4x4.xml 
-      --annotate ../bitstream 
+    - ./test.py ../new_coremapped.json ../cgra4x4.xml
+      --annotate ../bitstream
       --print --coreir-libs stdlib cgralib
     - cat ../bitstream
