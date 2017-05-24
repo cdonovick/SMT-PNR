@@ -61,7 +61,6 @@ install:
 script: 
     - cd ./src
     - ./test.py ../new_coremapped.json ../cgra4x4.xml 
-      --bitstream ../bitstream 
-      --print --print-route 
-      --coreir-libs stdlib cgralib
-
+      --annotate ../bitstream 
+      --print --coreir-libs stdlib cgralib
+    - cat ../bitstream
