@@ -1,16 +1,26 @@
 '''
     Classes for represtenting designs and various constructors
 '''
-from util import NamedIDObject
+from util import NamedIDObject, SortedDict
 from .module import Module
 from .net import Net
 
 class Design(NamedIDObject):
-    def __init__(self, adj_dict, op_dict, name=''):
+    def __init__(self, modules, nets, name=''):
         super().__init__(name)
         self._modules = set()
         self._nets = set()
-        self._gen_graph(adj_dict, op_dict)
+
+        mods = SortedDict()
+        for mod_name,args in modules.items():
+            mod = Module(mod_name, args['type'], args['conf'])
+            self.modules.add(mod)
+            mods[mod_name] = mod
+
+        for src_name, src_port, dst_name, dst_port, width in nets:
+            src = mods[src_name]
+            dst = mods[dst_name]
+            self.nets.add(Net(src, src_port, dst, dst_port, width))
 
     @property
     def modules(self):
@@ -20,25 +30,4 @@ class Design(NamedIDObject):
     def nets(self):
         return self._nets
 
-
-    def _gen_graph(self, adj_dict, op_dict):
-        mods = dict()
-        for (src_name, src_port), adj_list in adj_dict.items():
-            if src_name not in mods:
-                src = Module(src_name, *op_dict[src_name])
-                mods[src_name] = src
-                self._modules.add(src)
-            else:
-                src = mods[src_name]
-
-
-            for dst_name, dst_port, width in adj_list:
-                if dst_name not in mods:
-                    dst = Module(dst_name, *op_dict[dst_name])
-                    mods[dst_name] = dst
-                    self._modules.add(dst)
-                else:
-                    dst = mods[dst_name]
-
-                self._nets.add(Net(src, src_port, dst, dst_port, width))
 

@@ -1,11 +1,10 @@
 from util import NamedIDObject
 
 class Module(NamedIDObject):
-    def __init__(self, name, op, op_val, op_atr):
+    def __init__(self, name, type_, config):
         super().__init__(name)
-        self._op = op
-        self._op_val = op_val
-        self._op_atr = op_atr
+        self._type_ = type_
+        self._config = config
         self._inputs = dict()
         self._outputs = dict()
 
@@ -14,33 +13,25 @@ class Module(NamedIDObject):
         '''
             returns a iterator over Wires
         '''
-        return self._inputs.values()
+        return self._inputs
 
     @property
     def outputs(self):
         '''
             returns a iterator over Wires
         '''
-        return self._outputs.values()
+        return self._outputs
 
     @property
-    def op(self):
-        return self._op
+    def type_(self):
+        return self._type_
 
     @property
-    def op_val(self):
-        return self._op_val
-    
-    @property
-    def op_atr(self):
-        return self._op_atr
-    
+    def config(self):
+        return self._config
+
     def _add_input(self, src, port):
         self._inputs[port] = src
 
     def _add_output(self, dst, port):
         self._outputs[port] = dst
-
-        
-
-

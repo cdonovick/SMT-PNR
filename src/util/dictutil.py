@@ -1,8 +1,8 @@
-from collections import defaultdict, Iterable, OrderedDict
+from collections import defaultdict, Iterable, OrderedDict, MutableMapping
 
 __all__ = ['BiMultiDict', 'BiDict', 'SortedDict']
 
-class BiMultiDict:
+class BiMultiDict(MutableMapping):
     def __init__(self, d=dict()):
         self._d = defaultdict(list)
         self._i = defaultdict(list)
@@ -31,12 +31,12 @@ class BiMultiDict:
                 del self._i[val]
 
         del self._d[key]
-
+    
     def __contains__(self, key):
         return key in self._d
 
     def __iter__(self):
-        return iter(self.keys())
+        yield from self._d.keys()
 
     def __repr__(self):
         c = []
@@ -49,18 +49,6 @@ class BiMultiDict:
     def __len__(self):
         return len(self._d)
 
-    def keys(self):
-        for k in self._d.keys():
-            yield k
-
-    def items(self):
-        for k,vs in self._d.items():
-            for v in vs:
-                yield (k,v)
-
-    def values(self):
-        for v in self._i:
-            yield v 
 
     @property
     def I(self):
@@ -78,7 +66,7 @@ class BiMultiDict:
             for v in vs:
                 assert k in self._d[v]
 
-class BiDict:
+class BiDict(MutableMapping):
     def __init__(self, d=dict()):
         self._d = dict()
         self._i = dict()
@@ -103,10 +91,7 @@ class BiDict:
         del self._d[key]
 
     def __iter__(self):
-        return iter(self.keys())
-
-    def __contains__(self, key):
-        return key in self._d
+        yield from self._d.keys()
 
     def __repr__(self):
         c = []
@@ -117,15 +102,6 @@ class BiDict:
 
     def __len__(self):
         return len(self._d)
-
-    def keys(self):
-        yield from self._d.keys()
-
-    def items(self):
-        yield from self._d.items()
-
-    def values(self):
-        yield from self._i.keys()
 
     @property
     def I(self):
@@ -143,7 +119,7 @@ class BiDict:
             for v in vs:
                 assert k in self._d[v]
 
-class SortedDict:
+class SortedDict(MutableMapping):
     def __init__(self, d=dict()):
         self._d = OrderedDict()
         self._sorted = True
@@ -161,10 +137,9 @@ class SortedDict:
         del self._d[key]
 
     def __iter__(self):
-        yield from self.keys
+        for k, _ in self.items():
+            yield k
 
-    def __contains__(self, key):
-        return key in self._d
 
     def __repr__(self):
         c = []
@@ -176,10 +151,6 @@ class SortedDict:
     def __len__(self):
         return len(self._d)
 
-    def keys(self):
-        for k, _ in self.items():
-            yield k
-
     def items(self):
         if not self._sorted:
             self._d = OrderedDict(sorted(self._d.items(), key=lambda t: t[0]))
@@ -187,7 +158,4 @@ class SortedDict:
 
         yield from self._d.items()
 
-    def values(self):
-        for _, v in self.items:
-            yield v
 

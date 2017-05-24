@@ -4,6 +4,11 @@ language: python
 
 python: 3.5
 
+cache:
+    apt: true
+    directories:
+    - ./smt_solvers
+
 addons:
     apt:
         sources:
@@ -22,11 +27,6 @@ addons:
             - swig2.0
             - libcln-dev
 
-cache:
-    apt: true
-    directories:
-    - ./smt_solvers
-
 before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
@@ -44,25 +44,23 @@ install:
     #- sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
-    - git clone https://github.com/rdaly525/coreir.git 
+    - git clone -b dev -- https://github.com/rdaly525/coreir.git
     - cd coreir;
     - export COREIRCONFIG="g++-4.9";
     - export COREIRHOME=$PWD
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/bin
-    - make install
+    - export COREIR=$PWD
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/bin:$PWD/lib
+    - make install py
     #- make -C src
     #- make -C src ../build/coreir.so  # For bindings tests
     #- make -C tests
-    - pip install pytest;
-    - pip install -e bindings/python;
     - cd $TRAVIS_BUILD_DIR
     # Stuff needed for P&R
-    - pip install pygraphviz
     - pip install lxml
 
-script: 
+script:
     - cd ./src
-    - ./test.py ../mapped.json ../cgra4x4.xml --xml ../placed.xml ../io.xml --bitstream ../bitstream --print
-
-
-
+    - ./test.py ../new_coremapped.json ../cgra4x4.xml
+      --annotate ../bitstream
+      --print --coreir-libs stdlib cgralib
+    - cat ../bitstream

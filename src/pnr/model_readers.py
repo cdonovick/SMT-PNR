@@ -1,4 +1,7 @@
 
+#hacky -- this is the same function as defined in pnr.constraints
+def _is_placeable(x) : return x.type_ in ('PE', 'IO')
+
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
         state[module] = var.get_coordinates()
@@ -11,12 +14,34 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
     for net in design.nets:
         src = net.src
         dst = net.dst
+        src_port = net.src_port
+        dst_port = net.dst_port
+        # contract nets with unplaced modules
+        # Note: This results in repeated constraints
+        if not _is_placeable(src):
+            assert len(src.inputs) <= 1
+            if src.inputs:
+                srcnet = next(iter(src.inputs.values()))
+                src = srcnet.src
+                src_port = srcnet.src_port
+            else:
+                continue
+
+        if not _is_placeable(dst):
+            assert len(dst.outputs) <= 1
+            if dst.outputs:
+                dstnet = next(iter(dst.outputs.values()))
+                dst = dstnet.dst
+                dst_port = dstnet.dst_port
+            else:
+                continue
+
         graph = vars[net]
 
         src_pos = p_state[src][0]
         dst_pos = p_state[dst][0]
-        src_pe = sources[src_pos + (net.src_port,)]
-        dst_pe = sinks[dst_pos + (net.dst_port,)]
+        src_pe = sources[src_pos + (src_port,)]
+        dst_pe = sinks[dst_pos + (dst_port,)]
         reaches = graph.reaches(vars[src_pe], vars[dst_pe])
         l = graph.getPath(reaches)
         path = tuple(graph.names[node] for node in l)

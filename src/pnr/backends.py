@@ -8,13 +8,12 @@ import lxml.etree as ET
 
 from fabric.fabricfuns import parse_name, mapSide
 from fabric import Side
-from util import smart_open
-from smt.z3util import Mask
+from util import smart_open, Mask
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream', 'write_xml']
 
 # -------------------------------------------------
-# write_bitsream consants 
+# write_bitsream consants
 # -------------------------------------------------
 _bit_widths = {
     'address'   : 32,
@@ -47,8 +46,10 @@ _op_codes = {
     'not'       : 0x15,
     #mult->mull
     'mult'      : 0x0b,
-    'source'    : 0xf0,
-    'sink'      : 0xff,
+    #mul->mull
+    'mul'       : 0x0b,
+    'i'         : 0xf0,
+    'o'         : 0xff,
 }
 
 _pe_reg = {
@@ -58,35 +59,52 @@ _pe_reg = {
 }
 
 _load_reg = {
-    'a' : 17,
-    'b' : 19,
+    'a'   : 14,
+    'b'   : 12,
+    'c'   : 10,
+    'd'   : 8,
 }
 
 _read_wire = {
-    'a' : 16,
-    'b' : 18,
+    'a'   : 15,
+    'b'   : 13,
+    'c'   : 11,
+    'd'   : 9,
 }
 
-def write_bitstream(cgra_xml, bitstream):
-    return partial(_write_bitstream, cgra_xml, bitstream)
+
+def write_bitstream(cgra_xml, bitstream, annotate):
+    return partial(_write_bitstream, cgra_xml, bitstream, annotate)
 
 
-def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
+def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
     # -------------------------------------------------
     # write_bitsream utilities
     # -------------------------------------------------
     def _proc_cb(cb):
         data = defaultdict(int)
+        comment = defaultdict(dict)
+        for tag in cb.findall('sel_width'):
+            sel_w = int(tag.text)
+
+
+
         for mux in cb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
                 if (x, y, 'CB', snk, src.text) in r_state.I:
                     # reg == 0 for all cb
                     data[0] = int(src.get('sel'))
-        return data
+                    comment[0][(sel_w-1, 0)] = 'connect wire {} ({}) to {}'.format(data[0], src.text, snk)
+
+        return data, comment
 
     def _proc_sb(sb):
         data = defaultdict(int)
+        comment = defaultdict(dict)
+        for tag in cb.findall('sel_width'):
+            sel_w = int(tag.text)
+
         for mux in sb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
@@ -97,44 +115,74 @@ def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
                     reg = configl // 32
                     offset = configl % 32
                     data[reg] |= int(src.get('sel')) << offset
-        return data
+                    comment[reg][(sel_w + offset - 1, offset)] = 'connect wire {} ({}) to {}'.format(src.get('sel'), src.text, snk)
+
+        return data,comment
 
 
     def _proc_pe(pe):
-        data = defaultdict(lambda : Mask(size=_bit_widths['data']))
+        data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
+        mask = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
+        comment = defaultdict(dict)
 
         if (x, y) in p_state.I:
-            op_name = p_state.I[(x,y)][0].op
-            op_text = p_state.I[(x,y)][0].op_val
-            if op_name == 'const':
-                #set op to add
-                data[_pe_reg['op']] |= _op_codes['add']
-                data[_pe_reg['a']]  |= int(op_text)
-                data[_pe_reg['b']]  |= 0
-            elif op_name == 'io':
-                iotype = p_state.I[(x,y)][0].op_atr['type']
-                data[_pe_reg['op']] |= _op_codes[iotype]
-                if iotype == 'source':
+            mod = p_state.I[(x,y)][0]
+            if mod.type_ == 'PE':
+                data[_pe_reg['op']] |= _op_codes[mod.config]
+                comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
+
+                for port in ('a', 'b'):
+                    src = mod.inputs[port].src
+
+                    if src.type_ == 'Const':
+                        data[_pe_reg[port]] |= src.config # load 'a' reg with const
+                        comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
+                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                    elif src.type_ == 'Reg':
+                        data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
+                        comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
+                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                    else:
+                        data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
+                        comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
+
+            elif mod.type_ == 'IO':
+                data[_pe_reg['op']] = _op_codes[mod.config]
+
+                if mod.config == 'i':
+                    comment[_pe_reg['op']][(4, 0)] = 'op = input'
                     data[_pe_reg['a']]  = 0xffffffff
                     data[_pe_reg['b']]  = 0xffffffff
                 else:
+                    comment[_pe_reg['op']][(4, 0)] = 'op = output'
                     data[_pe_reg['b']]  = 0xffffffff
-            else:
-                data[_pe_reg['op']] |= _op_codes[op_name]
-                data[_pe_reg['op']][_read_wire['a']] |= 1
-                data[_pe_reg['op']][_read_wire['b']] |= 1
-        return data
 
-    def _write(data, tile_address, feature_address, bs):
-        for reg,d in data.items():
-            bs.write(_format_line(tile_address, feature_address, reg, int(d)) + '\n')
+
+        return data, comment
+
+    def _write(data, tile_address, feature_address, bs, comment):
+        for reg in data:
+            if annotate:
+                suffix =  _format_comment(comment[reg])
+            else:
+                suffix = ''
+            bs.write(_format_line(tile_address, feature_address, reg, int(data[reg])) + suffix)
+
 
     def _format_line(tile, feature, reg, data):
         ts = _format_elem(tile, _bit_widths['tile'])
         fs = _format_elem(feature, _bit_widths['feature'])
         rs = _format_elem(reg, _bit_widths['reg'])
         ds = _format_elem(data, _bit_widths['data'])
-        return rs+fs+ts+' '+ds
+        return rs+fs+ts+' '+ds+'\n'
+
+    def _format_comment(comment):
+        s = []
+        for bit, c in comment.items():
+            s.append('# data[{}] : {}\n'.format(bit, c))
+
+        return ''.join(s)
+
 
     def _format_elem(elem, elem_bits):
         return '{:0{bits}X}'.format(elem, bits=elem_bits//4)
@@ -145,7 +193,7 @@ def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
     # -------------------------------------------------
     tree = ET.parse(cgra_xml)
     root = tree.getroot()
-    with open(bitstream, 'w') as bs: 
+    with open(bitstream, 'w') as bs:
         for tile in root:
                 tile_address = int(tile.get('tile_addr'))
 
@@ -153,20 +201,20 @@ def _write_bitstream(cgra_xml, bitstream, p_state, r_state):
                 x = int(tile.get('col'))
                 for cb in tile.findall('cb'):
                     feature_address = int(cb.get('feature_address'))
-                    data = _proc_cb(cb)
-                    _write(data, tile_address, feature_address, bs)
-
+                    data,comment = _proc_cb(cb)
+                    _write(data, tile_address, feature_address, bs, comment)
 
                 for sb in tile.findall('sb'):
                     feature_address = int(sb.get('feature_address'))
-                    data = _proc_sb(sb)
-                    _write(data, tile_address, feature_address, bs)
+                    data,comment = _proc_sb(sb)
+                    _write(data, tile_address, feature_address, bs, comment)
 
                 for pe in tile.findall('pe'):
                     feature_address = int(pe.get('feature_address'))
-                    data = _proc_pe(pe)
-                    _write(data, tile_address, feature_address, bs)
-                    
+                    data,comment = _proc_pe(pe)
+                    _write(data, tile_address, feature_address, bs, comment)
+
+
 
 def write_debug(design, output=sys.stdout):
     return partial(_write_debug, design, output)
@@ -176,16 +224,16 @@ def _write_debug(design, output, p_state, r_state):
         for module in design.modules:
             try:
                 f.write("module: {} @ ({}, {})\n".format(module.name, *p_state[module][0]))
-                f.write("inputs: {}\n".format(', '.join(d.src.name for d in module.inputs)))
-                f.write("outputs: {}\n".format(', '.join(d.dst.name for d in module.outputs)))
+                f.write("inputs: {}\n".format(', '.join(d.src.name for d in module.inputs.values())))
+                f.write("outputs: {}\n".format(', '.join(d.dst.name for d in module.outputs.values())))
                 f.write("\n")
-            except KeyError:
+            except (KeyError, IndexError):
                 f.write("module: {} is not placed\n".format(module.name))
                 f.write("\n")
 
-        for net in design.nets:
-            f.write("{} -> {}\n".format(net.src.name, net.dst.name))
-        f.write("\n")
+#        for net in design.nets:
+#            f.write("{} -> {}\n".format(net.src.name, net.dst.name))
+#        f.write("\n")
 
 def write_route_debug(design, output=sys.stdout):
     return partial(_write_route_debug, design, output)
@@ -205,7 +253,7 @@ def _write_route_debug(design, output, p_state, r_state):
 
 def write_xml(inpath, outpath, io_outpath):
     return partial(_write_xml, inpath, outpath, io_outpath)
-                  
+
 def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
     #with open(inpath, 'r') as f:
     #    tree = ET.parse(f)
@@ -233,7 +281,7 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                         direc, bus, side, iotrack = parse_name(src.text)
                         #newx, ioy, newside = mapSide(x, y, side)
                         #newside = Side((side.value + 2) % 4)
-                        
+
                         if side.value == 0:
                             ioside = Side(2)
                             iox = x + 1
@@ -285,7 +333,7 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                     sb_used = True
                 else:
                     sb.remove(ft)
-                    
+
             if not sb_used:
                 tile.remove(sb)
 
@@ -306,9 +354,9 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 if 'a' not in ioroute and 'out' not in ioroute:
                     raise RuntimeError('An invariant is broken...')
 
-                
+
                 iowname = ET.SubElement(io, 'wire_name')
-                
+
                 if iotype == 'source':
                     #print(ioroute['out'])
                     #_, _, side, track = parse_name(ioroute['out'])
@@ -317,7 +365,7 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                     #print(ioroute['a'])
                     #_, _, side, track = parse_name(ioroute['a'])
                     iowname.text = ioroute['a']
-                    
+
 
                 ioside_element = ET.SubElement(io, 'side')
 
@@ -326,7 +374,7 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 #    edge_side = 'S2'
                 #else:
                 #    edge_side = 'S3'
-                
+
                 ioside_element.text = str(ioside.value)
                 iotrack_element = ET.SubElement(io, 'track')
                 iotrack_element.text = str(iotrack)
@@ -334,7 +382,7 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 iocol = ET.SubElement(io, 'col')
                 iorow.text = str(ioy)
                 iocol.text = str(iox)
-                    
+
             op.text = op_text
 
     processed_xml = re.sub(r'"', r"'", ET.tostring(root, pretty_print=True).decode('utf-8'))

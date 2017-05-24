@@ -5,18 +5,19 @@ from functools import partial
 
 import argparse
 parser = argparse.ArgumentParser(description='Run place and route')
-parser.add_argument('df', metavar='<DESIGN_FILE>', help='Mapped coreir file')
-parser.add_argument('ff', metavar='<FABRIC_FILE>', help='XML Fabric file')
-parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'), 
-    help='output CGRA configuration in XML file with IO info')
-parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', 
-        help='output CGRA configuration in bitstream')
-parser.add_argument('--print', action='store_true', help='print CGRA configuration to stdout')
-parser.add_argument('--print_route', action='store_true', help='print routing information to stdout')
+parser.add_argument('design', metavar='<DESIGN_FILE>', help='Mapped coreir file')
+parser.add_argument('fabric', metavar='<FABRIC_FILE>', help='XML Fabric file')
+parser.add_argument('--coreir-libs', nargs='+', help='coreir libraries to load', dest='libs', default=())
+#parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'), help='output CGRA configuration in XML file with IO info')
+parser.add_argument('--print', action='store_true', help='equivelent to --print-place, --print-route')
+parser.add_argument('--print-place', action='store_true', dest='print_place', help='print placement information to stdout') 
+parser.add_argument('--print-route', action='store_true', dest='print_route', help='print routing information to stdout')
+parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', help='output CGRA configuration in bitstream')
+parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitstream with annotations')
 args = parser.parse_args()
 
-df = args.df
-ff = args.ff
+design_file = args.design
+fabric_file = args.fabric
 
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
@@ -28,13 +29,14 @@ ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, p
 # Once nets represent the whole tree of connections, this will be fixed
 # ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
-print("Loading design: {}".format(df))
-d = design.Design(*design.core2graph.load_core(df))
+print("Loading design: {}".format(design_file))
+modules, nets = design.core2graph.load_core(design_file, *args.libs)
+des = design.Design(modules, nets)
 
-print("Loading fabric: {}".format(ff))
-f = fabric.parse_xml(ff)
+print("Loading fabric: {}".format(fabric_file))
+fab = fabric.parse_xml(fabric_file)
 
-p = pnr.PNR(f, d)
+p = pnr.PNR(fab, des)
 
 print("Placing design...", end=' ')
 if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
@@ -54,21 +56,22 @@ else:
     print("!!!failure!!!")
     sys.exit(1)
 
-if args.xml:
-    cf, io = args.xml
-    print("Writing design to: {}".format(cf))
-    print("Writing io settings to: {}".format(io))
-    p.write_design(pnr.write_xml(ff, cf, io))
-
 if args.bitstream:
-    bf = args.bitstream 
-    print("Writing bitsream to: {}".format(bf))
-    p.write_design(pnr.write_bitstream(ff, bf))
+    bit_file = args.bitstream
+    print("Writing bitsream to: {}".format(bit_file))
+    p.write_design(pnr.write_bitstream(fabric_file, bit_file, False))
 
-if args.print:
+if args.annotate:
+    bit_file = args.annotate
+    print("Writing bitsream to: {}".format(bit_file))
+    p.write_design(pnr.write_bitstream(fabric_file, bit_file, True))
+
+    
+
+if args.print or args.print_place:
     print("\nPlacement info:")
-    p.write_design(pnr.write_debug(d))
+    p.write_design(pnr.write_debug(des))
 
-if args.print_route:
+if args.print or args.print_route:
     print("\nRouting info:")
-    p.write_design(pnr.write_route_debug(d))
+    p.write_design(pnr.write_route_debug(des))
