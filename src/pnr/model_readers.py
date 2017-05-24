@@ -1,6 +1,8 @@
 
 #hacky -- this is the same function as defined in pnr.constraints
-def _is_placeable(x) : return x.type_ in ('PE', 'IO')
+def _is_fused(x) : return x['fused']
+
+def _f_nfused(lst) : return filter(lambda x: not _is_fused(x), lst)
 
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
@@ -18,7 +20,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
         dst_port = net.dst_port
         # contract nets with unplaced modules
         # Note: This results in repeated constraints
-        if not _is_placeable(src):
+        if _is_fused(src):
             assert len(src.inputs) <= 1
             if src.inputs:
                 srcnet = next(iter(src.inputs.values()))
@@ -27,7 +29,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             else:
                 continue
 
-        if not _is_placeable(dst):
+        if _is_fused(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
                 dstnet = next(iter(dst.outputs.values()))
