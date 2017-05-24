@@ -7,9 +7,9 @@ from smt_switch import functions
 And = functions.And()
 Or = functions.Or()
 
-def _is_placeable(x) : return x.type_ in ('PE', 'IO')
+def _is_fused(x) : return x['fused']
 
-_f_placable = partial(filter, _is_placeable)
+def _f_nfused(lst) : return filter(lambda x: not _is_fused(x), lst)
 
 
 def init_positions(position_type):
@@ -19,7 +19,7 @@ def init_positions(position_type):
     '''
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in _f_placable(design.modules):
+        for module in _f_nfused(design.modules):
             if module not in vars:
                 p = position_type(module.name, fabric)
                 vars[module] = p
@@ -29,7 +29,7 @@ def init_positions(position_type):
 
 def assert_pinned(fabric, design, state, vars, solver):
     constraints = []
-    for module in _f_placable(design.modules):
+    for module in _f_nfused(design.modules):
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
@@ -37,9 +37,9 @@ def assert_pinned(fabric, design, state, vars, solver):
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
-    for m1 in _f_placable(design.modules):
-        for m2 in _f_placable(design.modules):
-            if m1 != m2:
+    for m1 in _f_nfused(design.modules):
+        for m2 in _f_nfused(design.modules):
+            if m1 != m2 and m1['resource'] == m2['resource']:
                 constraints.append(vars[m1].flat != vars[m2].flat)
     return And(constraints)
 
@@ -48,25 +48,26 @@ def nearest_neighbor(fabric, design, state, vars, solver):
     for net in design.nets:
         src = net.src
         dst = net.dst
-        if not _is_placeable(src):
+        if _is_fused(src):
             assert len(src.inputs) <= 1
             if src.inputs:
                 src = next(iter(src.inputs.values())).src
-                assert _is_placeable(src)
+                assert not _is_fused(src)
             else:
                 continue
 
-        if not _is_placeable(dst):
+        if _is_fused(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
                 dst = next(iter(dst.outputs.values())).dst
-                assert _is_placeable(dst)
+                assert not _is_fused(dst)
             else:
                 continue
 
         c = []
         dx = vars[src].delta_x_fun(vars[dst])
         dy = vars[src].delta_y_fun(vars[dst])
+        #c.append(And(dx(0), dy(0)))
         c.append(And(dx(0), dy(1)))
         c.append(And(dx(1), dy(0)))
         constraints.append(Or(c))
@@ -75,7 +76,7 @@ def nearest_neighbor(fabric, design, state, vars, solver):
 
 def pin_IO(fabric, design, state, vars, solver):
     constraints = []
-    for module in filter(lambda m: m.type_ == 'IO', design.modules):
+    for module in filter(lambda m: m['type'] == 'IO', design.modules):
         pos = vars[module]
         c = [pos.x == pos.encode_x(0),
              pos.y == pos.encode_y(0)]
@@ -110,7 +111,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst_port = net.dst_port
         # contract nets with unplaced modules
         # Note: This results in repeated constraints
-        if not _is_placeable(src):
+        if not not _is_fused(src):
             assert len(src.inputs) <= 1
             if src.inputs:
                 srcnet = next(iter(src.inputs.values()))
@@ -119,7 +120,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             else:
                 continue
 
-        if not _is_placeable(dst):
+        if not not _is_fused(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
                 dstnet = next(iter(dst.outputs.values()))
@@ -135,11 +136,11 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
 
     # make sure modules that aren't connected are not connected
-    for m1 in _f_placable(design.modules):
+    for m1 in _f_nfused(design.modules):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
-            if not _is_placeable(src):
+            if _is_fused(src):
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))
@@ -150,7 +151,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             contracted_inputs.add(src)
 
         m1_pos = p_state[m1][0]
-        for m2 in _f_placable(design.modules):
+        for m2 in _f_nfused(design.modules):
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
 
@@ -175,7 +176,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst_port = net.dst_port
         # contract nets with unplaced modules
         # Note: This results in repeated constraints
-        if not _is_placeable(src):
+        if not not _is_fused(src):
             assert len(src.inputs) <= 1
             if src.inputs:
                 srcnet = next(iter(src.inputs.values()))
@@ -184,7 +185,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
             else:
                 continue
 
-        if not _is_placeable(dst):
+        if not not _is_fused(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
                 dstnet = next(iter(dst.outputs.values()))
@@ -223,7 +224,7 @@ def dist_limit(dist_factor):
             dst_port = net.dst_port
             # contract nets with unplaced modules
             # Note: This results in repeated constraints
-            if not _is_placeable(src):
+            if not not _is_fused(src):
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))
@@ -232,7 +233,7 @@ def dist_limit(dist_factor):
                 else:
                     continue
 
-            if not _is_placeable(dst):
+            if not not _is_fused(dst):
                 assert len(dst.outputs) <= 1
                 if dst.outputs:
                     dstnet = next(iter(dst.outputs.values()))
@@ -357,7 +358,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
             dst = net.dst
             # contract nets with unplaced modules
             # Note: This results in repeated constraints
-            if not _is_placeable(src):
+            if not not _is_fused(src):
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))
@@ -365,7 +366,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
                 else:
                     continue
 
-            if not _is_placeable(dst):
+            if not not _is_fused(dst):
                 assert len(dst.outputs) <= 1
                 if dst.outputs:
                     dstnet = next(iter(dst.outputs.values()))

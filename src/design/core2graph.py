@@ -79,6 +79,10 @@ PORT_TRANSLATION = {
         'in'  : 'a',
         'out' : 'out',
     },
+    'Reg' : {
+        'in'  : 'a',
+        'out' : 'out',
+    },
 }
 
 

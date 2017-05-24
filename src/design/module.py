@@ -1,12 +1,11 @@
 from util import NamedIDObject
 
 class Module(NamedIDObject):
-    def __init__(self, name, type_, config):
+    def __init__(self, name, attributes=dict()):
         super().__init__(name)
-        self._type_ = type_
-        self._config = config
         self._inputs = dict()
         self._outputs = dict()
+        self._attributes = dict()
 
     @property
     def inputs(self):
@@ -23,12 +22,14 @@ class Module(NamedIDObject):
         return self._outputs
 
     @property
-    def type_(self):
-        return self._type_
+    def attributes(self):
+        return self._attributes
 
-    @property
-    def config(self):
-        return self._config
+    def __getitem__(self, key):
+        return self.attributes[key]
+
+    def __setitem__(self, key, value):
+        self.attributes[key] = value
 
     def _add_input(self, src, port):
         self._inputs[port] = src
