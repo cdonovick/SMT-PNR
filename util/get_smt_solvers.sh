@@ -1,6 +1,6 @@
 #!/bin/bash
 
-solver_dirs=(cvc4 z3 monosat)
+solver_dirs=(cvc4 z3 monosat boolector)
 
 echo "Scanning for solvers"
 
@@ -35,3 +35,6 @@ pip install -e smt_solvers/monosat/python
 export PATH=$PATH:`pwd`/smt_solvers/z3/bin/
 export PYTHONPATH=$PYTHONPATH:`pwd`/smt_solvers/z3/bin/python/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/smt_solvers/z3/bin
+
+export PYTHONPATH=$PYTHONPATH:`pwd`/smt_solvers/boolector
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/smt_solvers/boolector
