@@ -10,7 +10,7 @@ parser.add_argument('fabric', metavar='<FABRIC_FILE>', help='XML Fabric file')
 parser.add_argument('--coreir-libs', nargs='+', help='coreir libraries to load', dest='libs', default=())
 #parser.add_argument('--xml', nargs=2, metavar=('<PLACEMENT_FILE>', '<IO_FILE>'), help='output CGRA configuration in XML file with IO info')
 parser.add_argument('--print', action='store_true', help='equivelent to --print-place, --print-route')
-parser.add_argument('--print-place', action='store_true', dest='print_place', help='print placement information to stdout') 
+parser.add_argument('--print-place', action='store_true', dest='print_place', help='print placement information to stdout')
 parser.add_argument('--print-route', action='store_true', dest='print_route', help='print routing information to stdout')
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', help='output CGRA configuration in bitstream')
 parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitstream with annotations')
@@ -66,7 +66,7 @@ if args.annotate:
     print("Writing bitsream to: {}".format(bit_file))
     p.write_design(pnr.write_bitstream(fabric_file, bit_file, True))
 
-    
+
 
 if args.print or args.print_place:
     print("\nPlacement info:")
