@@ -49,6 +49,7 @@ def nearest_neighbor(fabric, design, state, vars, solver):
         src = net.src
         dst = net.dst
         if _is_fused(src):
+            #fan in is not a problem because it has to be done by a PE
             assert len(src.inputs) <= 1
             if src.inputs:
                 src = next(iter(src.inputs.values())).src
@@ -57,20 +58,25 @@ def nearest_neighbor(fabric, design, state, vars, solver):
                 continue
 
         if _is_fused(dst):
-            assert len(dst.outputs) <= 1
+            #cannot assert the following
+            #src->reg->fanout->(PE1, PE2, PE3)
+            #assert len(dst.outputs) <= 1
             if dst.outputs:
-                dst = next(iter(dst.outputs.values())).dst
-                assert not _is_fused(dst)
+                dst_s = set(x.dst for x in dst.outputs.values())
             else:
                 continue
+        else:
+            dst_s = {dst}
 
-        c = []
-        dx = vars[src].delta_x_fun(vars[dst])
-        dy = vars[src].delta_y_fun(vars[dst])
-        #c.append(And(dx(0), dy(0)))
-        c.append(And(dx(0), dy(1)))
-        c.append(And(dx(1), dy(0)))
-        constraints.append(Or(c))
+        for dst_i in dst_s:
+            assert not _is_fused(dst_i)
+            c = []
+            dx = vars[src].delta_x_fun(vars[dst_i])
+            dy = vars[src].delta_y_fun(vars[dst_i])
+            #c.append(And(dx(0), dy(0)))
+            c.append(And(dx(0), dy(1)))
+            c.append(And(dx(1), dy(0)))
+            constraints.append(Or(c))
 
     return And(constraints)
 
@@ -111,7 +117,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst_port = net.dst_port
         # contract nets with unplaced modules
         # Note: This results in repeated constraints
-        if not not _is_fused(src):
+        if _is_fused(src):
             assert len(src.inputs) <= 1
             if src.inputs:
                 srcnet = next(iter(src.inputs.values()))
@@ -120,7 +126,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             else:
                 continue
 
-        if not not _is_fused(dst):
+        if _is_fused(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
                 dstnet = next(iter(dst.outputs.values()))
@@ -176,7 +182,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst_port = net.dst_port
         # contract nets with unplaced modules
         # Note: This results in repeated constraints
-        if not not _is_fused(src):
+        if _is_fused(src):
             assert len(src.inputs) <= 1
             if src.inputs:
                 srcnet = next(iter(src.inputs.values()))
@@ -185,7 +191,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
             else:
                 continue
 
-        if not not _is_fused(dst):
+        if _is_fused(dst):
             assert len(dst.outputs) <= 1
             if dst.outputs:
                 dstnet = next(iter(dst.outputs.values()))
@@ -224,7 +230,7 @@ def dist_limit(dist_factor):
             dst_port = net.dst_port
             # contract nets with unplaced modules
             # Note: This results in repeated constraints
-            if not not _is_fused(src):
+            if _is_fused(src):
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))
@@ -233,7 +239,7 @@ def dist_limit(dist_factor):
                 else:
                     continue
 
-            if not not _is_fused(dst):
+            if _is_fused(dst):
                 assert len(dst.outputs) <= 1
                 if dst.outputs:
                     dstnet = next(iter(dst.outputs.values()))
@@ -358,7 +364,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
             dst = net.dst
             # contract nets with unplaced modules
             # Note: This results in repeated constraints
-            if not not _is_fused(src):
+            if _is_fused(src):
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))
@@ -366,7 +372,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
                 else:
                     continue
 
-            if not not _is_fused(dst):
+            if _is_fused(dst):
                 assert len(dst.outputs) <= 1
                 if dst.outputs:
                     dstnet = next(iter(dst.outputs.values()))

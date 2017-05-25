@@ -224,12 +224,12 @@ def _write_debug(design, output, p_state, r_state):
         for module in design.modules:
             try:
                 f.write("module: {} @ ({}, {})\n".format(module.name, *p_state[module][0]))
-                f.write("inputs: {}\n".format(', '.join(d.src.name for d in module.inputs.values())))
-                f.write("outputs: {}\n".format(', '.join(d.dst.name for d in module.outputs.values())))
-                f.write("\n")
             except (KeyError, IndexError):
                 f.write("module: {} is not placed\n".format(module.name))
-                f.write("\n")
+
+            f.write("inputs: {}\n".format(', '.join(d.src.name for d in module.inputs.values())))
+            f.write("outputs: {}\n".format(', '.join(d.dst.name for d in module.outputs.values())))
+            f.write("\n")
 
 #        for net in design.nets:
 #            f.write("{} -> {}\n".format(net.src.name, net.dst.name))
