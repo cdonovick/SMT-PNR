@@ -11,6 +11,7 @@ class Design(NamedIDObject):
         super().__init__(name)
         self._modules = set()
         self._nets = set()
+        self._v_net_cache = dict()
 
         mods = SortedDict()
         for mod_name,args in modules.items():
@@ -74,5 +75,9 @@ class Design(NamedIDObject):
                     assert s_net.width == d_net.width
                     assert not s_net.src['fused']
                     assert not d_net.dst['fused']
-                    yield Net(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)
+                    try:
+                        yield self._v_net_cache[(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)]
+                    except KeyError:
+                        self._v_net_cache[(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)] = Net(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)
+                        yield self._v_net_cache[(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)]
 
