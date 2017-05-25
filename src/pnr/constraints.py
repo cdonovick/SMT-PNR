@@ -85,31 +85,11 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     # TODO: Fix this so doesn't assume only connected to one input port
     # there might be weird cases where you want to drive multiple inputs
     # of dst module with one output
-    for net in design.nets:
+    for net in design.virtual_nets:
         src = net.src
         dst = net.dst
         src_port = net.src_port
         dst_port = net.dst_port
-        # contract nets with unplaced modules
-        # Note: This results in repeated constraints
-        if _is_fused(src):
-            assert len(src.inputs) <= 1
-            if src.inputs:
-                srcnet = next(iter(src.inputs.values()))
-                src = srcnet.src
-                src_port = srcnet.src_port
-            else:
-                continue
-
-        if _is_fused(dst):
-            assert len(dst.outputs) <= 1
-            if dst.outputs:
-                dstnet = next(iter(dst.outputs.values()))
-                dst = dstnet.dst
-                dst_port = dstnet.dst_port
-            else:
-                continue
-
         src_pos = p_state[src][0]
         dst_pos = p_state[dst][0]
 
@@ -117,11 +97,11 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
 
     # make sure modules that aren't connected are not connected
-    for m1 in _f_nfused(design.modules):
+    for m1 in design.nf_modules:
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
-            if _is_fused(src):
+            if src['fused']:
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))
@@ -130,9 +110,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
                     continue
             # add the (potentially contracted) src
             contracted_inputs.add(src)
-
         m1_pos = p_state[m1][0]
-        for m2 in _f_nfused(design.modules):
+        for m2 in design.nf_modules:
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
 
@@ -150,31 +129,11 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     reaches = []
     sources = fabric[layer].sources
     sinks = fabric[layer].sinks
-    for net in design.nets:
+    for net in design.virtual_nets:
         src = net.src
         dst = net.dst
         src_port = net.src_port
         dst_port = net.dst_port
-        # contract nets with unplaced modules
-        # Note: This results in repeated constraints
-        if _is_fused(src):
-            assert len(src.inputs) <= 1
-            if src.inputs:
-                srcnet = next(iter(src.inputs.values()))
-                src = srcnet.src
-                src_port = srcnet.src_port
-            else:
-                continue
-
-        if _is_fused(dst):
-            assert len(dst.outputs) <= 1
-            if dst.outputs:
-                dstnet = next(iter(dst.outputs.values()))
-                dst = dstnet.dst
-                dst_port = dstnet.dst_port
-            else:
-                continue
-
         src_pos = p_state[src][0]
         dst_pos = p_state[dst][0]
         src_pe = sources[src_pos + (src_port,)]
@@ -198,31 +157,11 @@ def dist_limit(dist_factor):
         constraints = []
         sources = fabric[layer].sources
         sinks = fabric[layer].sinks
-        for net in design.nets:
+        for net in design.virtual_nets:
             src = net.src
             dst = net.dst
             src_port = net.src_port
             dst_port = net.dst_port
-            # contract nets with unplaced modules
-            # Note: This results in repeated constraints
-            if _is_fused(src):
-                assert len(src.inputs) <= 1
-                if src.inputs:
-                    srcnet = next(iter(src.inputs.values()))
-                    src = srcnet.src
-                    src_port = srcnet.src_port
-                else:
-                    continue
-
-            if _is_fused(dst):
-                assert len(dst.outputs) <= 1
-                if dst.outputs:
-                    dstnet = next(iter(dst.outputs.values()))
-                    dst = dstnet.dst
-                    dst_port = dstnet.dst_port
-                else:
-                    continue
-
             src_pos = p_state[src][0]
             dst_pos = p_state[dst][0]
             src_pe = sources[src_pos + (src_port,)]
@@ -245,7 +184,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     # note: in this case, all point to the same graph
     # this allows us to reuse constraints such as dist_limit and use the same model_reader
     solver.add_graph()
-    for net in design.nets:
+    for net in design.virtual_nets:
         vars[net] = solver.graphs[0]
 
     graph = solver.graphs[0]  # only one graph in this encoding
@@ -292,7 +231,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     # create graphs for each net
     node_dict = dict()  # used to keep track of nodes in each graph
-    for net in design.nets:
+    for net in design.virtual_nets:
         vars[net] = solver.add_graph()
         node_dict[net] = dict()
 
@@ -303,7 +242,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
     for x in range(fabric.width):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
-                for net in design.nets:
+                for net in design.virtual_nets:
                     src = net.src
                     dst = net.dst
                     # currently broken because have two nets for one connection
@@ -323,38 +262,20 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         # naming scheme is (x, y)Side_direction[track]
         if src not in vars:
-            for net in design.nets:
+            for net in design.virtual_nets:
                 u = vars[net].addNode(src.name)
                 node_dict[net][u] = solver.false()
             vars[src] = u
         if dst not in vars:
-            for net in design.nets:
+            for net in design.virtual_nets:
                 v = vars[net].addNode(dst.name)
                 node_dict[net][v] = solver.false()
             vars[dst] = v
 
         # keep track of whether a node is 'active' based on connected edges
-        for net in design.nets:
+        for net in design.virtual_nets:
             src = net.src
             dst = net.dst
-            # contract nets with unplaced modules
-            # Note: This results in repeated constraints
-            if _is_fused(src):
-                assert len(src.inputs) <= 1
-                if src.inputs:
-                    srcnet = next(iter(src.inputs.values()))
-                    src = srcnet.src
-                else:
-                    continue
-
-            if _is_fused(dst):
-                assert len(dst.outputs) <= 1
-                if dst.outputs:
-                    dstnet = next(iter(dst.outputs.values()))
-                    dst = dstnet.dst
-                else:
-                    continue
-
             e = vars[net].addEdge(vars[src], vars[dst])
             node_dict[net][vars[src]] = solver.Or(node_dict[net][vars[src]], e)
             node_dict[net][vars[dst]] = solver.Or(node_dict[net][vars[dst]], e)
@@ -366,7 +287,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
     # now enforce that each node is only used in one of the graphs
     # Note: all graphs have same nodes, so can get them from any graph
     for node in range(0, solver.graphs[0].nodes):
-        node_in_graphs = [node_dict[net][node] for net in design.nets]
+        node_in_graphs = [node_dict[net][node] for net in design.virtual_nets]
         solver.AssertAtMostOne(node_in_graphs)
 
     return solver.And([])

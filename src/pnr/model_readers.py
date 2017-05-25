@@ -13,30 +13,11 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
     sources = fabric[16].sources
     sinks = fabric[16].sinks
 
-    for net in design.nets:
+    for net in design.virtual_nets:
         src = net.src
         dst = net.dst
         src_port = net.src_port
         dst_port = net.dst_port
-        # contract nets with unplaced modules
-        # Note: This results in repeated constraints
-        if _is_fused(src):
-            assert len(src.inputs) <= 1
-            if src.inputs:
-                srcnet = next(iter(src.inputs.values()))
-                src = srcnet.src
-                src_port = srcnet.src_port
-            else:
-                continue
-
-        if _is_fused(dst):
-            assert len(dst.outputs) <= 1
-            if dst.outputs:
-                dstnet = next(iter(dst.outputs.values()))
-                dst = dstnet.dst
-                dst_port = dstnet.dst_port
-            else:
-                continue
 
         graph = vars[net]
 

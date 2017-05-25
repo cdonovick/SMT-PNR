@@ -49,13 +49,13 @@ else:
         print("!!!failure!!!")
         sys.exit(1)
 
-#print("Routing design...", end=' ')
-#if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
-#    print("success!")
-#else:
-#    print("!!!failure!!!")
-#    sys.exit(1)
-#
+print("Routing design...", end=' ')
+if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
+    print("success!")
+else:
+    print("!!!failure!!!")
+    sys.exit(1)
+
 if args.bitstream:
     bit_file = args.bitstream
     print("Writing bitsream to: {}".format(bit_file))
