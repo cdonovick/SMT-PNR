@@ -5,7 +5,7 @@ class Module(NamedIDObject):
         super().__init__(name)
         self._inputs = dict()
         self._outputs = dict()
-        self._attributes = dict()
+        self._attributes = attributes
 
     @property
     def inputs(self):
