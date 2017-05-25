@@ -107,7 +107,7 @@ nn
         encode :: (int, int) -> z3.BitVec
         '''
         pass
-    
+
     @abstractmethod
     def encode_x(self, x):
         '''
@@ -225,7 +225,7 @@ class BVXY(PositionBase):
         if 2**(self.fabric.cols.bit_length()-1) == self.fabric.cols:
             #adding extra bit to avoid overflow adjacency
             self._x_bits    = self.fabric.cols.bit_length()
-            self._is_x_pow2 = True 
+            self._is_x_pow2 = True
         else:
             self._x_bits    = self.fabric.cols.bit_length()
             self._is_x_pow2 = False
@@ -236,7 +236,7 @@ class BVXY(PositionBase):
         else:
             self._y_bits    = self.fabric.rows.bit_length()
             self._is_y_pow2 = False
-    
+
         self._x = solver.declare_const(self.name + '_x', sorts.BitVec(self._x_bits))
         self._y = solver.declare_const(self.name + '_y', sorts.BitVec(self._y_bits))
 

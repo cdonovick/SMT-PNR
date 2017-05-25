@@ -18,7 +18,7 @@ class PNR:
 
         self._place_vars = BiDict()
         self._route_vars = BiDict()
-        
+
         self._place_solver = PLACE_SOLVER
         self._route_solver = _ROUTE_SOLVER
 
@@ -27,7 +27,7 @@ class PNR:
 
     def pin_module(self, module, placement):
         self._place_state[module] = placement
-    
+
     def pin_net(self, net, placement):
         pass
 
@@ -37,14 +37,14 @@ class PNR:
             c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.add(c)
 
-        
+
         if not self._place_solver.check_sat():
             self._place_solver.reset()
             # set options
             self._place_solver.set_option('produce-models', 'true')
             self._place_vars = BiDict()
             return False
-        
+
         model_reader(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
 
         return True
@@ -59,8 +59,8 @@ class PNR:
 
         if not self._route_solver.solve():
             return False
-        
-        
+
+
         model_reader(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver)
         return True
 
@@ -74,5 +74,5 @@ class PNR:
     @property
     def design(self):
         return self._design
-    
+
 

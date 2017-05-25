@@ -31,7 +31,7 @@ class BiMultiDict(MutableMapping):
                 del self._i[val]
 
         del self._d[key]
-    
+
     def __contains__(self, key):
         return key in self._d
 
@@ -59,7 +59,7 @@ class BiMultiDict(MutableMapping):
 
     def _attest(self):
         for k,vs in self._d.items():
-            for v in vs: 
+            for v in vs:
                 assert k in self._i[v]
 
         for k,vs in self._i.items():
@@ -112,7 +112,7 @@ class BiDict(MutableMapping):
 
     def _attest(self):
         for k,vs in self._d.items():
-            for v in vs: 
+            for v in vs:
                 assert k in self._i[v]
 
         for k,vs in self._i.items():

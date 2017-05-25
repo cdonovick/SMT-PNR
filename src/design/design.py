@@ -35,7 +35,7 @@ class Design(NamedIDObject):
             if (src['resource'], dst['resource']) in _fusable:
                 src['fused'] = True
                 src['resource'] = None
-            
+
             self.nets.add(Net(src, src_port, dst, dst_port, width))
 
     @property
