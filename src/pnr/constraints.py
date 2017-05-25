@@ -7,9 +7,6 @@ from smt_switch import functions
 And = functions.And()
 Or = functions.Or()
 
-def _is_fused(x) : return x['fused']
-
-def _f_nfused(lst) : return filter(lambda x: not _is_fused(x), lst)
 
 
 def init_positions(position_type):
@@ -19,7 +16,7 @@ def init_positions(position_type):
     '''
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in _f_nfused(design.modules):
+        for module in design.nf_modules:
             if module not in vars:
                 p = position_type(module.name, fabric)
                 vars[module] = p
@@ -29,7 +26,7 @@ def init_positions(position_type):
 
 def assert_pinned(fabric, design, state, vars, solver):
     constraints = []
-    for module in _f_nfused(design.modules):
+    for module in design.nf_modules:
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
@@ -37,46 +34,24 @@ def assert_pinned(fabric, design, state, vars, solver):
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
-    for m1 in _f_nfused(design.modules):
-        for m2 in _f_nfused(design.modules):
+    for m1 in design.nf_modules:
+        for m2 in design.nf_modules:
             if m1 != m2 and m1['resource'] == m2['resource']:
                 constraints.append(vars[m1].flat != vars[m2].flat)
     return And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     constraints = []
-    for net in design.nets:
+    for net in design.virtual_nets:
         src = net.src
         dst = net.dst
-        if _is_fused(src):
-            #fan in is not a problem because it has to be done by a PE
-            assert len(src.inputs) <= 1
-            if src.inputs:
-                src = next(iter(src.inputs.values())).src
-                assert not _is_fused(src)
-            else:
-                continue
-
-        if _is_fused(dst):
-            #cannot assert the following
-            #src->reg->fanout->(PE1, PE2, PE3)
-            #assert len(dst.outputs) <= 1
-            if dst.outputs:
-                dst_s = set(x.dst for x in dst.outputs.values())
-            else:
-                continue
-        else:
-            dst_s = {dst}
-
-        for dst_i in dst_s:
-            assert not _is_fused(dst_i)
-            c = []
-            dx = vars[src].delta_x_fun(vars[dst_i])
-            dy = vars[src].delta_y_fun(vars[dst_i])
-            #c.append(And(dx(0), dy(0)))
-            c.append(And(dx(0), dy(1)))
-            c.append(And(dx(1), dy(0)))
-            constraints.append(Or(c))
+        c = []
+        dx = vars[src].delta_x_fun(vars[dst])
+        dy = vars[src].delta_y_fun(vars[dst])
+        #c.append(And(dx(0), dy(0)))
+        c.append(And(dx(0), dy(1)))
+        c.append(And(dx(1), dy(0)))
+        constraints.append(Or(c))
 
     return And(constraints)
 

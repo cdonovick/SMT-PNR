@@ -20,7 +20,6 @@ addons:
             - cmake
             - zlib1g
             - zlib1g-dev
-            - graphviz-dev
             - git
             - g++-4.9
             - build-essential
@@ -50,7 +49,7 @@ install:
     - export COREIRHOME=$PWD
     - export COREIR=$PWD
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/bin:$PWD/lib
-    - make install py
+    - make -j 2 install py
     #- make -C src
     #- make -C src ../build/coreir.so  # For bindings tests
     #- make -C tests

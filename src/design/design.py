@@ -47,3 +47,32 @@ class Design(NamedIDObject):
         return self._nets
 
 
+    @property
+    def nf_modules(self):
+        yield from filter(lambda x : not x['fused'], self.modules)
+
+    @property
+    def f_modules(self):
+        yield from filter(lambda x : x['fused'], self.modules)
+
+    @property
+    def virtual_nets(self):
+        s = set()
+        for net in self.nets:
+            if net.src['fused']:
+                src_s = (x for x in net.src.inputs.values())
+            else:
+                src_s = (net,)
+
+            if net.dst['fused']:
+                dst_s = (x for x in net.dst.outputs.values())
+            else:
+                dst_s = (net,)
+
+            for s_net in src_s:
+                for d_net in dst_s:
+                    assert s_net.width == d_net.width
+                    assert not s_net.src['fused']
+                    assert not d_net.dst['fused']
+                    yield Net(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)
+
