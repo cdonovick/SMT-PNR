@@ -245,7 +245,7 @@ def _write_route_debug(design, output, p_state, r_state):
        which is unfortunately verbose...
     '''
     with smart_open(output) as f:
-        for net in design.nets:
+        for net in design.virtual_nets:
             f.write('{} -> {}:\n'.format(net.src.name, net.dst.name))
             f.write(str(r_state[(net, 'debug')]))
             f.write("\n")
