@@ -18,6 +18,7 @@ class Port(NamedIDObject):
         super().__init__('({}, {}){}_{}[{}]'.format(x, y, side.name, direction, str(track)))
         self._x = x
         self._y = y
+        self._side = side
 
     @property
     def x(self):
@@ -26,6 +27,10 @@ class Port(NamedIDObject):
     @property
     def y(self):
         return self._y
+
+    @property
+    def side(self):
+        return self._side
 
     @property
     def loc(self):
