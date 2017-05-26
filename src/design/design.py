@@ -16,15 +16,15 @@ class Design(NamedIDObject):
         mods = SortedDict()
         for mod_name,args in modules.items():
             mod = Module(mod_name)
-            mod['type'] = args['type']
-            mod['fused'] = False
+            mod.type_ = args['type']
+            mod.fused = False
             if args['conf'] is not None:
-                mod['config'] = args['conf']
+                mod.config = args['conf']
 
-            if args['type'] in ('PE', 'IO'):
-                mod['resource'] = 'PE'
+            if mod.type_ in ('PE', 'IO'):
+                mod.resource = 'PE'
             else:
-                mod['resource'] = args['type']
+                mod.resource = mod.type_
 
             self.modules.add(mod)
             mods[mod_name] = mod
@@ -33,9 +33,9 @@ class Design(NamedIDObject):
 
             src = mods[src_name]
             dst = mods[dst_name]
-            if (src['resource'], dst['resource']) in _fusable:
-                src['fused'] = True
-                src['resource'] = None
+            if (src.type_, dst.type_) in _fusable:
+                src.fused = True
+                src.resource = None
 
             self.nets.add(Net(src, src_port, dst, dst_port, width))
 
@@ -50,34 +50,31 @@ class Design(NamedIDObject):
 
     @property
     def nf_modules(self):
-        yield from filter(lambda x : not x['fused'], self.modules)
+        yield from filter(lambda x : not x.fused, self.modules)
 
     @property
     def f_modules(self):
-        yield from filter(lambda x : x['fused'], self.modules)
+        yield from filter(lambda x : x.fused, self.modules)
 
     @property
     def virtual_nets(self):
-        s = set()
-        for net in self.nets:
-            if net.src['fused']:
-                src_s = (x for x in net.src.inputs.values())
+        nets = set((n.src, n.src_port, n.dst, n.dst_port, n.width, 0)
+                for n in self.nets
+                if (n.src.type_ != 'Reg'  and n.src.type_ != 'Const'))
+        while nets:
+            n = nets.pop()
+            if n[2].type_ != 'Reg':
+                assert n[2].type_ != 'Const', "Const cannot be dst"
+                try:
+                    yield self._v_net_cache[n]
+                except KeyError:
+                    t = Net(*n[:-1])
+                    t.length = n[-1]
+                    self._v_net_cache[n] = t
+                    yield t
             else:
-                src_s = (net,)
-
-            if net.dst['fused']:
-                dst_s = (x for x in net.dst.outputs.values())
-            else:
-                dst_s = (net,)
-
-            for s_net in src_s:
-                for d_net in dst_s:
-                    assert s_net.width == d_net.width
-                    assert not s_net.src['fused']
-                    assert not d_net.dst['fused']
-                    try:
-                        yield self._v_net_cache[(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)]
-                    except KeyError:
-                        self._v_net_cache[(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)] = Net(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)
-                        yield self._v_net_cache[(s_net.src, s_net.src_port, d_net.dst, d_net.dst_port, s_net.width)]
+                for dst_net in n[2].outputs.values():
+                    assert dst_net.width == n[4]
+                    #print("Fusing ({a}->{b}), ({b}->{c}) to ({a}->{c})".format(a=n[0].name, b=n[2].name, c=dst_net.dst.name))
+                    nets.add((n[0], n[1], dst_net.dst, dst_net.dst_port, n[4], n[5] + (0 if n[2].fused else 1)))
 
