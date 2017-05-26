@@ -3,6 +3,7 @@ Constraint generators
 '''
 from functools import partial
 from smt_switch import functions
+from fabric import Side
 
 And = functions.And()
 Or = functions.Or()
@@ -211,6 +212,8 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
         src = track.src
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
+        if src.side == Side.PE and (src.x, src.y) not in p_state.I:
+            continue
         if src not in vars:
             vars[src] = graph.addNode(src.name)
         if dst not in vars:
