@@ -275,7 +275,9 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 snk = mux.get('snk')
                 mux_used = False
                 for src in mux.findall('src'):
-                    if (x, y, 'CB', snk, src.text) in r_state.I:
+                    # construct a RoutedTrack to compare to r_state.I tracks
+                    rt = RoutedTrack(x, y, 'CB', snk, src.text)
+                    if rt in r_state.I:
                         cb_used = True
                         mux_used = True
                         direc, bus, side, iotrack = parse_name(src.text)
@@ -312,7 +314,9 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 snk = mux.get('snk')
                 mux_used = False
                 for src in mux.findall('src'):
-                    if (x, y, 'SB', snk, src.text) in r_state.I:
+                    # create a RoutedTrack to compare to routed tracks in r_state.I
+                    rt = RoutedTrack(x, y, 'SB', snk, src.text)
+                    if rt in r_state.I:
                         sb_used = True
                         mux_used = True
                         if src.text == 'pe_out_res':
@@ -329,7 +333,8 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
             for ft in sb.findall('ft'):
                 snk = ft.get('snk')
                 src = ft.find('src')
-                if (x, y, 'SB', snk, src.text) in r_state.I:
+                rt = RoutedTrack(x, y, 'SB', snk, src.text)
+                if rt in r_state.I:
                     sb_used = True
                 else:
                     sb.remove(ft)
