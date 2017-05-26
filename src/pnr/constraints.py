@@ -36,7 +36,7 @@ def distinct(fabric, design, state, vars, solver):
     constraints = []
     for m1 in design.nf_modules:
         for m2 in design.nf_modules:
-            if m1 != m2 and m1['resource'] == m2['resource']:
+            if m1 != m2 and m1.resource == m2.resource:
                 constraints.append(vars[m1].flat != vars[m2].flat)
     return And(constraints)
 
@@ -57,7 +57,7 @@ def nearest_neighbor(fabric, design, state, vars, solver):
 
 def pin_IO(fabric, design, state, vars, solver):
     constraints = []
-    for module in filter(lambda m: m['type'] == 'IO', design.modules):
+    for module in filter(lambda m: m.type_ == 'IO', design.modules):
         pos = vars[module]
         c = [pos.x == pos.encode_x(0),
              pos.y == pos.encode_y(0)]
@@ -101,7 +101,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
-            if src['fused']:
+            if src.fused:
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))

@@ -5,7 +5,6 @@ class Module(NamedIDObject):
         super().__init__(name)
         self._inputs = dict()
         self._outputs = dict()
-        self._attributes = dict()
 
     @property
     def inputs(self):
@@ -21,15 +20,6 @@ class Module(NamedIDObject):
         '''
         return self._outputs
 
-    @property
-    def attributes(self):
-        return self._attributes
-
-    def __getitem__(self, key):
-        return self.attributes[key]
-
-    def __setitem__(self, key, value):
-        self.attributes[key] = value
 
     def _add_input(self, src, port):
         self._inputs[port] = src
