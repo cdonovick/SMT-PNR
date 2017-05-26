@@ -7,7 +7,7 @@ import sys
 import lxml.etree as ET
 
 from fabric.fabricfuns import parse_name, mapSide
-from fabric import Side, RoutedTrack
+from fabric import Side
 from util import smart_open, Mask
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream', 'write_xml']
@@ -92,7 +92,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
         for mux in cb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
-                if RoutedTrack(x, y, 'CB', snk, src.text) in r_state.I:
+                if (x, y, 'CB', snk, src.text) in r_state.I:
                     # reg == 0 for all cb
                     data[0] = int(src.get('sel'))
                     comment[0][(sel_w-1, 0)] = 'connect wire {} ({}) to {}'.format(data[0], src.text, snk)
@@ -108,7 +108,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
         for mux in sb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
-                if RoutedTrack(x, y, 'SB', snk, src.text) in r_state.I:
+                if (x, y, 'SB', snk, src.text) in r_state.I:
                     # if latched
                     # set bit 1 << (sb.get('configr') % 32) at data[configr//32]
                     configl = int(mux.get('configl'))
@@ -275,8 +275,8 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 snk = mux.get('snk')
                 mux_used = False
                 for src in mux.findall('src'):
-                    # construct a RoutedTrack to compare to r_state.I tracks
-                    if RoutedTrack(x, y, 'CB', snk, src.text) in r_state.I:
+                    # construct a  to compare to r_state.I tracks
+                    if (x, y, 'CB', snk, src.text) in r_state.I:
                         cb_used = True
                         mux_used = True
                         direc, bus, side, iotrack = parse_name(src.text)
@@ -313,8 +313,8 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
                 snk = mux.get('snk')
                 mux_used = False
                 for src in mux.findall('src'):
-                    # create a RoutedTrack to compare to routed tracks in r_state.I
-                    if RoutedTrack(x, y, 'SB', snk, src.text) in r_state.I:
+                    # create a  to compare to routed tracks in r_state.I
+                    if (x, y, 'SB', snk, src.text) in r_state.I:
                         sb_used = True
                         mux_used = True
                         if src.text == 'pe_out_res':
@@ -331,7 +331,7 @@ def _write_xml(inpath, outpath, io_outpath, p_state, r_state):
             for ft in sb.findall('ft'):
                 snk = ft.get('snk')
                 src = ft.find('src')
-                if RoutedTrack(x, y, 'SB', snk, src.text) in r_state.I:
+                if (x, y, 'SB', snk, src.text) in r_state.I:
                     sb_used = True
                 else:
                     sb.remove(ft)

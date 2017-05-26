@@ -23,7 +23,7 @@ fabric_file = args.fabric
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
 PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.excl_constraints, pnr.reachability, pnr.dist_limit(1)
+ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.dist_limit(1), pnr.excl_constraints
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
 # Once nets represent the whole tree of connections, this will be fixed
