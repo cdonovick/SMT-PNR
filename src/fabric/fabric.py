@@ -92,14 +92,15 @@ class RoutedTrack():
         self._src = src
 
     def __hash__(self):
-        return (self._x, self._y, self._resource_type, self._snk, self._src)
+        # relying on tuple's hash
+        return (self._x, self._y, self._resource_type, self._snk, self._src).__hash__()
 
     def __eq__(self, other):
         return self._x == other._x and \
                self._y == other._y and \
                self._resource_type == other._resource_type and \
                self._snk == other._snk and \
-               self._src = other._src
+               self._src == other._src
 
 class FabricLayer:
     def __init__(self, sources, sinks, routable, tracks):
