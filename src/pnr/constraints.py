@@ -111,7 +111,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
 
     # make sure modules that aren't connected are not connected
-    for m1 in design.modules_with_attr_val('fused', False):
+    for m1 in design.modules_with_attr_val('resource', 'PE'):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -125,7 +125,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             # add the (potentially contracted) src
             contracted_inputs.add(src)
         m1_pos = p_state[m1][0]
-        for m2 in design.modules_with_attr_val('fused', False): 
+        for m2 in design.modules_with_attr_val('resource', 'PE'):
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
 
@@ -180,20 +180,21 @@ def dist_limit(dist_factor):
             dst_pos = p_state[dst][0]
             src_pe = sources[src_pos + (src_port,)]
             dst_pe = sinks[dst_pos + (dst_port,)]
-            if net.num_reg == 0:
-                manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
-                # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
-                # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
-                # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
-                # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
-                # You can adjust it with dist_factor
-                constraints.append(vars[net].distance_leq(vars[src_pe],
-                                                          vars[dst_pe],
-                                                          3*dist_factor*manhattan_dist + 1))
-            else:
-                # 2*net.length because distance in monosat is twice the design graph's distance
-                constraints.append(solver.Not(vars[net].distance_lt(vars[src_pe], vars[dst_pe], 2*net.num_reg)))
-                #TODO: Put upper limit on distance to prevent crazy routes
+
+            manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
+            # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
+            # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
+            # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
+            # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
+            # You can adjust it with dist_factor
+            heuristic_dist = 3*dist_factor*manhattan_dist + 1
+
+            # just checking that greater than 0 to avoid adding meaningless constraint dist > 0
+            if net.num_reg > 0: constraints.append(solver.Not(vars[net].distance_leq(vars[src_pe], vars[dst_pe], net.num_reg)))
+
+            # if there are registers, this allows up to double the needed length
+            constraints.append(vars[net].distance_leq(vars[src_pe], vars[dst_pe], max(heuristic_dist, 2*net.num_reg)))
+
         return solver.And(constraints)
     return dist_constraints
 
