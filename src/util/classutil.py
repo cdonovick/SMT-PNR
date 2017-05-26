@@ -45,6 +45,7 @@ class NamedIDObject(IDObject):
     def name(self):
         return self._name
 
+
 class ValidContainer:
     '''wrapper class that allows data to marked invalid '''
     __slots__ = '_data', '_valid'
