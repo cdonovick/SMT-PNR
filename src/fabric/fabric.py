@@ -90,12 +90,17 @@ class RoutedTrack():
         self._resource_type = resource_type
         self._snk = snk
         self._src = src
+        self._as_tuple = (x, y, resource_type, snk, src)
 
     def __hash__(self):
         # relying on tuple's hash
         return (self._x, self._y, self._resource_type, self._snk, self._src).__hash__()
 
     def __eq__(self, other):
+        # convenient to check against tuple
+        if isinstance(other, tuple):
+            return self._as_tuple == other
+        
         return self._x == other._x and \
                self._y == other._y and \
                self._resource_type == other._resource_type and \
