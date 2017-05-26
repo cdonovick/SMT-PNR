@@ -4,16 +4,17 @@
 from util import NamedIDObject, SortedDict
 from .module import Module
 from .net import Net
+from functools import lru_cache
 
 _fusable = {(s, d) for s in ('Reg', 'Const') for d in ('PE',)}
 class Design(NamedIDObject):
     def __init__(self, modules, nets, name=''):
         super().__init__(name)
-        self._modules = set()
-        self._nets = set()
-        self._v_net_cache = dict()
+        _mods = SortedDict()
+        _nets = dict()
 
-        mods = SortedDict()
+    
+        #build modules
         for mod_name,args in modules.items():
             mod = Module(mod_name)
             mod.type_ = args['type']
@@ -26,18 +27,51 @@ class Design(NamedIDObject):
             else:
                 mod.resource = mod.type_
 
-            self.modules.add(mod)
-            mods[mod_name] = mod
+            _mods[mod_name] = mod
 
+        self._modules=frozenset(_mods.values())
+
+        #build nets
+        idx_set = set()
         for src_name, src_port, dst_name, dst_port, width in nets:
 
-            src = mods[src_name]
-            dst = mods[dst_name]
+            src = _mods[src_name]
+            dst = _mods[dst_name]
             if (src.type_, dst.type_) in _fusable:
                 src.fused = True
                 src.resource = None
 
-            self.nets.add(Net(src, src_port, dst, dst_port, width))
+            idx = (src, src_port, dst, dst_port, width)
+
+            _nets[idx] = Net(*idx)
+            #for virtual nets
+            if src.type_ != 'Reg' and src.type_ != 'Const':
+                idx_set.add(idx + (0,))
+        
+        self._nets=frozenset(_nets.values())
+
+        #build _v_nets
+        _v_nets = set()
+        while idx_set:
+            idx = idx_set.pop()
+            #idx[2] == dst
+            if idx[2].type_ != 'Reg':
+                assert idx[2].type_ != 'Const', 'Const cannot be a sink'
+                #[:-1] are constructor args, [-1] is num_reg
+                if idx[:-1] in _nets:
+                    assert idx[-1] == 0, 'Non-virtual net with register'
+                    _v_nets.add(_nets[idx[:-1]])
+                else:
+                    t = Net(*idx[:-1])
+                    t.num_reg = idx[-1]
+                    _v_nets.add(t)
+            else:
+                for dst_net in idx[2].outputs.values():
+                    assert dst_net.width == idx[4] 
+                    #print("Fusing ({a}->{b}), ({b}->{c}) to ({a}->{c})".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
+                    idx_set.add((idx[0], idx[1], dst_net.dst, dst_net.dst_port, idx[4], idx[5] + (0 if idx[2].fused else 1)))
+        
+        self._v_nets = frozenset(_v_nets)
 
     @property
     def modules(self):
@@ -47,34 +81,16 @@ class Design(NamedIDObject):
     def nets(self):
         return self._nets
 
+    @lru_cache(maxsize=32)
+    def modules_with_attr(self, attr):
+        return set(filter(lambda x : hasattr(x, attr), self.modules))
 
-    @property
-    def nf_modules(self):
-        yield from filter(lambda x : not x.fused, self.modules)
+    @lru_cache(maxsize=32)
+    def modules_with_attr_val(self, attr, val):
+        return set(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
 
-    @property
-    def f_modules(self):
-        yield from filter(lambda x : x.fused, self.modules)
 
     @property
     def virtual_nets(self):
-        nets = set((n.src, n.src_port, n.dst, n.dst_port, n.width, 0)
-                for n in self.nets
-                if (n.src.type_ != 'Reg'  and n.src.type_ != 'Const'))
-        while nets:
-            n = nets.pop()
-            if n[2].type_ != 'Reg':
-                assert n[2].type_ != 'Const', "Const cannot be dst"
-                try:
-                    yield self._v_net_cache[n]
-                except KeyError:
-                    t = Net(*n[:-1])
-                    t.length = n[-1]
-                    self._v_net_cache[n] = t
-                    yield t
-            else:
-                for dst_net in n[2].outputs.values():
-                    assert dst_net.width == n[4]
-                    #print("Fusing ({a}->{b}), ({b}->{c}) to ({a}->{c})".format(a=n[0].name, b=n[2].name, c=dst_net.dst.name))
-                    nets.add((n[0], n[1], dst_net.dst, dst_net.dst_port, n[4], n[5] + (0 if n[2].fused else 1)))
+        return self._v_nets
 

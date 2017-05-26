@@ -2,6 +2,8 @@
 Constraint generators
 '''
 from functools import partial
+import itertools 
+
 from smt_switch import functions
 from fabric import Side
 
@@ -17,7 +19,7 @@ def init_positions(position_type):
     '''
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in design.nf_modules:
+        for module in design.modules_with_attr_val('fused', False):
             if module not in vars:
                 p = position_type(module.name, fabric)
                 vars[module] = p
@@ -35,13 +37,22 @@ def assert_pinned(fabric, design, state, vars, solver):
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
-    for m1 in design.nf_modules:
-        for m2 in design.nf_modules:
+    for m1 in design.modules_with_attr_val('fused', False):
+        for m2 in design.modules_with_attr_val('fused', False):
             if m1 != m2 and m1.resource == m2.resource:
                 constraints.append(vars[m1].flat != vars[m2].flat)
     return And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
+    dxdy = {(0,1), (1,0)}
+    return _neighborhood(dxdy, fabric, design, state, vars, solver)
+
+
+def neighborhood(dist): 
+    dxdy = {(x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0}
+    return partial(_neighborhood, dxdy)
+
+def _neighborhood(dxdy, fabric, design, state, vars, solver):
     constraints = []
     for net in design.virtual_nets:
         src = net.src
@@ -50,15 +61,17 @@ def nearest_neighbor(fabric, design, state, vars, solver):
         dx = vars[src].delta_x_fun(vars[dst])
         dy = vars[src].delta_y_fun(vars[dst])
         #c.append(And(dx(0), dy(0)))
-        c.append(And(dx(0), dy(1)))
-        c.append(And(dx(1), dy(0)))
+        for x, y in dxdy:
+            c.append(And(dx(x), dy(y)))
+
         constraints.append(Or(c))
 
     return And(constraints)
+        
 
 def pin_IO(fabric, design, state, vars, solver):
     constraints = []
-    for module in filter(lambda m: m.type_ == 'IO', design.modules):
+    for module in design.modules_with_attr_val('type_', 'IO'):
         pos = vars[module]
         c = [pos.x == pos.encode_x(0),
              pos.y == pos.encode_y(0)]
@@ -98,7 +111,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
 
     # make sure modules that aren't connected are not connected
-    for m1 in design.nf_modules:
+    for m1 in design.modules_with_attr_val('fused', False):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -112,7 +125,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             # add the (potentially contracted) src
             contracted_inputs.add(src)
         m1_pos = p_state[m1][0]
-        for m2 in design.nf_modules:
+        for m2 in design.modules_with_attr_val('fused', False): 
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
 
@@ -167,8 +180,7 @@ def dist_limit(dist_factor):
             dst_pos = p_state[dst][0]
             src_pe = sources[src_pos + (src_port,)]
             dst_pe = sinks[dst_pos + (dst_port,)]
-            # net.length is the number of registers on the net
-            if net.length == 0:
+            if net.num_reg == 0:
                 manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
                 # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
                 # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
@@ -180,7 +192,7 @@ def dist_limit(dist_factor):
                                                           3*dist_factor*manhattan_dist + 1))
             else:
                 # 2*net.length because distance in monosat is twice the design graph's distance
-                constraints.append(solver.Not(vars[net].distance_lt(vars[src_pe], vars[dst_pe], 2*net.length)))
+                constraints.append(solver.Not(vars[net].distance_lt(vars[src_pe], vars[dst_pe], 2*net.num_reg)))
                 #TODO: Put upper limit on distance to prevent crazy routes
         return solver.And(constraints)
     return dist_constraints
