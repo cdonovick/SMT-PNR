@@ -70,7 +70,7 @@ def pos_to_side(pos1, pos2, vertport):
     difx = pos2[0] - pos1[0]
     dify = pos2[1] - pos1[1]
 
-    if vertport not None:
+    if vertport is not None:
         if vertport:
             if dify >= 0:
                 return Side.S

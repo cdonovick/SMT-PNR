@@ -18,11 +18,18 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
         graph = vars[net]
 
-        src_pos = p_state[src][0]
-        dst_pos = p_state[dst][0]
-        src_pe = sources[src_pos + (src_port,)]
-        dst_pe = sinks[dst_pos + (dst_port,)]
-        reaches = graph.reaches(vars[src_pe], vars[dst_pe])
+        src_index = p_state[src][0]
+        dst_index = p_state[dst][0]
+
+        # get correct tuple index
+        if src.resource == 'PE':
+            src_index = src_index + (src_port,)
+        if dst.resource == 'PE':
+            dst_index = dst_index + (dst_port,)
+        
+        src_node = vars[sources[src_index]]
+        dst_node = vars[sinks[dst_index]]
+        reaches = graph.reaches(src_node, dst_node)
         l = graph.getPath(reaches)
         path = tuple(graph.names[node] for node in l)
         # record for debug printing

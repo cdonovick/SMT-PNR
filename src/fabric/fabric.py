@@ -132,7 +132,7 @@ class Fabric:
     def __getitem__(self, bus_width):
         return self._layers[bus_width]
 
-    def update(self, parsed_params);
+    def update(self, parsed_params):
         self._layers = dict()
         for bus_width in parsed_params['bus_widths']:
             fl = FabricLayer(parsed_params['sources' + bus_width],
@@ -199,19 +199,20 @@ def process_regs(design, p_state):
     for mod in design.modules:
         if mod.resource == 'Reg':
             k = 0
-            for port, x in mod.outputs.values():
-                outmod = x.dst
+            for port, net in mod.outputs.items():
+                outmod = net.dst
+                dst_port = net.dst_port 
                 k = k+1
             assert k == 1  # should only execute loop once...
 
             modpos = p_state[mod][0][:-1]
-            outmod = outputs.pop()
-            outputpos = p_state[outmod][0][:-1]
+            # get just the position (registers have extra info)
+            outmodpos = p_state[outmod][0][0:2]
 
             vertport = None
             if outmod.resource == 'PE':
                 # check if receiving side is a vertical port
-                vertport = port in {'a', 'c'}
+                vertport = dst_port in {'a', 'c'}
             # take port into consideration because of vertical/horizontal track issue
             side = pos_to_side(modpos, outmodpos, vertport)
             newstate = p_state[mod][0] + (side,)
@@ -286,6 +287,7 @@ def connect_tiles(bus_width, params, p_state):
     SB = params['SB' + bus_width]
     num_tracks = params['num_tracks']
     sinks = params['sinks' + bus_width]
+    sources = params['sources' + bus_width]
     routable = params['routable' + bus_width]
 
     for x in range(0, cols):

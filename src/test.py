@@ -35,7 +35,7 @@ modules, nets = design.core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
-fab = fabric.parse_xml(fabric_file)
+fab = fabric.pre_place_parse_xml(fabric_file)
 
 p = pnr.PNR(fab, des)
 
@@ -49,6 +49,8 @@ else:
     else:
         print("!!!failure!!!")
         sys.exit(1)
+
+fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
 
 if not args.noroute:
     print("Routing design...", end=' ')

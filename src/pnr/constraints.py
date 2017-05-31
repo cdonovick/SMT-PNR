@@ -131,13 +131,11 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             for port in ports - set(dst_port):
                 c.append(~vars[net].reaches(vars[sources[src_index]],
                                             vars[sinks[dst_pos + (port,)]]))
-        else:
-            # destination is a register
-            c.append(~vars[net].reaches(vars[sources[src_index]],
-                                        vars[sinks[dst_pos]]))
+        # if not a PE, then there aren't other ports -- do nothing
 
+        
     # make sure modules that aren't connected are not connected
-    for m1 in design.modules:
+    for m1 in design.modules_with_attr_val('fused', False):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -151,7 +149,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             # add the (potentially contracted) src
             contracted_inputs.add(src)
         m1_pos = p_state[m1][0]
-        for m2 in design.modules:
+        for m2 in design.modules_with_attr_val('fused', False):
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
                 m2_index = m2_pos
@@ -192,7 +190,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
             dst_index = dst_index + (dst_port,)
 
         reaches.append(vars[net].reaches(vars[sources[src_index]],
-                                         vars[sinks[snk_index]]))
+                                         vars[sinks[dst_index]]))
 
     return solver.And(reaches)
 
