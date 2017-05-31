@@ -33,7 +33,7 @@ class Net(IDObject):
     def width(self):
         return self._width
 
-#    def __repr__(self):
-#        return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
+    def __repr__(self):
+        return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
 
 
