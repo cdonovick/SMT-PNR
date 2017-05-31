@@ -40,16 +40,32 @@ def distinct(fabric, design, state, vars, solver):
     for m1 in design.modules_with_attr_val('fused', False):
         for m2 in design.modules_with_attr_val('fused', False):
             if m1 != m2 and m1.resource == m2.resource:
-                constraints.append(vars[m1].flat != vars[m2].flat)
+                v1,v2 = vars[m1],vars[m2]
+                c = v1.flat != v2.flat
+
+                if m1.resource == 'Reg':
+                    constraints.append(Or(c,  v1.c != v2.c))
+                else:
+                    constraints.append(c)
+
+    return And(constraints)
+
+def register_colors(fabric, design, state, vars, solver):
+    constraints = []
+    for net in design.virtual_nets:
+        src = net.src
+        dst = net.dst
+        if src.resource == dst.resource == 'Reg':
+            constraints.append(vars[src].c == vars[dst].c)
     return And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
-    dxdy = {(0,1), (1,0)}
+    dxdy = ((0,1), (1,0))
     return _neighborhood(dxdy, fabric, design, state, vars, solver)
 
 
 def neighborhood(dist): 
-    dxdy = {(x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0}
+    dxdy = ((x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0)
     return partial(_neighborhood, dxdy)
 
 def _neighborhood(dxdy, fabric, design, state, vars, solver):
@@ -63,8 +79,8 @@ def _neighborhood(dxdy, fabric, design, state, vars, solver):
         #c.append(And(dx(0), dy(0)))
         for x, y in dxdy:
             c.append(And(dx(x), dy(y)))
-
         constraints.append(Or(c))
+
 
     return And(constraints)
         

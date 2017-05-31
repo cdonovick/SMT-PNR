@@ -174,6 +174,8 @@ class Mask:
 
             if isinstance(value, Iterable):
                 val_list = [v for v in value]
+            elif isinstance(value, int):
+                val_list = [v for v in Mask(value, size=len(idx_list))]
             else:
                 val_list = [value]*len(idx_list)
 

@@ -11,7 +11,6 @@ class Net(IDObject):
         src._add_output(self, src_port)
         dst._add_input(self, dst_port)
         self._width = width
-        self.num_reg = 0
 
     @property
     def src(self):

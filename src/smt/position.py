@@ -52,6 +52,12 @@ nn
         '''
         pass
 
+    @property
+    @abstractmethod
+    def c(self):
+        pass
+
+
     @abstractmethod
     def delta_x(self, other):
         '''
@@ -222,23 +228,19 @@ class Unpacked2H(Base2H):
 class BVXY(PositionBase):
     def __init__(self, name, fabric, solver):
         super().__init__(name, fabric, solver)
-        if 2**(self.fabric.cols.bit_length()-1) == self.fabric.cols:
-            #adding extra bit to avoid overflow adjacency
-            self._x_bits    = self.fabric.cols.bit_length()
-            self._is_x_pow2 = True
-        else:
-            self._x_bits    = self.fabric.cols.bit_length()
-            self._is_x_pow2 = False
-        if 2**(self.fabric.rows.bit_length()-1) == self.fabric.rows:
-            #adding extra bit to avoid overflow adjacency
-            self._y_bits    = self.fabric.rows.bit_length()
-            self._is_y_pow2 = True
-        else:
-            self._y_bits    = self.fabric.rows.bit_length()
-            self._is_y_pow2 = False
+
+        self._is_x_pow2 = self.fabric.cols & (self.fabric.cols - 1) == 0
+        self._x_bits = self.fabric.cols.bit_length()
+
+        self._is_y_pow2 = self.fabric.rows & (self.fabric.rows - 1) == 0
+        self._y_bits = self.fabric.rows.bit_length()
+
+        self._is_c_pow2 = self.fabric.num_tracks & (self.fabric.num_tracks -1) == 0
+        self._c_bits = self.fabric.num_tracks.bit_length()
 
         self._x = solver.declare_const(self.name + '_x', sorts.BitVec(self._x_bits))
         self._y = solver.declare_const(self.name + '_y', sorts.BitVec(self._y_bits))
+        self._c = solver.declare_const(self.name + '_color', sorts.BitVec(self._c_bits))
 
     def delta_x(self, other):
         return [], zu.absolute_value(self.x - other.x)
@@ -271,6 +273,10 @@ class BVXY(PositionBase):
         return self._y
 
     @property
+    def c(self):
+        return self._c
+
+    @property
     def invariants(self):
         bvult = functions.bvult()
         constraint = []
@@ -286,10 +292,21 @@ class BVXY(PositionBase):
             constraint.append(ext(self.y) == 0)
         else:
             constraint.append(bvult(self.y, self.fabric.rows))
+
+        if self._is_c_pow2:
+            ic = self._c_bits - 1
+            ext = functions.extract(ic, ic)
+            constraint.append(ext(self.c)  == 0)
+        else:
+            constraint.append(bvult(self.c, self.fabric.num_tracks))
+
         return And(constraint)
 
     def get_coordinates(self):
         return (self.solver.get_value(self.x).as_int(), self.solver.get_value(self.y).as_int())
+
+    def get_color(self):
+        return (self.solver.get_value(self.c).as_int())
 
     def encode(self, p):
         return self.encode_x(p[0]), self.encode_y(p[1])

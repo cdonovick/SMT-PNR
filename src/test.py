@@ -14,6 +14,7 @@ parser.add_argument('--print-place', action='store_true', dest='print_place', he
 parser.add_argument('--print-route', action='store_true', dest='print_route', help='print routing information to stdout')
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', help='output CGRA configuration in bitstream')
 parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitstream with annotations')
+parser.add_argument('--noroute', action='store_true')
 args = parser.parse_args()
 
 design_file = args.design
@@ -21,8 +22,8 @@ fabric_file = args.fabric
 
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
-PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO
-PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO
+PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO, pnr.register_colors
+PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO, pnr.register_colors
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.dist_limit(1), pnr.excl_constraints
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
@@ -49,12 +50,13 @@ else:
         print("!!!failure!!!")
         sys.exit(1)
 
-print("Routing design...", end=' ')
-if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
-    print("success!")
-else:
-    print("!!!failure!!!")
-    sys.exit(1)
+if not args.noroute:
+    print("Routing design...", end=' ')
+    if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
+        print("success!")
+    else:
+        print("!!!failure!!!")
+        sys.exit(1)
 
 if args.bitstream:
     bit_file = args.bitstream
