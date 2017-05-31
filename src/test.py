@@ -24,7 +24,7 @@ fabric_file = args.fabric
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
 PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO, pnr.register_colors
 PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO, pnr.register_colors
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.dist_limit(1), pnr.excl_constraints
+ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1) 
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
 # Once nets represent the whole tree of connections, this will be fixed
@@ -39,26 +39,34 @@ fab = fabric.pre_place_parse_xml(fabric_file)
 
 p = pnr.PNR(fab, des)
 
-print("Placing design...", end=' ')
-if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
-    print("success!")
-else:
-    print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
-    if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
+pnrdone = False
+
+iterations = 0
+
+while not pnrdone and iterations < 10:
+    print("Placing design...", end=' ')
+    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
         print("success!")
     else:
-        print("!!!failure!!!")
-        sys.exit(1)
+        print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
+        if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
+            print("success!")
+        else:
+            print("!!!failure!!!")
 
-fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
+    fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
 
-if not args.noroute:
-    print("Routing design...", end=' ')
-    if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
-        print("success!")
-    else:
-        print("!!!failure!!!")
-        sys.exit(1)
+    if not args.noroute:
+        print("Routing design...", end=' ')
+        if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
+            print("success!")
+            pnrdone = True
+        else:
+            print("!!!failure!!!")
+
+    iterations += 1
+
+print('Successfully placed and routed in {} iterations'.format(iterations))
 
 if args.bitstream:
     bit_file = args.bitstream

@@ -233,10 +233,11 @@ def dist_limit(dist_factor):
             # You can adjust it with dist_factor
             heuristic_dist = 3*dist_factor*manhattan_dist + 1
 
-            # if there are registers, this allows up to double the needed length
-            constraints.append(vars[net].distance_leq(vars[sources[src_index]],
-                                                      vars[sinks[dst_index]],
-                                                      heuristic_dist))
+            # not imposing distance constraints for reg-->reg nets -- because sometimes needs to take weird path
+            if dst.resource != 'Reg':
+                constraints.append(vars[net].distance_leq(vars[sources[src_index]],
+                                                          vars[sinks[dst_index]],
+                                                          heuristic_dist))
 
         return solver.And(constraints)
     return dist_constraints
