@@ -37,16 +37,17 @@ class Design(NamedIDObject):
 
             src = _mods[src_name]
             dst = _mods[dst_name]
+            idx = (src, src_port, dst, dst_port, width)
+
             if (src.type_, dst.type_) in _fusable:
                 src.fused = True
                 src.resource = None
+            else:
+                #for virtual nets
+                idx_set.add(idx)
 
-            idx = (src, src_port, dst, dst_port, width)
 
             _nets[idx] = Net(*idx)
-            #for virtual nets
-            if src.type_ != 'Reg' and src.type_ != 'Const':
-                idx_set.add(idx + (0,))
         
         self._nets=frozenset(_nets.values())
 
@@ -55,22 +56,17 @@ class Design(NamedIDObject):
         while idx_set:
             idx = idx_set.pop()
             #idx[2] == dst
-            if idx[2].type_ != 'Reg':
-                assert idx[2].type_ != 'Const', 'Const cannot be a sink'
-                #[:-1] are constructor args, [-1] is num_reg
-                if idx[:-1] in _nets:
-                    assert idx[-1] == 0, 'Non-virtual net with register'
-                    _v_nets.add(_nets[idx[:-1]])
+            if not idx[2].fused:
+                if idx in _nets:
+                    _v_nets.add(_nets[idx])
                 else:
-                    t = Net(*idx[:-1])
-                    t.num_reg = idx[-1]
+                    t = Net(*idx)
                     _v_nets.add(t)
             else:
                 for dst_net in idx[2].outputs.values():
                     assert dst_net.width == idx[4] 
                     #print("Fusing ({a}->{b}), ({b}->{c}) to ({a}->{c})".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
-                    idx_set.add((idx[0], idx[1], dst_net.dst, dst_net.dst_port, idx[4], idx[5] + (0 if idx[2].fused else 1)))
-        
+                    idx_set.add((idx[0], idx[1], dst_net.dst, dst_net.dst_port, idx[4]))
         self._v_nets = frozenset(_v_nets)
 
     @property
@@ -83,12 +79,11 @@ class Design(NamedIDObject):
 
     @lru_cache(maxsize=32)
     def modules_with_attr(self, attr):
-        return set(filter(lambda x : hasattr(x, attr), self.modules))
+        return frozenset(filter(lambda x : hasattr(x, attr), self.modules))
 
     @lru_cache(maxsize=32)
     def modules_with_attr_val(self, attr, val):
-        return set(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
-
+        return frozenset(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
 
     @property
     def virtual_nets(self):
