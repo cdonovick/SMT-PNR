@@ -209,20 +209,20 @@ def generate_layer(bus_width, params):
     for y in range(0, params['rows']):
         # for x = 0 and all y
         for t in range(0, params['num_tracks'][(0, y, bus_width)]):
-            sources[(0, y, t)] = SB[(0, y, Side.W, 'in')]
+            sources[(0, y, t)] = SB[(0, y, Side.W, 'in')][t]
 
         # for x = cols-1 and all y
         for t in range(0, params['num_tracks'][(params['cols'] - 1, y, bus_width)]):
-            sources[(params['cols']-1, y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')]
+            sources[(params['cols']-1, y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')][t]
 
     for x in range(0, params['cols']):
         # for y = 0 and all x
         for t in range(0, params['num_tracks'][(x, 0, bus_width)]):
-            sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')]
+            sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')][t]
 
         # for y = rows-1 and all x
         for t in range(0, params['num_tracks'][(x, params['rows'] - 1, bus_width)]):
-            sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')]
+            sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')][t]
 
     return SB, PE
 

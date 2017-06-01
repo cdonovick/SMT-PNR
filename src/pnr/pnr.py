@@ -4,12 +4,9 @@ import itertools as it
 from smt_switch import solvers
 
 
-PLACE_SOLVER = solvers.Z3Solver()
-_ROUTE_SOLVER = Solver_monosat()
-
 ''' Class for handling place & route '''
 class PNR:
-    def __init__(self, fabric, design):
+    def __init__(self, fabric, design, solver_str):
         self._fabric = fabric
         self._design = design
 
@@ -18,9 +15,12 @@ class PNR:
 
         self._place_vars = BiDict()
         self._route_vars = BiDict()
-        
-        self._place_solver = PLACE_SOLVER
-        self._route_solver = _ROUTE_SOLVER
+
+        try:
+            self._place_solver = eval('solvers.{}Solver()'.format(solver_str))
+        except AttributeError:
+            print('{} is not a supported solver'.format(solver_str))
+        self._route_solver = Solver_monosat()
 
         # set options
         self._place_solver.set_option('produce-models', 'true')
