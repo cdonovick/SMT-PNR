@@ -66,6 +66,10 @@ while not pnrdone and iterations < 10:
 
     iterations += 1
 
+if not pnrdone:
+    print('Failed to place and route in 10 iterations')
+    sys.exit(1)
+
 print('Successfully placed and routed in {} iterations'.format(iterations))
 
 if args.bitstream:
