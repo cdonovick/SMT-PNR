@@ -69,7 +69,8 @@ def pos_to_side(pos1, pos2, vertport):
     '''
     difx = pos2[0] - pos1[0]
     dify = pos2[1] - pos1[1]
-
+    
+    # TODO: Improve this heuristic for NW, SW etc...
     if vertport is not None:
         if vertport:
             if dify >= 0:
@@ -93,6 +94,33 @@ def pos_to_side(pos1, pos2, vertport):
                 return Side.S
             else:
                 return Side.N
+
+    # For some reason this is less robust
+    # makes no sense because only changes is handling edge cases...
+    
+    # if vertport is not None:
+    #     if vertport:
+    #         if dify <= 0 and pos1[1] > 0:
+    #             return Side.N
+    #         else:
+    #             return Side.S
+    #     else:
+    #         if difx <= 0 and pos1[0] > 0:
+    #             return Side.W
+    #         else:
+    #             return Side.E
+    # else:
+    #     # pick by largest difference
+    #     if abs(difx) >= abs(dify):
+    #         if difx <= 0 and pos1[0] > 0:
+    #             return Side.W
+    #         else:
+    #             return Side.E
+    #     else:
+    #         if dify <= 0 and pos1[1] > 0:
+    #             return Side.N
+    #         else:
+    #             return Side.S
 
 
     # Unfinished: Need to take port into consideration because of vertical/horizontal track issues
