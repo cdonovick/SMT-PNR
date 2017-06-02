@@ -65,4 +65,4 @@ script:
       --solver $SOLVER 
       --print 
       --coreir-libs stdlib cgralib
-    - cat bitstream
+    - cat ../bitstream
