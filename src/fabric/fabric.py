@@ -1,6 +1,6 @@
 import lxml.etree as ET
 from util import NamedIDObject
-from .fabricfuns import Side, mapSide, parse_name
+from .fabricfuns import Side, mapSide, parse_name, pos_to_side
 from abc import ABCMeta
 
 
@@ -139,8 +139,34 @@ class Fabric:
     def __getitem__(self, bus_width):
         return self._layers[bus_width]
 
+    def update(self, parsed_params):
+        self._layers = dict()
+        for bus_width in parsed_params['bus_widths']:
+            fl = FabricLayer(parsed_params['sources' + bus_width],
+                             parsed_params['sinks' + bus_width],
+                             parsed_params['routable' + bus_width],
+                             parsed_params['tracks' + bus_width])
+            self._layers[int(bus_width)] = fl
 
-def parse_xml(filepath):
+
+def pre_place_parse_xml(filepath):
+    N = Side.N
+    S = Side.S
+    E = Side.E
+    W = Side.W
+    sides = [N, S, E, W]
+
+    tree = ET.parse(filepath)
+    root = tree.getroot()
+    rows, cols, num_tracks, bus_widths = pre_process(root)
+
+    params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks,
+              'bus_widths': bus_widths, 'sides': sides}
+
+    return Fabric(params)
+
+
+def parse_xml(filepath, fab, design, p_state):
     N = Side.N
     S = Side.S
     E = Side.E
@@ -155,6 +181,8 @@ def parse_xml(filepath):
     params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks,
               'bus_widths': bus_widths, 'sides': sides}
 
+    process_regs(design, p_state)
+
     for bus_width in bus_widths:
         params['sinks' + bus_width] = dict()
         params['sources' + bus_width] = dict()
@@ -164,13 +192,39 @@ def parse_xml(filepath):
         params['SB' + bus_width] = SB
         params['PE' + bus_width] = PE
 
-        connect_tiles(bus_width, params)
+        connect_tiles(bus_width, params, p_state)
         params['tracks' + bus_width] = list()
 
         connect_pe(root, bus_width, params)
         connect_sb(root, bus_width, params)
 
-    return Fabric(params)
+    return fab.update(params)
+
+
+# process the registers
+def process_regs(design, p_state):
+    for mod in design.modules:
+        if mod.resource == 'Reg':
+            k = 0
+            for port, net in mod.outputs.items():
+                outmod = net.dst
+                dst_port = net.dst_port 
+                k = k+1
+            assert k == 1  # should only execute loop once...
+
+            modpos = p_state[mod][0][:-1]
+            # get just the position (registers have extra info)
+            outmodpos = p_state[outmod][0][0:2]
+
+            vertport = None
+            if outmod.resource == 'PE':
+                # check if receiving side is a vertical port
+                vertport = dst_port in {'a', 'c'}
+            # take port into consideration because of vertical/horizontal track issue
+            side = pos_to_side(modpos, outmodpos, vertport)
+            newstate = p_state[mod][0] + (side,)
+            del p_state[mod]
+            p_state[mod] = newstate
 
 
 def pre_process(root):
@@ -216,30 +270,31 @@ def generate_layer(bus_width, params):
     for y in range(0, params['rows']):
         # for x = 0 and all y
         for t in range(0, params['num_tracks'][(0, y, bus_width)]):
-            sources[(0, y, t)] = SB[(0, y, Side.W, 'in')]
+            sources[(0, y, t)] = SB[(0, y, Side.W, 'in')][t]
 
         # for x = cols-1 and all y
         for t in range(0, params['num_tracks'][(params['cols'] - 1, y, bus_width)]):
-            sources[(params['cols']-1, y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')]
+            sources[(params['cols']-1, y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')][t]
 
     for x in range(0, params['cols']):
         # for y = 0 and all x
         for t in range(0, params['num_tracks'][(x, 0, bus_width)]):
-            sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')]
+            sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')][t]
 
         # for y = rows-1 and all x
         for t in range(0, params['num_tracks'][(x, params['rows'] - 1, bus_width)]):
-            sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')]
+            sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')][t]
 
     return SB, PE
 
 
-def connect_tiles(bus_width, params):
+def connect_tiles(bus_width, params, p_state):
     rows = params['rows']
     cols = params['cols']
     SB = params['SB' + bus_width]
     num_tracks = params['num_tracks']
     sinks = params['sinks' + bus_width]
+    sources = params['sources' + bus_width]
     routable = params['routable' + bus_width]
 
     for x in range(0, cols):
@@ -255,10 +310,22 @@ def connect_tiles(bus_width, params):
                     # the second SB's inputs
                     # i.e. no point in having redundant ports/nodes for routing
                     common_track_number = min([num_tracks[(x, y, bus_width)], num_tracks[(adj_x, adj_y, bus_width)]])
-                    SB[(x, y, side, 'out')] = SB[(adj_x, adj_y, adj_side, 'in')][0:common_track_number]
-                    # add these ports to routable
+                    SB[(x, y, side, 'out')] = list()
                     for t in range(0, common_track_number):
-                        routable[(adj_x, adj_y, adj_side)] = SB[(adj_x, adj_y, adj_side, 'in')][t]
+                        potential_reg = (x, y, t, side)
+                        if potential_reg in p_state.I:
+                            # there's a register here. Need to split the ports
+                            newport = Port(x, y, side, t, 'o')
+                            SB[(x, y, side, 'out')].append(newport)
+                            # add to sinks and sources
+                            sinks[potential_reg] = newport
+                            # index the source node from the same tile
+                            sources[potential_reg] = SB[(adj_x, adj_y, adj_side, 'in')][t]
+                        else:
+                            SB[(x, y, side, 'out')].append(SB[(adj_x, adj_y, adj_side, 'in')][t])
+                            # add port to routable
+                            routable[(adj_x, adj_y, adj_side, t)] = SB[(adj_x, adj_y, adj_side, 'in')][t]
+                    
                 # otherwise make ports for off the edge
                 else:
                     ports = []

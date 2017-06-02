@@ -118,16 +118,27 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     for net in design.virtual_nets:
         src = net.src
         dst = net.dst
-        src_port = net.src_port
         dst_port = net.dst_port
         src_pos = p_state[src][0]
         dst_pos = p_state[dst][0]
 
-        for port in ports - set(dst_port):
-            c.append(~vars[net].reaches(vars[sources[src_pos + (src_port,)]], vars[sinks[dst_pos + (port,)]]))
+        # find correct index tuple (based on resource type)
+        src_index = src_pos
+        if src.resource == 'PE':
+            src_index = src_index + (net.src_port,)
 
+        # TODO: Fix this so doesn't assume only connected to one input port
+        # there might be weird cases where you want to drive multiple inputs
+        # of dst module with one output
+        if dst.resource == 'PE':
+            for port in ports - set(dst_port):
+                c.append(~vars[net].reaches(vars[sources[src_index]],
+                                            vars[sinks[dst_pos + (port,)]]))
+        # if not a PE, then there aren't other ports -- do nothing
+
+        
     # make sure modules that aren't connected are not connected
-    for m1 in design.modules_with_attr_val('resource', 'PE'):
+    for m1 in design.modules_with_attr_val('fused', False):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -141,12 +152,20 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             # add the (potentially contracted) src
             contracted_inputs.add(src)
         m1_pos = p_state[m1][0]
-        for m2 in design.modules_with_attr_val('resource', 'PE'):
+        for m2 in design.modules_with_attr_val('fused', False):
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
+                m2_index = m2_pos
+                if m2.resource == 'PE':
+                    m2_index = m2_index + ('out',)
 
-                for port in ports:
-                    c.append(~graph.reaches(vars[sources[m2_pos + ('out',)]], vars[sinks[m1_pos + (port,)]]))
+                if m1.resource == 'PE':
+                    for port in ports:
+                        c.append(~graph.reaches(vars[sources[m2_index]],
+                                                vars[sinks[m1_pos + (port,)]]))
+                else:
+                    c.append(~graph.reaches(vars[sources[m2_index]],
+                                            vars[sinks[m1_pos]]))
 
     return solver.And(c)
 
@@ -164,16 +183,22 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst = net.dst
         src_port = net.src_port
         dst_port = net.dst_port
-        src_pos = p_state[src][0]
-        dst_pos = p_state[dst][0]
-        src_pe = sources[src_pos + (src_port,)]
-        dst_pe = sinks[dst_pos + (dst_port,)]
+        src_index = p_state[src][0]
+        dst_index = p_state[dst][0]
 
-        reaches.append(vars[net].reaches(vars[src_pe], vars[dst_pe]))
+        # get index tuple (if it's a PE, need to append port)
+        if src.resource == 'PE':
+            src_index = src_index + (src_port,)
+        if dst.resource == 'PE':
+            dst_index = dst_index + (dst_port,)
+
+        reaches.append(vars[net].reaches(vars[sources[src_index]],
+                                         vars[sinks[dst_index]]))
 
     return solver.And(reaches)
 
 
+# TODO: Fix indexing for distance constraints
 def dist_limit(dist_factor):
     '''
        Enforce a global distance constraint. Works with single or multi graph encoding
@@ -194,8 +219,14 @@ def dist_limit(dist_factor):
             dst_port = net.dst_port
             src_pos = p_state[src][0]
             dst_pos = p_state[dst][0]
-            src_pe = sources[src_pos + (src_port,)]
-            dst_pe = sinks[dst_pos + (dst_port,)]
+
+            # get correct index (based on resource type)
+            src_index = src_pos
+            dst_index = dst_pos
+            if src.resource == 'PE':
+                src_index = src_index + (src_port,)
+            if dst.resource == 'PE':
+                dst_index = dst_index + (dst_port,)
 
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
             # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
@@ -205,16 +236,16 @@ def dist_limit(dist_factor):
             # You can adjust it with dist_factor
             heuristic_dist = 3*dist_factor*manhattan_dist + 1
 
-            # just checking that greater than 0 to avoid adding meaningless constraint dist > 0
-            if net.num_reg > 0: constraints.append(solver.Not(vars[net].distance_leq(vars[src_pe], vars[dst_pe], net.num_reg)))
-
-            # if there are registers, this allows up to double the needed length
-            constraints.append(vars[net].distance_leq(vars[src_pe], vars[dst_pe], max(heuristic_dist, 2*net.num_reg)))
+            # not imposing distance constraints for reg-->reg nets -- because sometimes needs to take weird path
+            if dst.resource != 'Reg':
+                constraints.append(vars[net].distance_leq(vars[sources[src_index]],
+                                                          vars[sinks[dst_index]],
+                                                          heuristic_dist))
 
         return solver.And(constraints)
     return dist_constraints
 
-
+# TODO: Fix node generation. --might be fine already?
 def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     # to comply with multigraph, add graph for each net
     # note: in this case, all point to the same graph

@@ -49,3 +49,78 @@ def parse_name(text):
     '''
     s = text.split('_')
     return s[0], s[1], Side(int(s[2][1])), int(s[3][1])
+
+
+def pos_to_side(pos1, pos2, vertport):
+    '''
+       Given two positions, returns the output side from pos1's perspective
+       For use in preprocessing registers for routing
+       Example: 
+          pos1 = (0,0)
+          pos2 = (1,0)
+         i.e. for r with pos1 and m with pos2 on a 4x4
+          r  m x x
+          x  x  x x
+          x  x  x x
+          x  x  x x
+        
+         Then the resulting side is East, because the register (r) should be placed on the east
+         side of the switch box
+    '''
+    difx = pos2[0] - pos1[0]
+    dify = pos2[1] - pos1[1]
+    
+    # TODO: Improve this heuristic for NW, SW etc...
+    if vertport is not None:
+        if vertport:
+            if dify >= 0:
+                return Side.S
+            else:
+                return Side.N
+        else:
+            if difx >= 0:
+                return Side.E
+            else:
+                return Side.W
+    else:
+        # pick by largest difference
+        if abs(difx) >= abs(dify):
+            if difx >= 0:
+                return Side.E
+            else:
+                return Side.W
+        else:
+            if dify >= 0:
+                return Side.S
+            else:
+                return Side.N
+
+    # For some reason this is less robust
+    # makes no sense because only changes is handling edge cases...
+    
+    # if vertport is not None:
+    #     if vertport:
+    #         if dify <= 0 and pos1[1] > 0:
+    #             return Side.N
+    #         else:
+    #             return Side.S
+    #     else:
+    #         if difx <= 0 and pos1[0] > 0:
+    #             return Side.W
+    #         else:
+    #             return Side.E
+    # else:
+    #     # pick by largest difference
+    #     if abs(difx) >= abs(dify):
+    #         if difx <= 0 and pos1[0] > 0:
+    #             return Side.W
+    #         else:
+    #             return Side.E
+    #     else:
+    #         if dify <= 0 and pos1[1] > 0:
+    #             return Side.N
+    #         else:
+    #             return Side.S
+
+
+    # Unfinished: Need to take port into consideration because of vertical/horizontal track issues
