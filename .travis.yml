@@ -9,6 +9,11 @@ cache:
     directories:
     - ./smt_solvers
 
+env:
+    - SOLVER=Z3
+    - SOLVER=CVC4
+    - SOLVER=Boolector
+
 addons:
     apt:
         sources:
@@ -53,9 +58,11 @@ install:
     - pip install lxml
 
 script:
-    #- cd ./src
-    #- ./test.py ../new_coremapped.json ../cgra4x4.xml
-    #  --annotate ../bitstream
-    #  --print --coreir-libs stdlib cgralib
-    - ./util/mult_solver_test.sh
+    - echo Running tests with $SOLVER
+    - cd ./src
+    - ./test.py ../new_coremapped.json ../cgra4x4.xml
+      --annotate ../bitstream
+      --solver $SOLVER 
+      --print 
+      --coreir-libs stdlib cgralib
     - cat bitstream
