@@ -106,7 +106,9 @@ class Fabric:
         self._rows = parsed_params['rows']
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
-        
+        self._pe_locations = parsed_params['pe_locations']
+        self._mem_locations = parsed_params['mem_locations']
+
     @property
     def rows(self):
         return self._rows
@@ -128,6 +130,14 @@ class Fabric:
     @property
     def num_tracks(self):
         return self._num_tracks
+
+    @property
+    def pe_locations(self):
+        return self._pe_locations
+
+    @property
+    def mem_locations(self):
+        return self._mem_locations
 
     def __getitem__(self, bus_width):
         return self._layers[bus_width]
@@ -151,10 +161,10 @@ def pre_place_parse_xml(filepath):
 
     tree = ET.parse(filepath)
     root = tree.getroot()
-    rows, cols, num_tracks, bus_widths = pre_process(root)
 
-    params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks,
-              'bus_widths': bus_widths, 'sides': sides}
+    params = {'sides': sides}
+    
+    pre_process(root, params)
 
     return Fabric(params)
 
@@ -169,14 +179,13 @@ def parse_xml(filepath, fab, design, p_state):
     tree = ET.parse(filepath)
     root = tree.getroot()
 
-    rows, cols, num_tracks, bus_widths = pre_process(root)
+    params = {'sides': sides}
 
-    params = {'rows': rows, 'cols': cols, 'num_tracks': num_tracks,
-              'bus_widths': bus_widths, 'sides': sides}
+    pre_process(root, params)
 
     process_regs(design, p_state)
 
-    for bus_width in bus_widths:
+    for bus_width in params['bus_widths']:
         params['sinks' + bus_width] = dict()
         params['sources' + bus_width] = dict()
         params['routable' + bus_width] = dict()
@@ -220,11 +229,13 @@ def process_regs(design, p_state):
             p_state[mod] = newstate
 
 
-def pre_process(root):
+def pre_process(root, params):
     rows = 0
     cols = 0
     num_tracks = dict()
     bus_widths = set()
+    pe_locations = {True: set(), False: set()}
+    mem_locations = set()
     for tile in root:
         # Not assuming tiles are in order
         # Although one would hope they are
@@ -243,8 +254,25 @@ def pre_process(root):
             num_tracks[(c, r, tr[0][3:])] = int(tr[1])
             bus_widths.add(tr[0][3:])
 
-    # rows and cols are the number not the index
-    return rows + 1, cols + 1, num_tracks, bus_widths
+        if tile.get("type") == "pe_tile_new":
+            pe_locations[True].add((r, c))
+        # otherwise it's a memory tile
+        else:
+            mem_locations.add((r, c))
+            pe_locations[False].add((r, c))
+            # need to get other rows that this memory tile takes up
+            for sb in tile.findall('sb'):
+                r_incr = int(sb.get("row")) # what to increment row by
+                pe_locations[False].add((r + r_incr, c))
+                # hacky but true for now: making assumption that num_tracks is the same across memory_tiles
+                num_tracks[(c, r + r_incr, tr[0][3:])] = int(tr[1])
+
+    # rows and cols should the number not the index
+    params.update({'rows': rows + 1, 'cols': cols + 1, 'num_tracks': num_tracks,
+                   'bus_widths': bus_widths, 'pe_locations': pe_locations,
+                   'mem_locations': mem_locations})
+
+    return True
 
 
 def generate_layer(bus_width, params):
@@ -347,20 +375,23 @@ def connect_pe(root, bus_width, params):
         port = Port(x, y, Side.PE, 'out', 'o')
         PE[(x, y, 'out')] = port
         sources[(x, y, 'out')] = port
-        for cb in tile.findall('cb'):
-            if cb.get('bus') == 'BUS' + bus_width:
-                for mux in cb.findall('mux'):
-                    snk = mux.get('snk')
-                    port = Port(x, y, Side.PE, snk, 'i')
-                    PE[(x, y, snk)] = port
-                    sinks[(x, y, snk)] = port
-                    for src in mux.findall('src'):
-                        port_name = src.text
-                        direc, bus, side, track = parse_name(port_name)
-                        srcport = SB[(x, y, side, direc)][track]
-                        dstport = PE[(x, y, snk)]  # same port that was created above
-                        track_names = (port_name, snk)
-                        tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'CB'))
+        # need to handle memory tiles differently
+        if tile.get('type') == 'pe_tile_new':
+            for cb in tile.findall('cb'):
+                if cb.get('bus') == 'BUS' + bus_width:
+                    for mux in cb.findall('mux'):
+                        snk = mux.get('snk')
+                        port = Port(x, y, Side.PE, snk, 'i')
+                        PE[(x, y, snk)] = port
+                        sinks[(x, y, snk)] = port
+                        for src in mux.findall('src'):
+                            port_name = src.text
+                            direc, bus, side, track = parse_name(port_name)
+                            srcport = SB[(x, y, side, direc)][track]
+                            dstport = PE[(x, y, snk)]  # same port that was created above
+                            track_names = (port_name, snk)
+                            tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'CB'))
+        # TODO: Handle memory tiles
 
     return True
 
@@ -372,34 +403,38 @@ def connect_sb(root, bus_width, params):
     for tile in root:
         x = int(tile.get('row'))
         y = int(tile.get('col'))
-        for sb in tile.findall('sb'):
-            if sb.get('bus') == 'BUS' + bus_width:
-                for mux in sb.findall('mux'):
-                    snk_name = mux.get('snk')
-                    snk_direc, _, snk_side, snk_track = parse_name(snk_name)
-                    for src in mux.findall('src'):
-                        port_name = src.text
-                        track_names = (port_name, snk_name)
+        # need to handle memory tiles differently
+        if tile.get("type") == "pe_tile_new":
+            for sb in tile.findall('sb'):
+                if sb.get('bus') == 'BUS' + bus_width:
+                    for mux in sb.findall('mux'):
+                        snk_name = mux.get('snk')
+                        snk_direc, _, snk_side, snk_track = parse_name(snk_name)
+                        for src in mux.findall('src'):
+                            port_name = src.text
+                            track_names = (port_name, snk_name)
+                            dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
+                            # input is from PE
+                            if port_name[0:2] == 'pe':
+                                srcport = PE[(x, y, 'out')]
+                                tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
+                            # input is from another side of the SB
+                            else:
+                                src_direc, _, src_side, src_track = parse_name(port_name)
+                                srcport = SB[(x, y, src_side, src_direc)][src_track]
+                                tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
+                    # now connect feedthroughs
+                    for ft in sb.findall('ft'):
+                        snk_name = ft.get('snk')
+                        # since it's a feedthrough, there should be exactly one source
+                        src_name = ft.find('src').text
+                        snk_direc, _, snk_side, snk_track = parse_name(snk_name)
+                        src_direc, _, src_side, src_track = parse_name(src_name)
+                        track_names = (src_name, snk_name)
+                        srcport = SB[(x, y, src_side, src_direc)][src_track]
                         dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
-                        # input is from PE
-                        if port_name[0:2] == 'pe':
-                            srcport = PE[(x, y, 'out')]
-                            tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
-                        # input is from another side of the SB
-                        else:
-                            src_direc, _, src_side, src_track = parse_name(port_name)
-                            srcport = SB[(x, y, src_side, src_direc)][src_track]
-                            tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
-                # now connect feedthroughs
-                for ft in sb.findall('ft'):
-                    snk_name = ft.get('snk')
-                    # since it's a feedthrough, there should be exactly one source
-                    src_name = ft.find('src').text
-                    snk_direc, _, snk_side, snk_track = parse_name(snk_name)
-                    src_direc, _, src_side, src_track = parse_name(src_name)
-                    track_names = (src_name, snk_name)
-                    srcport = SB[(x, y, src_side, src_direc)][src_track]
-                    dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
-                    tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
+                        tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
+
+        # TODO: handle memorty tiles
 
     return True

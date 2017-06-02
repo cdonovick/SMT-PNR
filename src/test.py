@@ -37,6 +37,9 @@ des = design.Design(modules, nets)
 print("Loading fabric: {}".format(fabric_file))
 fab = fabric.pre_place_parse_xml(fabric_file)
 
+print(fab.pe_locations)
+print(fab.mem_locations)
+
 p = pnr.PNR(fab, des)
 
 pnrdone = False
@@ -54,15 +57,16 @@ while not pnrdone and iterations < 10:
         else:
             print("!!!failure!!!")
 
-    fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
-
     if not args.noroute:
+        fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
         print("Routing design...", end=' ')
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
             print("success!")
             pnrdone = True
         else:
             print("!!!failure!!!")
+    else:
+        pnrdone = True
 
     iterations += 1
 
