@@ -254,10 +254,7 @@ def pre_process(root, params):
             num_tracks[(c, r, tr[0][3:])] = int(tr[1])
             bus_widths.add(tr[0][3:])
 
-        if tile.get("type") == "pe_tile_new":
-            pe_locations[True].add((r, c))
-        # otherwise it's a memory tile
-        else:
+        if tile.get("type") == "memory_tile":
             mem_locations.add((r, c))
             pe_locations[False].add((r, c))
             # need to get other rows that this memory tile takes up
@@ -266,6 +263,8 @@ def pre_process(root, params):
                 pe_locations[False].add((r + r_incr, c))
                 # hacky but true for now: making assumption that num_tracks is the same across memory_tiles
                 num_tracks[(c, r + r_incr, tr[0][3:])] = int(tr[1])
+        else:
+            pe_locations[True].add((r, c))
 
     # rows and cols should the number not the index
     params.update({'rows': rows + 1, 'cols': cols + 1, 'num_tracks': num_tracks,
@@ -376,7 +375,7 @@ def connect_pe(root, bus_width, params):
         PE[(x, y, 'out')] = port
         sources[(x, y, 'out')] = port
         # need to handle memory tiles differently
-        if tile.get('type') == 'pe_tile_new':
+        if tile.get('type') is None or tile.get('type') == 'pe_tile_new':
             for cb in tile.findall('cb'):
                 if cb.get('bus') == 'BUS' + bus_width:
                     for mux in cb.findall('mux'):
@@ -404,7 +403,7 @@ def connect_sb(root, bus_width, params):
         x = int(tile.get('row'))
         y = int(tile.get('col'))
         # need to handle memory tiles differently
-        if tile.get("type") == "pe_tile_new":
+        if tile.get("type") is None or tile.get("type") == "pe_tile_new":
             for sb in tile.findall('sb'):
                 if sb.get('bus') == 'BUS' + bus_width:
                     for mux in sb.findall('mux'):
