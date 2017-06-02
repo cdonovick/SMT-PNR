@@ -9,6 +9,11 @@ cache:
     directories:
     - ./smt_solvers
 
+env:
+    - SOLVER=Z3
+    - SOLVER=CVC4
+    - SOLVER=Boolector
+
 addons:
     apt:
         sources:
@@ -36,12 +41,6 @@ install:
     # Add smt-switch
     - git clone https://github.com/makaimann/smt-switch.git
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
-    # Build z3
-    #- wget https://github.com/Z3Prover/z3/releases/download/z3-4.5.0/z3-4.5.0-x64-ubuntu-14.04.zip
-    #- unzip z3-4.5.0-x64-ubuntu-14.04.zip
-    #- export PATH=$PATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/
-    #- export PYTHONPATH=$PYTHONPATH:$PWD/z3-4.5.0-x64-ubuntu-14.04/bin/python/
-    #- sudo ln -s $PWD/z3-4.5.0-x64-ubuntu-14.04/bin/libz3.so /usr/lib/libz3.so
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
     - git clone -b master -- https://github.com/rdaly525/coreir.git
@@ -59,8 +58,11 @@ install:
     - pip install lxml
 
 script:
+    - echo Running tests with $SOLVER
     - cd ./src
     - ./test.py ../new_coremapped.json ../cgra4x4.xml
       --annotate ../bitstream
-      --print --coreir-libs stdlib cgralib
+      --solver $SOLVER 
+      --print 
+      --coreir-libs stdlib cgralib
     - cat ../bitstream
