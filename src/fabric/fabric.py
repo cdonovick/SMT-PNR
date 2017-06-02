@@ -106,14 +106,7 @@ class Fabric:
         self._rows = parsed_params['rows']
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
-        self._layers = dict()
-        for bus_width in parsed_params['bus_widths']:
-            fl = FabricLayer(parsed_params['sources' + bus_width],
-                             parsed_params['sinks' + bus_width],
-                             parsed_params['routable' + bus_width],
-                             parsed_params['tracks' + bus_width])
-            self._layers[int(bus_width)] = fl
-
+        
     @property
     def rows(self):
         return self._rows
