@@ -78,11 +78,12 @@ class Track(NamedIDObject):
 
 
 class FabricLayer:
-    def __init__(self, sources, sinks, routable, tracks):
+    def __init__(self, sources, sinks, routable, tracks, port_names):
         self._sources = sources
         self._sinks = sinks
         self._routable = routable
         self._tracks = tracks
+        self._port_names = port_names
 
     @property
     def sources(self):
@@ -99,6 +100,10 @@ class FabricLayer:
     @property
     def tracks(self):
         return self._tracks
+
+    @property
+    def port_names(self):
+        return self._port_names
 
 
 class Fabric:
@@ -148,7 +153,8 @@ class Fabric:
             fl = FabricLayer(parsed_params['sources' + bus_width],
                              parsed_params['sinks' + bus_width],
                              parsed_params['routable' + bus_width],
-                             parsed_params['tracks' + bus_width])
+                             parsed_params['tracks' + bus_width],
+                             parsed_params['port_names' + bus_width])
             self._layers[int(bus_width)] = fl
 
 
@@ -367,6 +373,8 @@ def connect_pe(root, bus_width, params):
     tracks = params['tracks' + bus_width]
     sinks = params['sinks' + bus_width]
     sources = params['sources' + bus_width]
+    port_names = {'PE': set()}
+    params['port_names' + bus_width] = port_names
     for tile in root:
         y = int(tile.get('row'))
         x = int(tile.get('col'))
@@ -380,6 +388,7 @@ def connect_pe(root, bus_width, params):
                 if cb.get('bus') == 'BUS' + bus_width:
                     for mux in cb.findall('mux'):
                         snk = mux.get('snk')
+                        port_names['PE'].add(snk)
                         port = Port(x, y, Side.PE, snk, 'i')
                         PE[(x, y, snk)] = port
                         sinks[(x, y, snk)] = port

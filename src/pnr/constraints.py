@@ -105,8 +105,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     '''
     c = []
     graph = solver.graphs[0]
-    # TODO: don't hardcode these -- get from coreir?
-    ports = {'a', 'b'}
+
+    PE_ports = fabric[layer].port_names['PE']
 
     sources = fabric[layer].sources
     sinks = fabric[layer].sinks
@@ -131,7 +131,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         # there might be weird cases where you want to drive multiple inputs
         # of dst module with one output
         if dst.resource == 'PE':
-            for port in ports - set(dst_port):
+            for port in PE_ports - set(dst_port):
                 c.append(~vars[net].reaches(vars[sources[src_index]],
                                             vars[sinks[dst_pos + (port,)]]))
         # if not a PE, then there aren't other ports -- do nothing
@@ -160,10 +160,11 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
                     m2_index = m2_index + ('out',)
 
                 if m1.resource == 'PE':
-                    for port in ports:
+                    for port in PE_ports:
                         c.append(~graph.reaches(vars[sources[m2_index]],
                                                 vars[sinks[m1_pos + (port,)]]))
                 else:
+                    # register
                     c.append(~graph.reaches(vars[sources[m2_index]],
                                             vars[sinks[m1_pos]]))
 
@@ -260,13 +261,15 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     sinks = fabric[layer].sinks
 
     # add msnodes for all the used PEs first (because special naming scheme)
-    # Hacky! Hardcoding port names
+    #note: still assuming the 'out' port...
     for x in range(fabric.width):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
-                vars[sinks[(x, y, 'a')]] = graph.addNode('({},{})PE_a'.format(x, y))
-                vars[sinks[(x, y, 'b')]] = graph.addNode('({},{})PE_b'.format(x, y))
                 vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
+                for port_name in fabric[layer].port_names['PE']:
+                    vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})PE_{}'.format(x, y, port_name))
+
+    #TODO: add msnodes for Memory tiles using port_names['mem']
 
     for track in fabric[layer].tracks:
         src = track.src
