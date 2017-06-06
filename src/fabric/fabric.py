@@ -195,10 +195,11 @@ def parse_xml(filepath, fab, design, p_state):
         params['sinks' + bus_width] = dict()
         params['sources' + bus_width] = dict()
         params['routable' + bus_width] = dict()
+        params['mem' + bus_width] = dict()
 
-        SB, PE = generate_layer(bus_width, params)
+        SB = generate_layer(bus_width, params)
         params['SB' + bus_width] = SB
-        params['PE' + bus_width] = PE
+        params['PE' + bus_width] = dict()
 
         connect_tiles(bus_width, params, p_state)
         params['tracks' + bus_width] = list()
@@ -261,16 +262,16 @@ def pre_process(root, params):
             bus_widths.add(tr[0][3:])
 
         if tile.get("type") == "memory_tile":
-            mem_locations.add((r, c))
-            pe_locations[False].add((r, c))
+            mem_locations.add((c, r))
+            pe_locations[False].add((c, r))
             # need to get other rows that this memory tile takes up
             for sb in tile.findall('sb'):
                 r_incr = int(sb.get("row")) # what to increment row by
-                pe_locations[False].add((r + r_incr, c))
+                pe_locations[False].add((c, r + r_incr))
                 # hacky but true for now: making assumption that num_tracks is the same across memory_tiles
                 num_tracks[(c, r + r_incr, tr[0][3:])] = int(tr[1])
         else:
-            pe_locations[True].add((r, c))
+            pe_locations[True].add((c, r))
 
     # rows and cols should the number not the index
     params.update({'rows': rows + 1, 'cols': cols + 1, 'num_tracks': num_tracks,
@@ -282,36 +283,33 @@ def pre_process(root, params):
 
 def generate_layer(bus_width, params):
     SB = dict()
-    PE = dict()
-    for x in range(0, params['cols']):
-        for y in range(0, params['rows']):
-            PE[(x, y)] = dict()
-            for side in params['sides']:
-                ports = [Port(x, y, side, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
-                SB[(x, y, side, 'in')] = ports
-
+    Mem = dict()
     sources = params['sources' + bus_width]
+    # make regular switch boxes
+    for loc in params['pe_locations'][True]:
+        x = loc[0]
+        y = loc[1]
+        for side in params['sides']:
+            ports = [Port(x, y, side, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
+            SB[(x, y, side, 'in')] = ports
 
-    # add inputs from the edges as sources
-    for y in range(0, params['rows']):
-        # for x = 0 and all y
-        for t in range(0, params['num_tracks'][(0, y, bus_width)]):
-            sources[(0, y, t)] = SB[(0, y, Side.W, 'in')][t]
+        # add inputs from edges as sources
+        if x == 0:
+            for t in range(0, params['num_tracks'][(0, y, bus_width)]):
+                sources[(0, y, t)] = SB[(0, y, Side.W, 'in')][t]
+        if x == params['cols'] - 1:
+            for t in range(0, params['num_tracks'][(params['cols'] - 1, y, bus_width)]):
+                sources[(params['cols']-1, y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')][t]
+        if y == 0:
+            for t in range(0, params['num_tracks'][(x, 0, bus_width)]):
+                sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')][t]
+        if y == params['rows'] - 1:
+            for t in range(0, params['num_tracks'][(x, params['rows'] - 1, bus_width)]):
+                sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')][t]
 
-        # for x = cols-1 and all y
-        for t in range(0, params['num_tracks'][(params['cols'] - 1, y, bus_width)]):
-            sources[(params['cols']-1, y, t)] = SB[(params['cols'] - 1, y, Side.E, 'in')][t]
+    #TODO: make memory tiles
 
-    for x in range(0, params['cols']):
-        # for y = 0 and all x
-        for t in range(0, params['num_tracks'][(x, 0, bus_width)]):
-            sources[(x, 0, t)] = SB[(x, 0, Side.N, 'in')][t]
-
-        # for y = rows-1 and all x
-        for t in range(0, params['num_tracks'][(x, params['rows'] - 1, bus_width)]):
-            sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')][t]
-
-    return SB, PE
+    return SB
 
 
 def connect_tiles(bus_width, params, p_state):

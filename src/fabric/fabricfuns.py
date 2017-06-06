@@ -51,6 +51,15 @@ def parse_name(text):
     return s[0], s[1], Side(int(s[2][1])), int(s[3][1])
 
 
+def parse_mem_tile_name(text):
+    '''
+       Parses the mem_tile wire format
+       Returns direc, bus_width, side, track, row_incr
+    '''
+    s = text.split('_')
+    return s[0], s[2], Side(int(s[3])), int(s[4]), s[1]
+
+
 def pos_to_side(pos1, pos2, vertport):
     '''
        Given two positions, returns the output side from pos1's perspective
