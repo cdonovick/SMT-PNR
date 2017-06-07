@@ -12,7 +12,7 @@ def load_core(file, *libs):
 
     for inst in top_def.instances:
         inst_name = inst.selectpath[0]
-        inst_type = inst.module_name()
+        inst_type = inst.module_name
 
         modules[inst_name] = dict()
 
