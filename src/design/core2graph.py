@@ -7,12 +7,12 @@ def load_core(file, *libs):
         context.load_library(lib)
 
     top_module = context.load_from_file(file)
-    top_def = top_module.get_definition()
+    top_def = top_module.definition
     modules = SortedDict()
 
-    for inst in top_def.get_instances():
-        inst_name = inst.get_selectpath()[0]
-        inst_type = inst.module_name()
+    for inst in top_def.instances:
+        inst_name = inst.selectpath[0]
+        inst_type = inst.module_name
 
         modules[inst_name] = dict()
 
@@ -40,9 +40,9 @@ def load_core(file, *libs):
             raise ValueError("Unknown module_name '{}' expected <'PE', 'Const', 'IO', 'Reg', 'Mem'>".format(inst_type))
 
     nets = set()
-    for con in top_def.get_connections():
-        v1 = con.first.get_selectpath()
-        v2 = con.second.get_selectpath()
+    for con in top_def.connections:
+        v1 = con.first.selectpath
+        v2 = con.second.selectpath
 
         if 'out' in v1:
             src = v1
