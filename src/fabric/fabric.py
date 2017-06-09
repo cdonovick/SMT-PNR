@@ -1,6 +1,6 @@
 import lxml.etree as ET
 from util import NamedIDObject
-from .fabricfuns import Side, mapSide, parse_name, pos_to_side
+from .fabricfuns import Side, mapSide, parse_name, pos_to_side, parse_mem_tile_name, parse_mem_sb_wire
 from abc import ABCMeta
 
 
@@ -197,14 +197,17 @@ def parse_xml(filepath, fab, design, p_state):
         params['routable' + bus_width] = dict()
         params['mem' + bus_width] = dict()
 
-        SB = generate_layer(bus_width, params)
+        SB, Mem = generate_layer(bus_width, params)
         params['SB' + bus_width] = SB
+        params['Mem' + bus_width] = Mem
         params['PE' + bus_width] = dict()
 
         connect_tiles(bus_width, params, p_state)
         params['tracks' + bus_width] = list()
 
         connect_pe(root, bus_width, params)
+        connect_memtiles_cb(root, bus_width, params)
+        connect_memtiles_internal(root, bus_width, params, p_state)
         connect_sb(root, bus_width, params)
 
     return fab.update(params)
@@ -243,6 +246,7 @@ def pre_process(root, params):
     bus_widths = set()
     pe_locations = {True: set(), False: set()}
     mem_locations = set()
+    mem_bounds = set()
     for tile in root:
         # Not assuming tiles are in order
         # Although one would hope they are
@@ -266,17 +270,21 @@ def pre_process(root, params):
             pe_locations[False].add((c, r))
             # need to get other rows that this memory tile takes up
             for sb in tile.findall('sb'):
+                bus = sb.get('bus')
                 r_incr = int(sb.get("row")) # what to increment row by
                 pe_locations[False].add((c, r + r_incr))
                 # hacky but true for now: making assumption that num_tracks is the same across memory_tiles
-                num_tracks[(c, r + r_incr, tr[0][3:])] = int(tr[1])
+                num_tracks[(c, r + r_incr, bus[3:])] = int(num_tracks[(c, r, bus[3:])])
+
+            # data structure for holding bounds of a memory tile
+            mem_bounds.add((c, r, r + r_incr))
         else:
             pe_locations[True].add((c, r))
 
     # rows and cols should the number not the index
     params.update({'rows': rows + 1, 'cols': cols + 1, 'num_tracks': num_tracks,
                    'bus_widths': bus_widths, 'pe_locations': pe_locations,
-                   'mem_locations': mem_locations})
+                   'mem_locations': mem_locations, 'mem_bounds': mem_bounds})
 
     return True
 
@@ -307,60 +315,119 @@ def generate_layer(bus_width, params):
             for t in range(0, params['num_tracks'][(x, params['rows'] - 1, bus_width)]):
                 sources[(x, params['rows']-1, t)] = SB[(x, params['rows'] - 1, Side.S, 'in')][t]
 
-    #TODO: make memory tiles
+    for bound in params['mem_bounds']:
+        x = bound[0]
+        lowery = bound[1]
+        uppery = bound[2]
 
-    return SB
+        # create north ports at top (i.e. lower y)
+        portsN = [Port(x, lowery, Side.N, t, 'i') for t in range(0, params['num_tracks'][(x, lowery, bus_width)])]
+        Mem[(x, lowery, Side.N, 'in')] = portsN
+
+        # create south ports at bottom (i.e. upper y)
+        portsS = [Port(x, uppery, Side.S, t, 'i') for t in range(0, params['num_tracks'][(x, uppery, bus_width)])]
+        Mem[(x, uppery, Side.S, 'in')] = portsS
+
+        # create east and west ports 
+        for y in range(lowery, uppery + 1):
+            portsW = [Port(x, y, Side.W, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
+            Mem[(x, y, Side.W, 'in')] = portsW
+            portsE = [Port(x, y, Side.E, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
+            Mem[(x, y, Side.E, 'in')] = portsE
+
+    return SB, Mem
 
 
 def connect_tiles(bus_width, params, p_state):
     rows = params['rows']
     cols = params['cols']
     SB = params['SB' + bus_width]
+    Mem = params['Mem' + bus_width]
     num_tracks = params['num_tracks']
     sinks = params['sinks' + bus_width]
     sources = params['sources' + bus_width]
     routable = params['routable' + bus_width]
 
-    for x in range(0, cols):
-        for y in range(0, rows):
-            for side in params['sides']:
-                # Given a location and a side, mapSide returns the
-                # receiving tile location and side
-                adj_x, adj_y, adj_side = mapSide(x, y, side)
+    SBorMem = SB.copy()
+    SBorMem.update(Mem)
 
-                # check if that switch box exists
-                if (adj_x, adj_y, adj_side, 'in') in SB:
-                    # make the first SB's outputs equal to
-                    # the second SB's inputs
-                    # i.e. no point in having redundant ports/nodes for routing
-                    common_track_number = min([num_tracks[(x, y, bus_width)], num_tracks[(adj_x, adj_y, bus_width)]])
-                    SB[(x, y, side, 'out')] = list()
-                    for t in range(0, common_track_number):
-                        potential_reg = (x, y, t, side)
-                        if potential_reg in p_state.I:
-                            # there's a register here. Need to split the ports
-                            newport = Port(x, y, side, t, 'o')
-                            SB[(x, y, side, 'out')].append(newport)
-                            # add to sinks and sources
-                            sinks[potential_reg] = newport
-                            # index the source node from the same tile
-                            sources[potential_reg] = SB[(adj_x, adj_y, adj_side, 'in')][t]
-                        else:
-                            SB[(x, y, side, 'out')].append(SB[(adj_x, adj_y, adj_side, 'in')][t])
-                            # add port to routable
-                            routable[(adj_x, adj_y, adj_side, t)] = SB[(adj_x, adj_y, adj_side, 'in')][t]
-                    
-                # otherwise make ports for off the edge
+    # make SB->SB and SB->Mem connections
+    for loc in params['pe_locations'][True]:
+        x = loc[0]
+        y = loc[1]
+        for side in params['sides']:
+            # Given a location and a side, mapSide returns the
+            # receiving tile location and side
+            adj_x, adj_y, adj_side = mapSide(x, y, side)
+
+            # check if that switch box exists
+            if (adj_x, adj_y, adj_side, 'in') in SBorMem:
+                # make the first SB's outputs equal to
+                # the second SB's inputs
+                # i.e. no point in having redundant ports/nodes for routing
+                common_track_number = min([num_tracks[(x, y, bus_width)], num_tracks[(adj_x, adj_y, bus_width)]])
+                SB[(x, y, side, 'out')] = list()
+                for t in range(0, common_track_number):
+                    potential_reg = (x, y, t, side)
+                    if potential_reg in p_state.I:
+                        # there's a register here. Need to split the ports
+                        newport = Port(x, y, side, t, 'o')
+                        SB[(x, y, side, 'out')].append(newport)
+                        # add to sinks and sources
+                        sinks[potential_reg] = newport
+                        # index the source node from the same tile
+                        sources[potential_reg] = SBorMem[(adj_x, adj_y, adj_side, 'in')][t]
+                    else:
+                        SB[(x, y, side, 'out')].append(SBorMem[(adj_x, adj_y, adj_side, 'in')][t])
+                        # add port to routable
+                        routable[(adj_x, adj_y, adj_side, t)] = SBorMem[(adj_x, adj_y, adj_side, 'in')][t]
+
+            # otherwise make ports for off the edge (if not an SB or memory)
+            else:
+                ports = []
+                for t in range(0, num_tracks[(x, y, bus_width)]):
+                    p = Port(x, y, side, t, 'o')
+                    ports.append(p)
+                    # note sinks are indexed by edge tile location
+                    # i.e. they're not really "off the edge"
+                    sinks[(x, y, t)] = p
+
+                SB[(x, y, side, 'out')] = ports
+
+    # make Mem->SB connections
+    for loc in list(Mem):
+        x = loc[0]
+        y = loc[1]
+        side = loc[2]
+        adj_x, adj_y, adj_side = mapSide(x, y, side)
+        if (adj_x, adj_y, adj_side, 'in') in SB:
+            common_track_number = min([num_tracks[(x, y, bus_width)], num_tracks[(adj_x, adj_y, bus_width)]])
+            Mem[(x, y, side, 'out')] = list()
+            for t in range(0, common_track_number):
+                potential_reg = (x, y, t, side)
+                if potential_reg in p_state.I:
+                    # there's a register here. Need to split the ports
+                    newport = Port(x, y, side, t, 'o')
+                    Mem[(x, y, side, 'out')].append(newport)
+                    # add to sinks and sources
+                    sinks[potential_reg] = newport
+                    # index the source node from the same tile
+                    sources[potential_reg] = SB[(adj_x, adj_y, adj_side, 'in')][t]
                 else:
-                    ports = []
-                    for t in range(0, num_tracks[(x, y, bus_width)]):
-                        p = Port(x, y, side, t, 'o')
-                        ports.append(p)
-                        # note sinks are indexed by edge tile location
-                        # i.e. they're not really "off the edge"
-                        sinks[(x, y, t)] = p
+                    Mem[(x, y, side, 'out')].append(SB[(adj_x, adj_y, adj_side, 'in')][t])
+                    # add port to routable
+                    routable[(adj_x, adj_y, adj_side, t)] = SB[(adj_x, adj_y, adj_side, 'in')][t]
+        # otherwise make ports off the edge
+        else:
+            ports = []
+            for t in range(0, num_tracks[(x, y, bus_width)]):
+                p = Port(x, y, side, t, 'o')
+                ports.append(p)
+                # note sinks are indexed by edge tile location
+                # i.e. they're not really "off the edge"
+                sinks[(x, y, t)] = p
 
-                    SB[(x, y, side, 'out')] = ports
+            Mem[(x, y, side, 'out')] = ports
 
     return True
 
@@ -397,8 +464,129 @@ def connect_pe(root, bus_width, params):
                             dstport = PE[(x, y, snk)]  # same port that was created above
                             track_names = (port_name, snk)
                             tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'CB'))
-        # TODO: Handle memory tiles
 
+    return True
+
+
+def connect_memtiles_cb(root, bus_width, params):
+    SB = params['SB' + bus_width]
+    Mem = params['Mem' + bus_width]
+    tracks = params['tracks' + bus_width]
+    sinks = params['sinks' + bus_width]
+    sources = params['sources' + bus_width]
+    port_names = params['port_names' + bus_width]
+    port_names['Mem'] = set()
+
+    for tile in root:
+        y = int(tile.get('row'))
+        x = int(tile.get('col'))
+        if tile.get('type') == 'memory_tile':
+            for cb in tile.findall('cb'):
+                if cb.get('bus') == 'BUS' + bus_width:
+                    for mux in cb.findall('mux'):
+                        snk = mux.get('snk')
+                        port_names['Mem'].add(snk)
+                        dstport = Port(x, y, Side.Mem, snk, 'i')
+                        Mem[(x, y, snk)] = dstport
+                        sinks[(x, y, snk)] = dstport
+                        for src in mux.findall('src'):
+                            port_name = src.text
+                            # these wires should always be in_* wires
+                            direc, bus, side, track = parse_mem_tile_name(port_name)
+                            srcport = Mem[(x, y, side, direc)][track]
+                            track_names = (port_name, snk)
+                            tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'CB'))
+
+    return True
+
+
+def connect_memtiles_internal(root, bus_width, params, p_state):
+    Mem = params['Mem' + bus_width]
+    tracks = params['tracks' + bus_width]
+    sinks = params['sinks' + bus_width]
+    sources = params['sources' + bus_width]
+
+    for tile in root:
+        # memory tile can include multiple rows
+        tile_y = int(tile.get('row'))
+        x = int(tile.get('col'))
+        if tile.get('type') == 'memory_tile':
+            for sb in tile.findall('sb'):
+                if sb.get('bus') == 'BUS' + bus_width:
+                    row_incr = int(sb.get('row'))
+                    y = tile_y + row_incr
+                    for mux in sb.findall('mux'):
+                        snk = mux.get('snk')
+
+                        # get or create the snk port
+                        if snk[0:3] == 'out':
+                            # registers for these wires already handled
+                            direc, bus, side, track = parse_mem_tile_name(snk)
+                            snkport = Mem[(x, y, side, direc)][track]
+                        else:
+                            # these ports are unique to the whole memory tile
+                            # i.e. indexed by top location (x, tile_y, ...
+                            direc, bus, side, track = parse_mem_sb_wire(snk)
+                            
+                            if (x, tile_y, snk, 'out') in Mem:
+                                snkport = Mem[(x, tile_y, snk, 'out')]
+                            else:
+                                snkport = Port(x, tile_y, Side.Mem, track, 'internal')
+                                Mem[(x, tile_y, snk, 'out')] = snkport
+                                
+                                # hacky! registers are not handled yet for these wires
+                                # note: the out_* registers have already been created
+                                # but not these
+                                if (x, y, side, track) in p_state.I:
+                                    #There's a register here
+                                    # create a different port for in if doesn't already exist
+                                    # hacky! These indices are supposed to be different...
+                                    # annoying property of memory tiles
+                                    sinks[(x, y, side, track)] = Mem[(x, tile_y, snk, 'out')]
+                                    snkport = Port(x, y, Side.Mem, track, 'reg')
+                                    
+                                if (x, tile_y, snk, 'in') not in Mem:
+                                    Mem[(x, tile_y, snk, 'in')] = snkport
+                                    sources[(x, y, side, track)] = snkport
+
+                        for src in mux.findall('src'):
+                            src_name = src.text
+
+                            # get or create src port
+                            if src_name[0:2] == 'in':
+                                direc, bus, side, track = parse_mem_tile_name(src_name)
+                                srcport = Mem[(x, y, side, direc)][track]
+                            else:
+                                # these ports are unique to the whole memory tile
+                                # i.e. indexed by top location (x, tile_y, ...
+                                if (x, tile_y, src_name, 'in') in Mem:
+                                    srcport = Mem[(x, tile_y, src_name, 'in')]
+                                else:
+                                    srcport = Port(x, tile_y, Side.Mem, src_name, 'internal')
+                                    Mem[(x, tile_y, src_name, 'in')] = srcport
+
+                                # check for registers and make new port if needed
+                                if src_name[0:2] == 'sb':
+                                    direc, bus, side, track = parse_mem_sb_wire(src_name)
+                                    if (x, y, side, track) in p_state.I:
+                                        # There's a register here
+                                        # add to sinks and sources
+                                        # hacky! indices supposed to be different
+                                        sources[(x, y, side, track)] = Mem[(x, tile_y, src_name, 'in')]
+                                        srcport = Port(x, y, Side.Mem, track, 'mem_reg')
+                                        sinks[(x, y, side, track)]
+
+                                if (x, tile_y, src_name, 'out') not in Mem:
+                                    Mem[(x, tile_y, src_name, 'out')] = srcport
+
+                                # hacky: hardcoded output ports
+                                # add port to sources if it's a routable signal
+                                if src_name in {'valid', 'almost_full', 'mem_out'}:
+                                    sources[(x, y, src_name)] = srcport
+
+                            # make the track
+                            track_names = (src_name, snk)
+                            tracks.append(Track(srcport, snkport, int(bus_width), track_names, 'SB'))
     return True
 
 
@@ -407,8 +595,8 @@ def connect_sb(root, bus_width, params):
     PE = params['PE' + bus_width]
     tracks = params['tracks' + bus_width]
     for tile in root:
-        x = int(tile.get('row'))
-        y = int(tile.get('col'))
+        x = int(tile.get('col'))
+        y = int(tile.get('row'))
         # need to handle memory tiles differently
         if tile.get("type") is None or tile.get("type") == "pe_tile_new":
             for sb in tile.findall('sb'):
@@ -440,7 +628,5 @@ def connect_sb(root, bus_width, params):
                         srcport = SB[(x, y, src_side, src_direc)][src_track]
                         dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
                         tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
-
-        # TODO: handle memorty tiles
 
     return True

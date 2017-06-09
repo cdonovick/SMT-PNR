@@ -8,7 +8,8 @@ class Side(Enum):
     S = 1
     E = 0
     W = 2
-    PE = 4 #no side
+    PE = 4 # To/from a PE
+    Mem = 5 # To/from a SB
 
 def getSide(side_str):
     '''
@@ -54,11 +55,28 @@ def parse_name(text):
 def parse_mem_tile_name(text):
     '''
        Parses the mem_tile wire format
-       Returns direc, bus_width, side, track, row_incr
+       Returns direc, bus_width, side, track
     '''
     s = text.split('_')
-    return s[0], s[2], Side(int(s[3])), int(s[4]), s[1]
+    return s[0], s[2], Side(int(s[3])), int(s[4])
 
+
+def parse_mem_sb_wire(text):
+    '''
+       Takes an internal memory tile wire, with prefix sb_wire and parses it
+       Returns direc, bus_width, side, track
+    '''
+    # maps to opposite side
+    SideMap = {'0': Side.W, '1': Side.N, '2': Side.E, '3': Side.S}
+
+    
+    s = text.split('_')
+    if s[2] == 'out':
+        return s[2], s[4], Side(int(s[5])), int(s[6])
+    else:
+        # side is backwards
+        return s[2], s[4], SideMap[s[5]], int(s[6])
+    
 
 def pos_to_side(pos1, pos2, vertport):
     '''
@@ -105,7 +123,7 @@ def pos_to_side(pos1, pos2, vertport):
                 return Side.N
 
     # For some reason this is less robust
-    # makes no sense because only changes is handling edge cases...
+    # makes no sense because only change is handling edge cases...
     
     # if vertport is not None:
     #     if vertport:

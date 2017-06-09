@@ -37,9 +37,6 @@ des = design.Design(modules, nets)
 print("Loading fabric: {}".format(fabric_file))
 fab = fabric.pre_place_parse_xml(fabric_file)
 
-print(fab.pe_locations[True])
-print(fab.mem_locations)
-
 p = pnr.PNR(fab, des)
 
 pnrdone = False
