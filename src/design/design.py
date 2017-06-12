@@ -2,7 +2,7 @@
     Classes for represtenting designs and various constructors
 '''
 from util import NamedIDObject, SortedDict
-from .module import Module
+from .module import Module, Resource
 from .net import Net
 from functools import lru_cache
 
@@ -13,7 +13,7 @@ class Design(NamedIDObject):
         _mods = SortedDict()
         _nets = dict()
 
-    
+
         #build modules
         for mod_name,args in modules.items():
             mod = Module(mod_name)
@@ -22,11 +22,7 @@ class Design(NamedIDObject):
             if args['conf'] is not None:
                 mod.config = args['conf']
 
-            if mod.type_ in ('PE', 'IO'):
-                mod.resource = 'PE'
-            else:
-                mod.resource = mod.type_
-
+            mod.resource = args['res']
             _mods[mod_name] = mod
 
         self._modules=frozenset(_mods.values())
@@ -41,37 +37,47 @@ class Design(NamedIDObject):
 
             if (src.type_, dst.type_) in _fusable:
                 src.fused = True
-                src.resource = None
+                src.resource = Resource.Fused
             else:
+
                 #for virtual nets
                 idx_set.add(idx)
 
 
             _nets[idx] = Net(*idx)
-        
-        self._nets=frozenset(_nets.values())
 
-        #build _v_nets
-        _v_nets = set()
+        self._nets=frozenset(_nets.values())
+        #build _p_modules
+        _p_modules = set()
+        for m in self.modules:
+            if m.resource != Resource.Fused:
+                _p_modules.add(m)
+
+        self._p_modules = frozenset(_p_modules)
+
+        #build _p_nets
+        _p_nets = set()
         while idx_set:
             idx = idx_set.pop()
             #idx[2] == dst
             if not idx[2].fused:
                 if idx in _nets:
-                    _v_nets.add(_nets[idx])
+                    _p_nets.add(_nets[idx])
                 else:
                     t = Net(*idx)
-                    _v_nets.add(t)
+                    _p_nets.add(t)
             else:
                 for dst_net in idx[2].outputs.values():
-                    assert dst_net.width == idx[4] 
+                    assert dst_net.width == idx[4]
                     #print("Fusing ({a}->{b}), ({b}->{c}) to ({a}->{c})".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
                     idx_set.add((idx[0], idx[1], dst_net.dst, dst_net.dst_port, idx[4]))
-        self._v_nets = frozenset(_v_nets)
+        self._p_nets = frozenset(_p_nets)
+
 
     @property
     def modules(self):
         return self._modules
+
 
     @property
     def nets(self):
@@ -86,6 +92,9 @@ class Design(NamedIDObject):
         return frozenset(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
 
     @property
-    def virtual_nets(self):
-        return self._v_nets
+    def physical_nets(self):
+        return self._p_nets
 
+    @property
+    def physical_modules(self):
+        return self._p_modules

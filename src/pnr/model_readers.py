@@ -1,6 +1,8 @@
+from design.module import Resource
+
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
-        if module.resource == 'Reg':
+        if module.resource == Resource.Reg:
             state[module] = var.get_coordinates() + (var.get_color(),)
         else:
             state[module] = var.get_coordinates()
@@ -10,7 +12,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
     sources = fabric[16].sources
     sinks = fabric[16].sinks
 
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         src = net.src
         dst = net.dst
         src_port = net.src_port
@@ -22,11 +24,11 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
         dst_index = p_state[dst][0]
 
         # get correct tuple index
-        if src.resource == 'PE':
+        if src.resource == Resource.PE:
             src_index = src_index + (src_port,)
-        if dst.resource == 'PE':
+        if dst.resource == Resource.PE:
             dst_index = dst_index + (dst_port,)
-        
+
         src_node = vars[sources[src_index]]
         dst_node = vars[sinks[dst_index]]
         reaches = graph.reaches(src_node, dst_node)
