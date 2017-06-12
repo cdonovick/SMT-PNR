@@ -309,10 +309,14 @@ class BVXY(PositionBase):
         return (self.solver.get_value(self.c).as_int())
 
     def encode(self, p):
-        return self.encode_x(p[0]), self.encode_y(p[1])
+        return concat(self.encode_x(p[0]), self.encode_y(p[1]))
 
     def encode_x(self, x):
         return self.solver.theory_const(sorts.BitVec(self._x_bits), x)
 
     def encode_y(self, y):
         return self.solver.theory_const(sorts.BitVec(self._y_bits), y)
+
+    def encode_c(self, c):
+        return self.solver.theory_const(sorts.BitVec(self._c_bits), c)
+

@@ -22,7 +22,7 @@ fabric_file = args.fabric
 
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
-PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO, pnr.register_colors
+PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO, pnr.pin_resource, pnr.register_colors
 PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO, pnr.register_colors
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1) 
 # To use multigraph encoding:

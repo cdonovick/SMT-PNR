@@ -96,6 +96,23 @@ def pin_IO(fabric, design, state, vars, solver):
     return And(constraints)
 
 
+def pin_resource(fabric, design, state, vars, solver):
+    constraints = []
+    for module in design.physical_modules:
+        pos = vars[module]
+        c = []
+        for p in fabric.locations[module.resource]:
+            if len(p) > 3 or len(p) < 2:
+                raise NotImplementedError("Can't haldle dimension other than 2 / 3")
+
+            cc = [pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1])]
+            if len(p) == 3:
+                cc.append(pos.c == pos.encode_c(p[0]))
+            c.append(And(cc))
+
+        constraints.append(Or(c))
+    return And(constraints)
+
 
 #################################### Routing Constraints ################################
 
