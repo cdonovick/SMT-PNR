@@ -6,6 +6,7 @@ import sys
 
 import lxml.etree as ET
 
+from design.module import Resource
 from fabric.fabricfuns import parse_name, mapSide
 from fabric import Side
 from util import smart_open, Mask
@@ -111,7 +112,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 r = (x, y, 'SB', snk, src.text)
                 if r in r_state.I:
                     vnet = r_state.I[r][0]
-                    if vnet.dst.resource == 'Reg' and mux.get('configr'):
+                    if vnet.dst.resource == Resource.Reg and mux.get('configr'):
                         configr = int(mux.get('configr'))
                         reg = configr // 32
                         offset = configr % 32
@@ -252,7 +253,7 @@ def _write_route_debug(design, output, p_state, r_state):
        which is unfortunately verbose...
     '''
     with smart_open(output) as f:
-        for net in design.virtual_nets:
+        for net in design.physical_nets:
             f.write('{} -> {}:\n'.format(net.src.name, net.dst.name))
             f.write(str(r_state[(net, 'debug')]))
             f.write("\n")

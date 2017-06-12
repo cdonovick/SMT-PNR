@@ -2,10 +2,11 @@
 Constraint generators
 '''
 from functools import partial
-import itertools 
+import itertools
 
 from smt_switch import functions
 from fabric import Side
+from design.module import Resource
 
 And = functions.And()
 Or = functions.Or()
@@ -19,7 +20,7 @@ def init_positions(position_type):
     '''
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in design.modules_with_attr_val('fused', False):
+        for module in design.physical_modules:
             if module not in vars:
                 p = position_type(module.name, fabric)
                 vars[module] = p
@@ -29,7 +30,7 @@ def init_positions(position_type):
 
 def assert_pinned(fabric, design, state, vars, solver):
     constraints = []
-    for module in design.nf_modules:
+    for module in design.physical_modules:
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
@@ -37,13 +38,13 @@ def assert_pinned(fabric, design, state, vars, solver):
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
-    for m1 in design.modules_with_attr_val('fused', False):
-        for m2 in design.modules_with_attr_val('fused', False):
+    for m1 in design.physical_modules:
+        for m2 in design.physical_modules:
             if m1 != m2 and m1.resource == m2.resource:
                 v1,v2 = vars[m1],vars[m2]
                 c = v1.flat != v2.flat
 
-                if m1.resource == 'Reg':
+                if m1.resource == Resource.Reg:
                     constraints.append(Or(c,  v1.c != v2.c))
                 else:
                     constraints.append(c)
@@ -52,10 +53,10 @@ def distinct(fabric, design, state, vars, solver):
 
 def register_colors(fabric, design, state, vars, solver):
     constraints = []
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         src = net.src
         dst = net.dst
-        if src.resource == dst.resource == 'Reg':
+        if src.resource == dst.resource == Resource.Reg:
             constraints.append(vars[src].c == vars[dst].c)
     return And(constraints)
 
@@ -64,13 +65,13 @@ def nearest_neighbor(fabric, design, state, vars, solver):
     return _neighborhood(dxdy, fabric, design, state, vars, solver)
 
 
-def neighborhood(dist): 
+def neighborhood(dist):
     dxdy = ((x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0)
     return partial(_neighborhood, dxdy)
 
 def _neighborhood(dxdy, fabric, design, state, vars, solver):
     constraints = []
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         src = net.src
         dst = net.dst
         c = []
@@ -83,7 +84,7 @@ def _neighborhood(dxdy, fabric, design, state, vars, solver):
 
 
     return And(constraints)
-        
+
 
 def pin_IO(fabric, design, state, vars, solver):
     constraints = []
@@ -115,7 +116,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     # TODO: Fix this so doesn't assume only connected to one input port
     # there might be weird cases where you want to drive multiple inputs
     # of dst module with one output
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         src = net.src
         dst = net.dst
         dst_port = net.dst_port
@@ -124,21 +125,21 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         # find correct index tuple (based on resource type)
         src_index = src_pos
-        if src.resource == 'PE':
+        if src.resource == Resource.PE:
             src_index = src_index + (net.src_port,)
 
         # TODO: Fix this so doesn't assume only connected to one input port
         # there might be weird cases where you want to drive multiple inputs
         # of dst module with one output
-        if dst.resource == 'PE':
+        if dst.resource == Resource.PE:
             for port in PE_ports - set(dst_port):
                 c.append(~vars[net].reaches(vars[sources[src_index]],
                                             vars[sinks[dst_pos + (port,)]]))
         # if not a PE, then there aren't other ports -- do nothing
 
-        
+
     # make sure modules that aren't connected are not connected
-    for m1 in design.modules_with_attr_val('fused', False):
+    for m1 in design.physical_modules:
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -152,14 +153,14 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             # add the (potentially contracted) src
             contracted_inputs.add(src)
         m1_pos = p_state[m1][0]
-        for m2 in design.modules_with_attr_val('fused', False):
+        for m2 in design.physical_modules:
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
                 m2_index = m2_pos
-                if m2.resource == 'PE':
+                if m2.resource == Resource.PE:
                     m2_index = m2_index + ('out',)
 
-                if m1.resource == 'PE':
+                if m1.resource == Resource.PE:
                     for port in PE_ports:
                         c.append(~graph.reaches(vars[sources[m2_index]],
                                                 vars[sinks[m1_pos + (port,)]]))
@@ -179,7 +180,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     reaches = []
     sources = fabric[layer].sources
     sinks = fabric[layer].sinks
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         src = net.src
         dst = net.dst
         src_port = net.src_port
@@ -188,9 +189,9 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst_index = p_state[dst][0]
 
         # get index tuple (if it's a PE, need to append port)
-        if src.resource == 'PE':
+        if src.resource == Resource.PE:
             src_index = src_index + (src_port,)
-        if dst.resource == 'PE':
+        if dst.resource == Resource.PE:
             dst_index = dst_index + (dst_port,)
 
         reaches.append(vars[net].reaches(vars[sources[src_index]],
@@ -213,7 +214,7 @@ def dist_limit(dist_factor):
         constraints = []
         sources = fabric[layer].sources
         sinks = fabric[layer].sinks
-        for net in design.virtual_nets:
+        for net in design.physical_nets:
             src = net.src
             dst = net.dst
             src_port = net.src_port
@@ -224,9 +225,9 @@ def dist_limit(dist_factor):
             # get correct index (based on resource type)
             src_index = src_pos
             dst_index = dst_pos
-            if src.resource == 'PE':
+            if src.resource == Resource.PE:
                 src_index = src_index + (src_port,)
-            if dst.resource == 'PE':
+            if dst.resource == Resource.PE:
                 dst_index = dst_index + (dst_port,)
 
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
@@ -238,7 +239,7 @@ def dist_limit(dist_factor):
             heuristic_dist = 3*dist_factor*manhattan_dist + 1
 
             # not imposing distance constraints for reg-->reg nets -- because sometimes needs to take weird path
-            if dst.resource != 'Reg':
+            if dst.resource != Resource.Reg:
                 constraints.append(vars[net].distance_leq(vars[sources[src_index]],
                                                           vars[sinks[dst_index]],
                                                           heuristic_dist))
@@ -252,7 +253,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     # note: in this case, all point to the same graph
     # this allows us to reuse constraints such as dist_limit and use the same model_reader
     solver.add_graph()
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         vars[net] = solver.graphs[0]
 
     graph = solver.graphs[0]  # only one graph in this encoding
@@ -303,7 +304,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     # create graphs for each net
     node_dict = dict()  # used to keep track of nodes in each graph
-    for net in design.virtual_nets:
+    for net in design.physical_nets:
         vars[net] = solver.add_graph()
         node_dict[net] = dict()
 
@@ -314,7 +315,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
     for x in range(fabric.width):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
-                for net in design.virtual_nets:
+                for net in design.physical_nets:
                     src = net.src
                     dst = net.dst
                     # currently broken because have two nets for one connection
@@ -334,18 +335,18 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         # naming scheme is (x, y)Side_direction[track]
         if src not in vars:
-            for net in design.virtual_nets:
+            for net in design.physical_nets:
                 u = vars[net].addNode(src.name)
                 node_dict[net][u] = solver.false()
             vars[src] = u
         if dst not in vars:
-            for net in design.virtual_nets:
+            for net in design.physical_nets:
                 v = vars[net].addNode(dst.name)
                 node_dict[net][v] = solver.false()
             vars[dst] = v
 
         # keep track of whether a node is 'active' based on connected edges
-        for net in design.virtual_nets:
+        for net in design.physical_nets:
             src = net.src
             dst = net.dst
             e = vars[net].addEdge(vars[src], vars[dst])
@@ -359,7 +360,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
     # now enforce that each node is only used in one of the graphs
     # Note: all graphs have same nodes, so can get them from any graph
     for node in range(0, solver.graphs[0].nodes):
-        node_in_graphs = [node_dict[net][node] for net in design.virtual_nets]
+        node_in_graphs = [node_dict[net][node] for net in design.physical_nets]
         solver.AssertAtMostOne(node_in_graphs)
 
     return solver.And([])

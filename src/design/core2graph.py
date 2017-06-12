@@ -1,4 +1,5 @@
 import coreir
+from .module import Resource
 from util import SortedDict
 
 def load_core(file, *libs):
@@ -19,22 +20,27 @@ def load_core(file, *libs):
         if inst_type[:2] == 'PE':
             modules[inst_name]['type'] = 'PE'
             modules[inst_name]['conf'] = inst.get_config_value('op')
+            modules[inst_name]['res']  = Resource.PE
 
         elif inst_type[:5] == 'Const':
             modules[inst_name]['type'] = 'Const'
             modules[inst_name]['conf'] = inst.get_config_value('value')
+            modules[inst_name]['res']  = Resource.UNSET
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'
             modules[inst_name]['conf'] = inst.get_config_value('mode')
+            modules[inst_name]['res']  = Resource.IO
 
         elif inst_type[:3] == 'Reg':
             modules[inst_name]['type'] = 'Reg'
             modules[inst_name]['conf'] = None
+            modules[inst_name]['res']  = Resource.Reg
 
         elif inst_type[:3] == 'Mem':
             modules[inst_name]['type'] = 'Mem'
             modules[inst_name]['conf'] = inst.get_config_value('mode')
+            modules[inst_name]['res']  = Resource.Mem
 
         else:
             raise ValueError("Unknown module_name '{}' expected <'PE', 'Const', 'IO', 'Reg', 'Mem'>".format(inst_type))
