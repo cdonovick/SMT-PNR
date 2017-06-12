@@ -107,7 +107,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     c = []
     graph = solver.graphs[0]
 
-    PE_ports = fabric[layer].port_names['PE']
+    PE_ports = fabric[layer].port_names[Resource.PE]
 
     sources = fabric[layer].sources
     sinks = fabric[layer].sinks
@@ -267,7 +267,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
         for y in range(fabric.height):
             if (x, y) in p_state.I:
                 vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
-                for port_name in fabric[layer].port_names['PE']:
+                for port_name in fabric[layer].port_names[Resource.PE]:
                     vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})PE_{}'.format(x, y, port_name))
 
     #TODO: add msnodes for Memory tiles using port_names['mem']

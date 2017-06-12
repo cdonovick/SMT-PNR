@@ -2,6 +2,7 @@ import lxml.etree as ET
 from util import NamedIDObject
 from .fabricfuns import Side, mapSide, parse_name, pos_to_side, parse_mem_tile_name, parse_mem_sb_wire
 from abc import ABCMeta
+from design.module import Resource
 
 
 class Port(NamedIDObject):
@@ -112,9 +113,9 @@ class Fabric:
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
         self._locations = dict()
-        self._locations['PE'] = parsed_params['pe_locations'][True]
-        self._locations['IO'] = self.io_locations
-        self._locations['Mem'] = parsed_params['mem_locations']
+        self._locations[Resource.PE] = parsed_params['pe_locations'][True]
+        self._locations[Resource.Mem] = parsed_params['mem_locations']
+        self._locations[Resource.Reg] = parsed_params['reg_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
 
@@ -272,6 +273,7 @@ def pre_process(root, params):
     bus_widths = set()
     pe_locations = {True: set(), False: set()}
     mem_locations = set()
+    reg_locations = set()
     mem_bounds = set()
     for tile in root:
         # Not assuming tiles are in order
@@ -291,11 +293,30 @@ def pre_process(root, params):
             num_tracks[(c, r, tr[0][3:])] = int(tr[1])
             bus_widths.add(tr[0][3:])
 
+        if tile.get("type") is None or tile.get('type') == 'pe_tile_new':
+            for sb in tile.findall('sb'):
+                for mux in sb.findall('mux'):
+                    if mux.get('reg') == "1":
+                        # there's a register here
+                        snk_name = mux.get('snk')
+                        # hacky just getting last character for now
+                        track = snk_name[-1:]
+                        reg_locations.add((c, r, int(track)))
+
         if tile.get("type") == "memory_tile":
             mem_locations.add((c, r))
             pe_locations[False].add((c, r))
             # need to get other rows that this memory tile takes up
             for sb in tile.findall('sb'):
+                # check for registers
+                for mux in sb.findall('mux'):
+                    if mux.get('reg') == "1":
+                        # there's a register here
+                        snk_name = mux.get('snk')
+                        # hacky just getting last character for now
+                        track = snk_name[-1:]
+                        reg_locations.add((c, r, int(track)))
+                    
                 bus = sb.get('bus')
                 r_incr = int(sb.get("row")) # what to increment row by
                 pe_locations[False].add((c, r + r_incr))
@@ -310,7 +331,9 @@ def pre_process(root, params):
     # rows and cols should the number not the index
     params.update({'rows': rows + 1, 'cols': cols + 1, 'num_tracks': num_tracks,
                    'bus_widths': bus_widths, 'pe_locations': pe_locations,
-                   'mem_locations': mem_locations, 'mem_bounds': mem_bounds})
+                   'mem_locations': mem_locations, 'mem_bounds': mem_bounds,
+                   'reg_locations': reg_locations
+                   })
 
     return True
 
@@ -464,7 +487,7 @@ def connect_pe(root, bus_width, params):
     tracks = params['tracks' + bus_width]
     sinks = params['sinks' + bus_width]
     sources = params['sources' + bus_width]
-    port_names = {'PE': set()}
+    port_names = {Resource.PE: set()}
     params['port_names' + bus_width] = port_names
     for tile in root:
         y = int(tile.get('row'))
@@ -479,7 +502,7 @@ def connect_pe(root, bus_width, params):
                 if cb.get('bus') == 'BUS' + bus_width:
                     for mux in cb.findall('mux'):
                         snk = mux.get('snk')
-                        port_names['PE'].add(snk)
+                        port_names[Resource.PE].add(snk)
                         port = Port(x, y, Side.PE, snk, 'i')
                         PE[(x, y, snk)] = port
                         sinks[(x, y, snk)] = port
@@ -511,7 +534,7 @@ def connect_memtiles_cb(root, bus_width, params):
                 if cb.get('bus') == 'BUS' + bus_width:
                     for mux in cb.findall('mux'):
                         snk = mux.get('snk')
-                        port_names['Mem'].add(snk)
+                        port_names[Resource.Mem].add(snk)
                         dstport = Port(x, y, Side.Mem, snk, 'i')
                         Mem[(x, y, snk)] = dstport
                         sinks[(x, y, snk)] = dstport
