@@ -125,17 +125,18 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         # find correct index tuple (based on resource type)
         src_index = src_pos
-        if src.resource == Resource.PE:
+        if src.resource != Resource.Reg:
             src_index = src_index + (net.src_port,)
 
         # TODO: Fix this so doesn't assume only connected to one input port
         # there might be weird cases where you want to drive multiple inputs
         # of dst module with one output
-        if dst.resource == Resource.PE:
-            for port in PE_ports - set(dst_port):
+        if dst.resource != Resource.Reg:
+            for port in fabric[layer].port_names[dst.resource] - set(dst_port):
                 c.append(~vars[net].reaches(vars[sources[src_index]],
                                             vars[sinks[dst_pos + (port,)]]))
-        # if not a PE, then there aren't other ports -- do nothing
+
+        # if it's a register, there are no other ports
 
 
     # make sure modules that aren't connected are not connected
@@ -157,15 +158,20 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
             if m2 != m1 and m2 not in contracted_inputs:
                 m2_pos = p_state[m2][0]
                 m2_index = m2_pos
+
+                # hacky hardcoding ports
                 if m2.resource == Resource.PE:
                     m2_index = m2_index + ('out',)
 
-                if m1.resource == Resource.PE:
-                    for port in PE_ports:
+                if m2.resource == Resource.Mem:
+                    m2_index = m2_index + ('mem_out',)
+
+                if m1.resource != Resource.Reg:
+                    for port in fabric[layer].port_names[m1.resource]:
                         c.append(~graph.reaches(vars[sources[m2_index]],
                                                 vars[sinks[m1_pos + (port,)]]))
                 else:
-                    # register
+                    # register -- indexed differently
                     c.append(~graph.reaches(vars[sources[m2_index]],
                                             vars[sinks[m1_pos]]))
 
@@ -188,10 +194,10 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         src_index = p_state[src][0]
         dst_index = p_state[dst][0]
 
-        # get index tuple (if it's a PE, need to append port)
-        if src.resource == Resource.PE:
+        # get index tuple (if it's a PE or Mem, need to append port)
+        if src.resource != Resource.Reg:
             src_index = src_index + (src_port,)
-        if dst.resource == Resource.PE:
+        if dst.resource != Resource.Reg:
             dst_index = dst_index + (dst_port,)
 
         reaches.append(vars[net].reaches(vars[sources[src_index]],
@@ -225,9 +231,9 @@ def dist_limit(dist_factor):
             # get correct index (based on resource type)
             src_index = src_pos
             dst_index = dst_pos
-            if src.resource == Resource.PE:
+            if src.resource != Resource.Reg:
                 src_index = src_index + (src_port,)
-            if dst.resource == Resource.PE:
+            if dst.resource != Resource.Reg:
                 dst_index = dst_index + (dst_port,)
 
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
