@@ -116,13 +116,15 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                         configr = int(mux.get('configr'))
                         reg = configr // 32
                         offset = configr % 32
-                        data[reg][offset:offset+1] = 1
+                        data[reg] |= 1 << offset
+#                        data[reg][offset:offset+1] = 1
                         comment[reg][(offset, offset)] = 'latch wire {} ({}) before connecting to {}'.format(src.get('sel'), src.text, snk)
 
                     configl = int(mux.get('configl'))
                     reg = configl // 32
                     offset = configl % 32
-                    data[reg][offset: offset + sel_w] = int(src.get('sel'))
+                    data[reg] |= int(src.get('sel')) << offset
+#                    data[reg][offset: offset + sel_w] = int(src.get('sel'))
                     comment[reg][(sel_w + offset - 1, offset)] = 'connect wire {} ({}) to {}'.format(src.get('sel'), src.text, snk)
 
         return data,comment
