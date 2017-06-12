@@ -111,6 +111,10 @@ class Fabric:
         self._rows = parsed_params['rows']
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
+        self._locations = dict()
+        self._locations['PE'] = parsed_params['pe_locations'][True]
+        self._locations['IO'] = self.io_locations
+        self._locations['Mem'] = parsed_params['mem_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
 
@@ -137,8 +141,30 @@ class Fabric:
         return self._num_tracks
 
     @property
+    def locations(self):
+        '''
+            Returns a dictionary of resource type --> set of locations
+        '''
+        return self._locations
+
+    # hacky returns all x==0 or y==0 locations for ios
+    @property
+    def io_locations(self):
+        locs = set()
+        for y in range(0, self.rows):
+            locs.add((0, y))
+        for x in range(0, self.cols):
+            locs.add((x, 0))
+
+        return locs
+
+    @property
     def pe_locations(self):
-        return self._pe_locations
+        return self._pe_locations[True]
+
+    @property
+    def npe_locations(self):
+        return self._pe_locations[False]
 
     @property
     def mem_locations(self):
