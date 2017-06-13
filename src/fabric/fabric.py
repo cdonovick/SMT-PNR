@@ -524,7 +524,7 @@ def connect_memtiles_cb(root, bus_width, params):
     sinks = params['sinks' + bus_width]
     sources = params['sources' + bus_width]
     port_names = params['port_names' + bus_width]
-    port_names['Mem'] = set()
+    port_names[Resource.Mem] = set()
 
     for tile in root:
         y = int(tile.get('row'))
