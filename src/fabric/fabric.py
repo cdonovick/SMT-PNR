@@ -243,7 +243,7 @@ def parse_xml(filepath, fab, design, p_state):
 # process the registers
 def process_regs(design, p_state):
     for mod in design.modules:
-        if mod.resource == 'Reg':
+        if mod.resource == Resource.Reg:
             k = 0
             for port, net in mod.outputs.items():
                 outmod = net.dst

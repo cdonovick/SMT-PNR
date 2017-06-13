@@ -113,14 +113,14 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 if r in r_state.I:
                     vnet = r_state.I[r][0]
                     if vnet.dst.resource == Resource.Reg:
-                        p = re.compile(r'(?:sb_wire_)?(?:in|out)(?:_\d*)?_BUS\d*_S?(?P<side>\d+)_T?(?P<track>\d+)')
+                        p = re.compile(r'(?:sb_wire_)?(?:in|out)(?:_\d*)?_BUS(?P<bus>\d+)_S?(?P<side>\d+)_T?(?P<track>\d+)')
                         m = p.search(snk)
-                        _side = m.group('side')
-                        _track = m.group('track')
+                        _side = Side(int(m.group('side')))
+                        _track = int(m.group('track'))
+                        _bus = int(m.group('bus'))
 
-                        if (x,y,_track,_side) == p_state[vnet.dst]:
+                        if (x,y,_track,_side) == p_state[vnet.dst][0]:
                             assert mux.get('configr') is not None
-                            print("good shit")
                             configr = int(mux.get('configr'))
                             reg = configr // 32
                             offset = configr % 32
