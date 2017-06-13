@@ -11,7 +11,7 @@ from fabric.fabricfuns import parse_name, mapSide
 from fabric import Side
 from util import smart_open, Mask
 
-__all__ = ['write_debug', 'write_route_debug', 'write_bitstream', 'write_xml']
+__all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
 
 # -------------------------------------------------
 # write_bitsream consants
