@@ -53,9 +53,10 @@ class PNR:
     def route_design(self, funcs, model_reader):
         constraints = []
         for f in funcs:
-            # TODO: Layer is currently hardcoded -- eventually iterate through and possibly use different constraints per layer
-            c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver, 16)
-            self._route_solver.add(self._route_solver.And(c))
+            # hacky hardcoding layers
+            for layer in {16}:
+                c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver, layer)
+                self._route_solver.add(self._route_solver.And(c))
 
         if not self._route_solver.solve():
             self._route_solver.reset()

@@ -493,9 +493,9 @@ def connect_pe(root, bus_width, params):
         y = int(tile.get('row'))
         x = int(tile.get('col'))
         # Hacky! Hardcoding the PE output port
-        port = Port(x, y, Side.PE, 'out', 'o')
-        PE[(x, y, 'out')] = port
-        sources[(x, y, 'out')] = port
+        port = Port(x, y, Side.PE, 'pe_out_res', 'o')
+        PE[(x, y, 'pe_out_res')] = port
+        sources[(x, y, 'pe_out_res')] = port
         # need to handle memory tiles differently
         if tile.get('type') is None or tile.get('type') == 'pe_tile_new':
             for cb in tile.findall('cb'):

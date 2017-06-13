@@ -113,12 +113,14 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 if r in r_state.I:
                     vnet = r_state.I[r][0]
                     if vnet.dst.resource == Resource.Reg and mux.get('configr'):
-                        configr = int(mux.get('configr'))
-                        reg = configr // 32
-                        offset = configr % 32
-                        data[reg] |= 1 << offset
-#                        data[reg][offset:offset+1] = 1
-                        comment[reg][(offset, offset)] = 'latch wire {} ({}) before connecting to {}'.format(src.get('sel'), src.text, snk)
+			if (x,y) == p_state[vnet.dst] and not hasattr(vnet, 'HACK'):
+				vnet.HACK = True
+				configr = int(mux.get('configr'))
+				reg = configr // 32
+				offset = configr % 32
+				data[reg] |= 1 << offset
+	#                        data[reg][offset:offset+1] = 1
+				comment[reg][(offset, offset)] = 'latch wire {} ({}) before connecting to {}'.format(src.get('sel'), src.text, snk)
 
                     configl = int(mux.get('configl'))
                     reg = configl // 32

@@ -134,6 +134,9 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     # there might be weird cases where you want to drive multiple inputs
     # of dst module with one output
     for net in design.physical_nets:
+        # hacky don't handle wrong layer here
+        if net.width != layer:
+            continue
         src = net.src
         dst = net.dst
         dst_port = net.dst_port
@@ -149,7 +152,9 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         # there might be weird cases where you want to drive multiple inputs
         # of dst module with one output
         if dst.resource != Resource.Reg:
-            for port in fabric[layer].port_names[dst.resource] - set(dst_port):
+            s = set()
+            s.add(dst_port)
+            for port in fabric[layer].port_names[dst.resource] - s:
                 c.append(~vars[net].reaches(vars[sources[src_index]],
                                             vars[sinks[dst_pos + (port,)]]))
 
@@ -204,6 +209,9 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     sources = fabric[layer].sources
     sinks = fabric[layer].sinks
     for net in design.physical_nets:
+        # hacky don't handle wrong layer
+        if net.width != layer:
+            continue
         src = net.src
         dst = net.dst
         src_port = net.src_port
@@ -238,6 +246,9 @@ def dist_limit(dist_factor):
         sources = fabric[layer].sources
         sinks = fabric[layer].sinks
         for net in design.physical_nets:
+            # hacky don't handle wrong layer here
+            if net.width != layer:
+                continue
             src = net.src
             dst = net.dst
             src_port = net.src_port
@@ -277,6 +288,9 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     # this allows us to reuse constraints such as dist_limit and use the same model_reader
     solver.add_graph()
     for net in design.physical_nets:
+        # hacky don't make graph for different layer nets
+        if net.width != layer:
+            continue
         vars[net] = solver.graphs[0]
 
     graph = solver.graphs[0]  # only one graph in this encoding
@@ -286,14 +300,21 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     # add msnodes for all the used PEs first (because special naming scheme)
     #note: still assuming the 'out' port...
-    for x in range(fabric.width):
-        for y in range(fabric.height):
-            if (x, y) in p_state.I:
-                vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
-                for port_name in fabric[layer].port_names[Resource.PE]:
-                    vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})PE_{}'.format(x, y, port_name))
+    for loc in fabric.locations[Resource.PE]:
+        x = loc[0]
+        y = loc[1]
+        if (x, y) in p_state.I:
+            vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
+            for port_name in fabric[layer].port_names[Resource.PE]:
+                vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})PE_{}'.format(x, y, port_name))
 
-    #TODO: add msnodes for Memory tiles using port_names['mem']
+    for loc in fabric.locations[Resource.Mem]:
+        x = loc[0]
+        y = loc[1]
+        if (x, y) in p_state.I:
+            vars[sources[(x, y, 'mem_out')]] = graph.addNode('({},{})Mem_out'.format(x,y))
+            for port_name in fabric[layer].port_names[Resource.Mem]:
+                vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})Mem_{}'.format(x, y, port_name))
 
     for track in fabric[layer].tracks:
         src = track.src
