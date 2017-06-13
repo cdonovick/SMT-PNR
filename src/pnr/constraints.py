@@ -183,7 +183,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
 
                 # hacky hardcoding ports
                 if m2.resource == Resource.PE:
-                    m2_index = m2_index + ('out',)
+                    m2_index = m2_index + ('pe_out_res',)
 
                 if m2.resource == Resource.Mem:
                     m2_index = m2_index + ('mem_out',)
@@ -304,7 +304,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
         x = loc[0]
         y = loc[1]
         if (x, y) in p_state.I:
-            vars[sources[(x, y, 'out')]] = graph.addNode('({},{})PE_out'.format(x, y))
+            vars[sources[(x, y, 'pe_out_res')]] = graph.addNode('({},{})PE_out'.format(x, y))
             for port_name in fabric[layer].port_names[Resource.PE]:
                 vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})PE_{}'.format(x, y, port_name))
 

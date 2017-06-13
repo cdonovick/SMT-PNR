@@ -29,10 +29,7 @@ def load_core(file, *libs):
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'
-            modules[inst_name]['conf'] = {
-                    'mode'  : inst.get_config_value('mode'), 
-#                    'depth' : inst.get_config_value('depth'),
-                                         }
+            modules[inst_name]['conf'] = inst.get_config_value('mode')
             modules[inst_name]['res']  = Resource.IO
 
         elif inst_type[:3] == 'Reg':
@@ -42,7 +39,11 @@ def load_core(file, *libs):
 
         elif inst_type[:3] == 'Mem':
             modules[inst_name]['type'] = 'Mem'
-            modules[inst_name]['conf'] = inst.get_config_value('mode')
+            modules[inst_name]['conf'] = {
+                    'mode'  : inst.get_config_value('mode'),
+                    'depth' : '1024', #HACK
+            }
+
             modules[inst_name]['res']  = Resource.Mem
 
         else:
@@ -62,10 +63,7 @@ def load_core(file, *libs):
         for select_step in src:
             curr = curr.select(select_step)
 
-        try:
-            width = len(curr.type)
-        except:
-            width = 1
+        width = curr.type.size
 
         net = (src_name, src_port, dst_name, dst_port, width)
         nets.add(net)
@@ -79,16 +77,16 @@ PORT_TRANSLATION = {
     'PE' : {
         'data.in.0' : 'a',
         'data.in.1' : 'b',
-        'data.out'  : 'out',
+        'data.out'  : 'pe_out_res',
         'bit.in.0'  : 'd',
-        'bit.out'   : 'out1',
+        'bit.out'   : 'pe_out_p',
     },
     'Const' : {
         'out' : 'out',
     },
     'IO' : {
         'in'  : 'a',
-        'out' : 'out',
+        'out' : 'pe_out_res',
     },
     'Reg' : {
         'in'  : 'a',

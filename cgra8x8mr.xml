@@ -967,11 +967,11 @@
         </mux>
     </cb>
     <mem feature_address='8' data_bus='BUS16' control_bus='BUS1'>
-       <mode bith='1' bitl='0'>00</mode>
-       <tile_en bit='2'>0</tile_en>
-       <fifo_depth bith='15' bitl='3'>0</fifo_depth>
-       <almost_full_count bith='18' bitl='16'>0</almost_full_count>
-       <chain_enable bit='19'>0</chain_enable>
+        <mode bith='1' bitl='0'>00</mode>                           <!-- 00->lb 01->fifo 10->sram 11-reserved -->
+       <tile_en bit='2'>0</tile_en>                                 <!-- dont care -->
+       <fifo_depth bith='15' bitl='3'>0</fifo_depth>                <!-- depth                            = 1024 -->
+       <almost_full_count bith='18' bitl='16'>0</almost_full_count> <!-- depth - size = almost_full_count = 0 -->
+       <chain_enable bit='19'>0</chain_enable>                      <!-- chain goes up only in lb mode  -->
     </mem>
     <sb feature_address='0' bus='BUS1' row='0'>
         <sel_width>3</sel_width>

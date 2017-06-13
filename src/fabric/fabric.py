@@ -664,7 +664,7 @@ def connect_sb(root, bus_width, params):
                             dstport = SB[(x, y, snk_side, snk_direc)][snk_track]
                             # input is from PE
                             if port_name[0:2] == 'pe':
-                                srcport = PE[(x, y, 'out')]
+                                srcport = PE[(x, y, 'pe_out_res')]
                                 tracks.append(Track(srcport, dstport, int(bus_width), track_names, 'SB'))
                             # input is from another side of the SB
                             else:

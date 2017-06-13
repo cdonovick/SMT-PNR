@@ -40,6 +40,9 @@ class Module(NamedIDObject):
         else:
             raise TypeError('Expected Resource not {}'.format(type(res)))
 
+    def __str__(self):
+        return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
+
 class Resource(Enum):
     UNSET = 0
     PE    = 1
