@@ -27,6 +27,9 @@ class Design(NamedIDObject):
 
         self._modules=frozenset(_mods.values())
 
+        fuse_me = set()
+        fuse_no = set()
+
         #build nets
         idx_set = set()
         for src_name, src_port, dst_name, dst_port, width in nets:
@@ -36,10 +39,9 @@ class Design(NamedIDObject):
             idx = (src, src_port, dst, dst_port, width)
 
             if (src.type_, dst.type_) in _fusable:
-                src.fused = True
-                src.resource = Resource.Fused
+                fuse_me.add(src)
             else:
-
+                fuse_no.add(src)
                 #for virtual nets
                 idx_set.add(idx)
 
@@ -50,8 +52,11 @@ class Design(NamedIDObject):
         #build _p_modules
         _p_modules = set()
         for m in self.modules:
-            if m.resource != Resource.Fused:
+            if m in fuse_no or m not in fuse_me:
                 _p_modules.add(m)
+            else:
+                assert m in fuse_me
+                m.resource = Resource.Fused
 
         self._p_modules = frozenset(_p_modules)
 
@@ -60,7 +65,7 @@ class Design(NamedIDObject):
         while idx_set:
             idx = idx_set.pop()
             #idx[2] == dst
-            if not idx[2].fused:
+            if idx[2].resource != Resource.Fused:
                 if idx in _nets:
                     _p_nets.add(_nets[idx])
                 else:
@@ -69,9 +74,26 @@ class Design(NamedIDObject):
             else:
                 for dst_net in idx[2].outputs.values():
                     assert dst_net.width == idx[4]
-                    #print("Fusing ({a}->{b}), ({b}->{c}) to ({a}->{c})".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
+                    #print("Fusing: \n({a}  ->  {b})\n ({b}  ->  {c})\n({a}  ->  {c})\n".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
                     idx_set.add((idx[0], idx[1], dst_net.dst, dst_net.dst_port, idx[4]))
+
         self._p_nets = frozenset(_p_nets)
+
+        for module in self.modules:
+            assert module.resource != Resource.UNSET
+
+        for module in self.physical_modules:
+            assert module.resource != Resource.Fused
+
+        for net in self.physical_nets:
+            assert net.src.resource != Resource.Fused, 'src'
+            assert net.dst.resource != Resource.Fused, 'dst'
+
+        for module in self.modules:
+            if module.resource == Resource.Fused:
+                assert module not in self.physical_modules
+            else:
+                assert module in self.physical_modules, module
 
 
     @property

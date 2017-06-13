@@ -66,24 +66,24 @@ def nearest_neighbor(fabric, design, state, vars, solver):
 
 
 def neighborhood(dist):
-    dxdy = ((x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0)
+    dxdy = set((x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0)
     return partial(_neighborhood, dxdy)
 
 def _neighborhood(dxdy, fabric, design, state, vars, solver):
-    constraints = []
-    for net in design.physical_nets:
-        src = net.src
-        dst = net.dst
-        c = []
-        dx = vars[src].delta_x_fun(vars[dst])
-        dy = vars[src].delta_y_fun(vars[dst])
-        #c.append(And(dx(0), dy(0)))
-        for x, y in dxdy:
-            c.append(And(dx(x), dy(y)))
-        constraints.append(Or(c))
+        constraints = []
+        for net in design.physical_nets:
+            src = net.src
+            dst = net.dst
+            c = []
+            dx = vars[src].delta_x_fun(vars[dst])
+            dy = vars[src].delta_y_fun(vars[dst])
+            #c.append(And(dx(0), dy(0)))
+            for x, y in dxdy:
+                c.append(And(dx(x), dy(y)))
+            constraints.append(Or(c))
 
 
-    return And(constraints)
+        return And(constraints)
 
 
 def pin_IO(fabric, design, state, vars, solver):

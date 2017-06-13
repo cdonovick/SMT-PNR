@@ -17,6 +17,7 @@ def load_core(file, *libs):
 
         modules[inst_name] = dict()
 
+#        print(inst_type)
         if inst_type[:2] == 'PE':
             modules[inst_name]['type'] = 'PE'
             modules[inst_name]['conf'] = inst.get_config_value('op')

@@ -22,8 +22,8 @@ fabric_file = args.fabric
 
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
-PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.nearest_neighbor, pnr.pin_IO, pnr.pin_resource, pnr.register_colors
-PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO, pnr.pin_resource, pnr.register_colors
+PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
+PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
 ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1) 
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
@@ -37,26 +37,34 @@ des = design.Design(modules, nets)
 print("Loading fabric: {}".format(fabric_file))
 fab = fabric.pre_place_parse_xml(fabric_file)
 
-p = pnr.PNR(fab, des)
 
 pnrdone = False
 
 iterations = 0
 
 while not pnrdone and iterations < 10:
+    p = pnr.PNR(fab, des)
     print("Placing design...", end=' ')
+    sys.stdout.flush()
     if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
         print("success!")
+        print("\nplacement info:")
+        p.write_design(pnr.write_debug(des))
+        sys.stdout.flush()
     else:
         print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
+        sys.stdout.flush()
         if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
             print("success!")
+            sys.stdout.flush()
         else:
             print("!!!failure!!!")
+            sys.exit(1)
 
     if not args.noroute:
         fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
         print("Routing design...", end=' ')
+        sys.stdout.flush()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
             print("success!")
             pnrdone = True
@@ -86,7 +94,7 @@ if args.annotate:
 
 
 if args.print or args.print_place:
-    print("\nPlacement info:")
+    print("\nplacement info:")
     p.write_design(pnr.write_debug(des))
 
 if args.print or args.print_route:
