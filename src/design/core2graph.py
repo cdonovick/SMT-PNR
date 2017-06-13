@@ -29,7 +29,10 @@ def load_core(file, *libs):
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'
-            modules[inst_name]['conf'] = inst.get_config_value('mode')
+            modules[inst_name]['conf'] = {
+                    'mode'  : inst.get_config_value('mode'), 
+#                    'depth' : inst.get_config_value('depth'),
+                                         }
             modules[inst_name]['res']  = Resource.IO
 
         elif inst_type[:3] == 'Reg':
@@ -59,10 +62,13 @@ def load_core(file, *libs):
         for select_step in src:
             curr = curr.select(select_step)
 
-        width = len(curr.type)
+        try:
+            width = len(curr.type)
+        except:
+            width = 1
 
-	net = (src_name, src_port, dst_name, dst_port, width)
-	nets.add(net)
+        net = (src_name, src_port, dst_name, dst_port, width)
+        nets.add(net)
 
 
     return modules, nets
