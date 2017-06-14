@@ -7,7 +7,7 @@ import sys
 import lxml.etree as ET
 
 from design.module import Resource
-from fabric.fabricfuns import parse_name, mapSide
+from fabric.fabricfuns import parse_name, mapSide, parse_mem_sb_wire
 from fabric import Side
 from util import smart_open, Mask
 
@@ -113,11 +113,19 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 if r in r_state.I:
                     vnet = r_state.I[r][0]
                     if vnet.dst.resource == Resource.Reg:
-                        p = re.compile(r'(?:sb_wire_)?(?:in|out)(?:_\d*)?_BUS(?P<bus>\d+)_S?(?P<side>\d+)_T?(?P<track>\d+)')
+                        p = re.compile(r'(?P<mem_int>sb_wire_)?(?:in|out)(?:_\d*)?_BUS(?P<bus>\d+)_S?(?P<side>\d+)_T?(?P<track>\d+)')
                         m = p.search(snk)
                         _side = Side(int(m.group('side')))
                         _track = int(m.group('track'))
                         _bus = int(m.group('bus'))
+
+                        if m.group('mem_int'):
+                            # internal memory wires have non-standard sides
+                            # need to do a mapping, overwriting _side
+                            _, b, _side, t = parse_mem_sb_wire(snk)
+                            # everything except for the side should stay the same
+                            assert b == 'BUS' + str(_bus)
+                            assert int(t) == _track
 
                         if (x,y,_track,_side) == p_state[vnet.dst][0]:
                             assert mux.get('configr') is not None

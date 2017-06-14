@@ -321,8 +321,7 @@ def pre_process(root, params):
                         snk_name = mux.get('snk')
                         # hacky just getting last character for now
                         track = snk_name[-1:]
-                        # temporarily removing
-#                        reg_locations.add((c, r + r_incr, int(track)))
+                        reg_locations.add((c, r + r_incr, int(track)))
 
             # data structure for holding bounds of a memory tile
             mem_bounds.add((c, r, r + r_incr))
@@ -570,6 +569,7 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                         snk = mux.get('snk')
 
                         # get or create the snk port
+                        # invariant is that snkport is assigned
                         if snk[0:3] == 'out':
                             # registers for these wires already handled i.e. split
                             direc, bus, side, track = parse_mem_tile_name(snk)
@@ -579,39 +579,43 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                             # i.e. indexed by top location (x, tile_y, ...
                             direc, bus, side, track = parse_mem_sb_wire(snk)
 
-                            # index these wires by top location
-                            if (x, tile_y, snk, 'out') in Mem:
-                                snkport = Mem[(x, tile_y, snk, 'out')]
-                            else:
-                                snkport = Port(x, tile_y, Side.Mem, track, 'internal')
-                                Mem[(x, tile_y, snk, 'out')] = snkport
-
-
-                            # hacky copy of snkport for passing to in
-                            # only different if there's register splitting
-                            insnkport = snkport
-
                             # hacky! registers are not handled yet for these wires
                             # note: the out_* registers have already been created
                             # but not these
                             potential_reg = (x, y, track, side)
                             if potential_reg in p_state.I:
                                 # There's a register here
-                                # create a different port for in if doesn't already exist
+                                # create a different port for out
                                 # hacky! These indices are supposed to be different...
                                 # annoying property of memory tiles
+                                snkport = Port(x, y, Side.Mem, track, 'ro')
+                                Mem[(x, tile_y, snk, 'out')] = snkport
                                 sinks[potential_reg] = Mem[(x, tile_y, snk, 'out')]
-                                insnkport = Port(x, y, Side.Mem, track, 'reg')
 
-                            # if no register, then 'in' points to same as 'out'
-                            if (x, tile_y, snk, 'in') not in Mem:
-                                Mem[(x, tile_y, snk, 'in')] = insnkport
-                                sources[potential_reg] = insnkport
+                                # create in port if not created already
+                                if (x, tile_y, snk, 'in') not in Mem:
+                                    Mem[(x, tile_y, snk, 'in')] = Port(x, y, Side.Mem, track, 'in')
+
+                                sources[potential_reg] = Mem[(x, tile_y, snk, 'in')]
+
+                            elif (x, tile_y, snk, 'in') in Mem:
+                                # there's no register so they should be equal
+                                Mem[(x, tile_y, snk, 'out')] = Mem[(x, tile_y, snk, 'in')]
+                                snkport = Mem[(x, tile_y, snk, 'out')]
+
+                            else:
+                                # make new port and set both equal to it
+                                # because no register so should be equal
+                                # hacky indices supposed to be different for y/tile_y
+                                snkport = Port(x, y, Side.Mem, track, 'in')
+                                Mem[(x, tile_y, snk, 'in')] = snkport
+                                Mem[(x, tile_y, snk, 'out')] = snkport
 
                         for src in mux.findall('src'):
                             src_name = src.text
 
                             # get or create src port
+                            # invariant is that srcport is assigned
                             if src_name[0:2] == 'in':
                                 direc, bus, side, track = parse_mem_tile_name(src_name)
                                 srcport = Mem[(x, y, side, direc)][track]
@@ -621,27 +625,10 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                 if (x, tile_y, src_name, 'in') in Mem:
                                     srcport = Mem[(x, tile_y, src_name, 'in')]
                                 else:
-                                    srcport = Port(x, tile_y, Side.Mem, src_name, 'internal')
+                                    # create new in port if not already created
+                                    srcport = Port(x, tile_y, Side.Mem, src_name, 'in')
                                     Mem[(x, tile_y, src_name, 'in')] = srcport
 
-
-                                # hacky only different than srcport if register splitting
-                                outsrcport = srcport
-
-                                # check for registers and make new port if needed
-                                if src_name[0:2] == 'sb':
-                                    direc, bus, side, track = parse_mem_sb_wire(src_name)
-                                    potential_reg = (x, y, track, side)
-                                    if potential_reg in p_state.I:
-                                        # There's a register here
-                                        # add to sinks and sources
-                                        # hacky! indices supposed to be different
-                                        sources[potential_reg] = Mem[(x, tile_y, src_name, 'in')]
-                                        outsrcport = Port(x, y, Side.Mem, track, 'mem_reg')
-
-                                if (x, tile_y, src_name, 'out') not in Mem:
-                                    Mem[(x, tile_y, src_name, 'out')] = outsrcport
-                                    sinks[potential_reg] = outsrcport
 
                                 # hacky: hardcoded output ports
                                 # add port to sources if it's a routable signal
