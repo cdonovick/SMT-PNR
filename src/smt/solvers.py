@@ -55,7 +55,7 @@ class Solver_z3(Solver_base):
 class Solver_monosat(Solver_base):
     def __init__(self):
         super().__init__()
-        ms.Monosat().init()  # could also use -decide-theories
+        ms.Monosat().init('-decide-theories -route')  # could also use -decide-theories
         self.graphs = []
 
     def solve(self):
@@ -71,7 +71,7 @@ class Solver_monosat(Solver_base):
     def reset(self):
         super().reset()
         self.graphs = []
-        ms.Monosat().init()
+        ms.Monosat().init('-decide-theories -route')
 
     def get_model(self):
         if self.sat:

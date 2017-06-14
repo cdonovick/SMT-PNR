@@ -23,10 +23,10 @@ fabric_file = args.fabric
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
 PLACE_INIT_0 = pnr.init_positions(POSITION_T),
-PLACE_INIT_R = pnr.init_positions(POSITION_T),
+PLACE_INIT_R = pnr.init_random(POSITION_T),
 PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
 PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1)
+ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1, include_reg=True)
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
 # Once nets represent the whole tree of connections, this will be fixed
@@ -57,8 +57,8 @@ while not pnrdone and iterations < 10:
 
     if p.place_design(PC, pnr.place_model_reader):
         print("success!")
-        print("\nplacement info:")
-        p.write_design(pnr.write_debug(des))
+#        print("\nplacement info:")
+#        p.write_design(pnr.write_debug(des))
         sys.stdout.flush()
     else:
         print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
@@ -72,6 +72,11 @@ while not pnrdone and iterations < 10:
 
     if not args.noroute:
         fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
+
+        if args.print or args.print_place:
+            print("\nplacement info:")
+            p.write_design(pnr.write_debug(des))
+        
         print("Routing design...", end=' ')
         sys.stdout.flush()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
@@ -102,9 +107,9 @@ if args.annotate:
 
 
 
-if args.print or args.print_place:
-    print("\nplacement info:")
-    p.write_design(pnr.write_debug(des))
+# if args.print or args.print_place:
+#     print("\nplacement info:")
+#     p.write_design(pnr.write_debug(des))
 
 if args.print or args.print_route:
     print("\nRouting info:")

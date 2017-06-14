@@ -96,7 +96,9 @@ def pos_to_side(pos1, pos2, vertport):
     '''
     difx = pos2[0] - pos1[0]
     dify = pos2[1] - pos1[1]
-    
+
+    # this is the original heuristic
+    # seemed more robust but I have no idea why
     # TODO: Improve this heuristic for NW, SW etc...
     if vertport is not None:
         if vertport:
@@ -124,7 +126,7 @@ def pos_to_side(pos1, pos2, vertport):
 
     # For some reason this is less robust
     # makes no sense because only change is handling edge cases...
-    
+
     # if vertport is not None:
     #     if vertport:
     #         if dify <= 0 and pos1[1] > 0:

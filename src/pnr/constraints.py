@@ -35,9 +35,15 @@ def init_positions(position_type):
 def init_random(position_type):
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in random.shuffle(design.physical_modules):
+        # random.shuffle shuffles in place and needs indexable data type
+        physical_modules = list(design.physical_modules)
+        random.shuffle(physical_modules)
+        for module in physical_modules:
             if module not in vars:
-                p = position_type(module.name + random.sample(string.ascii_letters + string.digits, 5), fabric)
+                randstring = ''
+                for s in random.sample(string.ascii_letters + string.digits, 5):
+                    randstring += s
+                p = position_type(module.name + randstring, fabric)
                 vars[module] = p
                 constraints.append(p.invariants)
         return And(constraints)
@@ -255,7 +261,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
 
 
 # TODO: Fix indexing for distance constraints
-def dist_limit(dist_factor):
+def dist_limit(dist_factor, include_reg=False):
     '''
        Enforce a global distance constraint. Works with single or multi graph encoding
        dist_factor is intepreted as manhattan distance on a placement grid
@@ -288,18 +294,23 @@ def dist_limit(dist_factor):
                 dst_index = dst_index + (dst_port,)
 
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
-            # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
-            # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
-            # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
-            # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
-            # You can adjust it with dist_factor
-            heuristic_dist = 3*dist_factor*manhattan_dist + 1
 
             # not imposing distance constraints for reg-->reg nets -- because sometimes needs to take weird path
             if dst.resource != Resource.Reg:
+                # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
+                # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
+                # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
+                # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
+                # You can adjust it with dist_factor
+                heuristic_dist = 3*dist_factor*manhattan_dist + 1
                 constraints.append(vars[net].distance_leq(vars[sources[src_index]],
                                                           vars[sinks[dst_index]],
                                                           heuristic_dist))
+            elif include_reg:
+                reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
+                constraints.append(vars[net].distance_leq(vars[sources[src_index]],
+                                                          vars[sinks[dst_index]],
+                                                          reg_heuristic_dist))                
 
         return solver.And(constraints)
     return dist_constraints

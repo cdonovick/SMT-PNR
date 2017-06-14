@@ -116,7 +116,7 @@ class Fabric:
         self._locations[Resource.PE] = parsed_params['pe_locations'][True]
         self._locations[Resource.Mem] = parsed_params['mem_locations']
         # hacky not placing registers at memory tiles
-        self._locations[Resource.Reg] = parsed_params['reg_locations'] - parsed_params['mem_locations']
+        self._locations[Resource.Reg] = parsed_params['reg_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
 

@@ -148,7 +148,6 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
                 for port in ('a', 'b'):
-                    print(mod)
                     src = mod.inputs[port].src
 
                     if src.type_ == 'Const':

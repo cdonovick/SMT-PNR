@@ -2,6 +2,8 @@ from util import BiMultiDict, BiDict
 from smt.solvers import Solver_z3, Solver_monosat
 import itertools as it
 from smt_switch import solvers
+from design.module import Resource
+from pnr.constraints import pin_reg
 
 
 PLACE_SOLVER = solvers.Z3Solver()
@@ -37,6 +39,14 @@ class PNR:
             c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.add(c)
 
+        # for reg in self.design.physical_modules:
+        #     if reg.resource == Resource.Reg:
+        #         break
+
+#        f = pin_reg(reg, (3,2))
+
+#        self._place_solver.add(f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver))
+
 
         if not self._place_solver.check_sat():
             self._place_solver.reset()
@@ -61,6 +71,8 @@ class PNR:
         if not self._route_solver.solve():
             self._route_solver.reset()
             self._place_solver.reset()
+            self._place_solver.set_option('produce-models', 'true')
+            self._place_vars = BiDict()
             self._place_state = BiMultiDict()
             self._route_vars = BiDict()
             return False
