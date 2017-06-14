@@ -115,7 +115,6 @@ class Fabric:
         self._locations = dict()
         self._locations[Resource.PE] = parsed_params['pe_locations'][True]
         self._locations[Resource.Mem] = parsed_params['mem_locations']
-        # hacky not placing registers at memory tiles
         self._locations[Resource.Reg] = parsed_params['reg_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
@@ -309,6 +308,12 @@ def pre_process(root, params):
             pe_locations[False].add((c, r))
             # need to get other rows that this memory tile takes up
             for sb in tile.findall('sb'):
+                bus = sb.get('bus')
+                r_incr = int(sb.get("row")) # what to increment row by
+                pe_locations[False].add((c, r + r_incr))
+                # hacky but true for now: making assumption that num_tracks is the same across memory_tiles
+                num_tracks[(c, r + r_incr, bus[3:])] = int(num_tracks[(c, r, bus[3:])])
+
                 # check for registers
                 for mux in sb.findall('mux'):
                     if mux.get('reg') == "1":
@@ -316,13 +321,8 @@ def pre_process(root, params):
                         snk_name = mux.get('snk')
                         # hacky just getting last character for now
                         track = snk_name[-1:]
-                        reg_locations.add((c, r, int(track)))
-                    
-                bus = sb.get('bus')
-                r_incr = int(sb.get("row")) # what to increment row by
-                pe_locations[False].add((c, r + r_incr))
-                # hacky but true for now: making assumption that num_tracks is the same across memory_tiles
-                num_tracks[(c, r + r_incr, bus[3:])] = int(num_tracks[(c, r, bus[3:])])
+                        # temporarily removing
+#                        reg_locations.add((c, r + r_incr, int(track)))
 
             # data structure for holding bounds of a memory tile
             mem_bounds.add((c, r, r + r_incr))
@@ -444,13 +444,13 @@ def connect_tiles(bus_width, params, p_state):
 
                 SB[(x, y, side, 'out')] = ports
 
-    # make Mem->SB connections
+    # make Mem->SB connections and Mem->Mem (but not internal Mem->Mem) connections
     for loc in list(Mem):
         x = loc[0]
         y = loc[1]
         side = loc[2]
         adj_x, adj_y, adj_side = mapSide(x, y, side)
-        if (adj_x, adj_y, adj_side, 'in') in SB:
+        if (adj_x, adj_y, adj_side, 'in') in SBorMem:
             common_track_number = min([num_tracks[(x, y, bus_width)], num_tracks[(adj_x, adj_y, bus_width)]])
             Mem[(x, y, side, 'out')] = list()
             for t in range(0, common_track_number):
@@ -462,11 +462,11 @@ def connect_tiles(bus_width, params, p_state):
                     # add to sinks and sources
                     sinks[potential_reg] = newport
                     # index the source node from the same tile
-                    sources[potential_reg] = SB[(adj_x, adj_y, adj_side, 'in')][t]
+                    sources[potential_reg] = SBorMem[(adj_x, adj_y, adj_side, 'in')][t]
                 else:
-                    Mem[(x, y, side, 'out')].append(SB[(adj_x, adj_y, adj_side, 'in')][t])
+                    Mem[(x, y, side, 'out')].append(SBorMem[(adj_x, adj_y, adj_side, 'in')][t])
                     # add port to routable
-                    routable[(adj_x, adj_y, adj_side, t)] = SB[(adj_x, adj_y, adj_side, 'in')][t]
+                    routable[(adj_x, adj_y, adj_side, t)] = SBorMem[(adj_x, adj_y, adj_side, 'in')][t]
         # otherwise make ports off the edge
         else:
             ports = []
@@ -585,27 +585,28 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                             else:
                                 snkport = Port(x, tile_y, Side.Mem, track, 'internal')
                                 Mem[(x, tile_y, snk, 'out')] = snkport
-                                
-                                # hacky copy of snkport for passing to in
-                                # only different if there's register splitting
-                                insnkport = snkport
 
-                                # hacky! registers are not handled yet for these wires
-                                # note: the out_* registers have already been created
-                                # but not these
-                                potential_reg = (x, y, track, side)
-                                if potential_reg in p_state.I:
-                                    # There's a register here
-                                    # create a different port for in if doesn't already exist
-                                    # hacky! These indices are supposed to be different...
-                                    # annoying property of memory tiles
-                                    sinks[potential_reg] = Mem[(x, tile_y, snk, 'out')]
-                                    insnkport = Port(x, y, Side.Mem, track, 'reg')
 
-                                # if no register, then 'in' points to same as 'out'
-                                if (x, tile_y, snk, 'in') not in Mem:
-                                    Mem[(x, tile_y, snk, 'in')] = insnkport
-                                    sources[potential_reg] = insnkport
+                            # hacky copy of snkport for passing to in
+                            # only different if there's register splitting
+                            insnkport = snkport
+
+                            # hacky! registers are not handled yet for these wires
+                            # note: the out_* registers have already been created
+                            # but not these
+                            potential_reg = (x, y, track, side)
+                            if potential_reg in p_state.I:
+                                # There's a register here
+                                # create a different port for in if doesn't already exist
+                                # hacky! These indices are supposed to be different...
+                                # annoying property of memory tiles
+                                sinks[potential_reg] = Mem[(x, tile_y, snk, 'out')]
+                                insnkport = Port(x, y, Side.Mem, track, 'reg')
+
+                            # if no register, then 'in' points to same as 'out'
+                            if (x, tile_y, snk, 'in') not in Mem:
+                                Mem[(x, tile_y, snk, 'in')] = insnkport
+                                sources[potential_reg] = insnkport
 
                         for src in mux.findall('src'):
                             src_name = src.text
@@ -622,6 +623,7 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                 else:
                                     srcport = Port(x, tile_y, Side.Mem, src_name, 'internal')
                                     Mem[(x, tile_y, src_name, 'in')] = srcport
+
 
                                 # hacky only different than srcport if register splitting
                                 outsrcport = srcport
