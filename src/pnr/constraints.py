@@ -52,6 +52,13 @@ def assert_pinned(fabric, design, state, vars, solver):
             constraints.append(pos == pos.encode(state[module][0]))
     return And(constraints)
 
+def pin_reg(reg, p):
+    def _pin_reg(fabric, design, state, vars, solver):
+        pos = vars[reg]
+        return And(pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1]))
+
+    return _pin_reg
+
 def distinct(fabric, design, state, vars, solver):
     constraints = []
     for m1 in design.physical_modules:

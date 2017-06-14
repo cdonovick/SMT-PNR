@@ -115,7 +115,8 @@ class Fabric:
         self._locations = dict()
         self._locations[Resource.PE] = parsed_params['pe_locations'][True]
         self._locations[Resource.Mem] = parsed_params['mem_locations']
-        self._locations[Resource.Reg] = parsed_params['reg_locations']
+        # hacky not placing registers at memory tiles
+        self._locations[Resource.Reg] = parsed_params['reg_locations'] - parsed_params['mem_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
 
@@ -585,6 +586,10 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                 snkport = Port(x, tile_y, Side.Mem, track, 'internal')
                                 Mem[(x, tile_y, snk, 'out')] = snkport
                                 
+                                # hacky copy of snkport for passing to in
+                                # only different if there's register splitting
+                                insnkport = snkport
+
                                 # hacky! registers are not handled yet for these wires
                                 # note: the out_* registers have already been created
                                 # but not these
@@ -595,12 +600,12 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                     # hacky! These indices are supposed to be different...
                                     # annoying property of memory tiles
                                     sinks[potential_reg] = Mem[(x, tile_y, snk, 'out')]
-                                    snkport = Port(x, y, Side.Mem, track, 'reg')
+                                    insnkport = Port(x, y, Side.Mem, track, 'reg')
 
                                 # if no register, then 'in' points to same as 'out'
                                 if (x, tile_y, snk, 'in') not in Mem:
-                                    Mem[(x, tile_y, snk, 'in')] = snkport
-                                    sources[potential_reg] = snkport
+                                    Mem[(x, tile_y, snk, 'in')] = insnkport
+                                    sources[potential_reg] = insnkport
 
                         for src in mux.findall('src'):
                             src_name = src.text
@@ -618,6 +623,9 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                     srcport = Port(x, tile_y, Side.Mem, src_name, 'internal')
                                     Mem[(x, tile_y, src_name, 'in')] = srcport
 
+                                # hacky only different than srcport if register splitting
+                                outsrcport = srcport
+
                                 # check for registers and make new port if needed
                                 if src_name[0:2] == 'sb':
                                     direc, bus, side, track = parse_mem_sb_wire(src_name)
@@ -627,11 +635,11 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                         # add to sinks and sources
                                         # hacky! indices supposed to be different
                                         sources[potential_reg] = Mem[(x, tile_y, src_name, 'in')]
-                                        srcport = Port(x, y, Side.Mem, track, 'mem_reg')
-                                        sinks[potential_reg] = srcport
+                                        outsrcport = Port(x, y, Side.Mem, track, 'mem_reg')
 
                                 if (x, tile_y, src_name, 'out') not in Mem:
-                                    Mem[(x, tile_y, src_name, 'out')] = srcport
+                                    Mem[(x, tile_y, src_name, 'out')] = outsrcport
+                                    sinks[potential_reg] = outsrcport
 
                                 # hacky: hardcoded output ports
                                 # add port to sources if it's a routable signal
