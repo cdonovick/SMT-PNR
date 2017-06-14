@@ -15,11 +15,21 @@ parser.add_argument('--print-route', action='store_true', dest='print_route', he
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', help='output CGRA configuration in bitstream')
 parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitstream with annotations')
 parser.add_argument('--noroute', action='store_true')
+parser.add_argument('--solver', help='choose the smt solver to use for placement', default='Z3')
+
 args = parser.parse_args()
 
 design_file = args.design
 fabric_file = args.fabric
 
+print("Loading design: {}".format(design_file))
+modules, nets = design.core2graph.load_core(design_file, *args.libs)
+des = design.Design(modules, nets)
+
+print("Loading fabric: {}".format(fabric_file))
+fab = fabric.parse_xml(fabric_file)
+
+p = pnr.PNR(fab, des, args.solver)
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
 PLACE_INIT_0 = pnr.init_positions(POSITION_T),
