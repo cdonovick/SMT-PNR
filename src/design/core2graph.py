@@ -41,14 +41,11 @@ def load_core(file, *libs):
         elif inst_type[:3] == 'Mem':
             modules[inst_name]['type'] = 'Mem'
             modules[inst_name]['conf'] = {
-                    'mode'              : 'fifo', #inst.get_config_value('mode'),
+                    'mode'              : 'linebuffer', #inst.get_config_value('mode'),
                     'fifo_depth'        : '1024', #HACK
                     'almost_full_count' : '0', #HACK
                     'chain_enable'      : '0', #HACK
             }
-            print(inst_name)
-            print(modules[inst_name]['conf'])
-            print()
 
             modules[inst_name]['res']  = Resource.Mem
 
