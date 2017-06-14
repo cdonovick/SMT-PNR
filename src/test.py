@@ -22,9 +22,11 @@ fabric_file = args.fabric
 
 
 POSITION_T = partial(smt.BVXY, solver=pnr.PLACE_SOLVER)
-PLACE_CONSTRAINTS = pnr.init_positions(POSITION_T), pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
-PLACE_RELAXED =  pnr.init_positions(POSITION_T), pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1) 
+PLACE_INIT_0 = pnr.init_positions(POSITION_T),
+PLACE_INIT_R = pnr.init_positions(POSITION_T),
+PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
+PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
+ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1)
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
 # Once nets represent the whole tree of connections, this will be fixed
@@ -46,7 +48,14 @@ while not pnrdone and iterations < 10:
     p = pnr.PNR(fab, des)
     print("Placing design...", end=' ')
     sys.stdout.flush()
-    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+    if iterations == 0:
+        PC = PLACE_INIT_0 + PLACE_CONSTRAINTS
+        PR = PLACE_INIT_0 + PLACE_RELAXED
+    else:
+        PC = PLACE_INIT_R + PLACE_CONSTRAINTS
+        PR = PLACE_INIT_R + PLACE_RELAXED
+
+    if p.place_design(PC, pnr.place_model_reader):
         print("success!")
         print("\nplacement info:")
         p.write_design(pnr.write_debug(des))
@@ -54,7 +63,7 @@ while not pnrdone and iterations < 10:
     else:
         print("\nfailed with nearest_neighbor, relaxing...", end = ' ')
         sys.stdout.flush()
-        if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
+        if p.place_design(PR, pnr.place_model_reader):
             print("success!")
             sys.stdout.flush()
         else:

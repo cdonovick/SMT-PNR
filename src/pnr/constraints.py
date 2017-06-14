@@ -8,6 +8,9 @@ from smt_switch import functions
 from fabric import Side
 from design.module import Resource
 
+import random
+import string
+
 And = functions.And()
 Or = functions.Or()
 
@@ -27,6 +30,19 @@ def init_positions(position_type):
                 constraints.append(p.invariants)
         return And(constraints)
     return initializer
+
+
+def init_random(position_type):
+    def initializer(fabric, design, state, vars, solver):
+        constraints = []
+        for module in random.shuffle(design.physical_modules):
+            if module not in vars:
+                p = position_type(module.name + random.sample(string.ascii_letters + string.digits, 5), fabric)
+                vars[module] = p
+                constraints.append(p.invariants)
+        return And(constraints)
+    return initializer
+
 
 def assert_pinned(fabric, design, state, vars, solver):
     constraints = []

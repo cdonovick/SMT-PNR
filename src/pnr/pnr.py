@@ -60,6 +60,7 @@ class PNR:
 
         if not self._route_solver.solve():
             self._route_solver.reset()
+            self._place_solver.reset()
             self._place_state = BiMultiDict()
             self._route_vars = BiDict()
             return False
