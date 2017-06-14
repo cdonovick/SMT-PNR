@@ -8,7 +8,8 @@ class Side(Enum):
     S = 1
     E = 0
     W = 2
-    PE = 4 #no side
+    PE = 4 # To/from a PE
+    Mem = 5 # To/from a SB
 
 def getSide(side_str):
     '''
@@ -49,3 +50,73 @@ def parse_name(text):
     '''
     s = text.split('_')
     return s[0], s[1], Side(int(s[2][1])), int(s[3][1])
+
+
+def parse_mem_tile_name(text):
+    '''
+       Parses the mem_tile wire format
+       Returns direc, bus_width, side, track
+    '''
+    s = text.split('_')
+    return s[0], s[2], Side(int(s[3])), int(s[4])
+
+
+def parse_mem_sb_wire(text):
+    '''
+       Takes an internal memory tile wire, with prefix sb_wire and parses it
+       Returns direc, bus_width, side, track
+    '''
+    # maps to opposite side
+    SideMap = {'0': Side.W, '1': Side.N, '2': Side.E, '3': Side.S}
+
+    
+    s = text.split('_')
+    if s[2] == 'out':
+        return s[2], s[4], Side(int(s[5])), int(s[6])
+    else:
+        # side is backwards
+        return s[2], s[4], SideMap[s[5]], int(s[6])
+    
+
+def pos_to_side(pos1, pos2, vertport):
+    '''
+       Given two positions, returns the output side from pos1's perspective
+       For use in preprocessing registers for routing
+       Example: 
+          pos1 = (0,0)
+          pos2 = (1,0)
+         i.e. for r with pos1 and m with pos2 on a 4x4
+          r  m x x
+          x  x  x x
+          x  x  x x
+          x  x  x x
+        
+         Then the resulting side is East, because the register (r) should be placed on the east
+         side of the switch box
+    '''
+    difx = pos2[0] - pos1[0]
+    dify = pos2[1] - pos1[1]
+
+    if vertport is not None:
+        if vertport:
+            if dify <= 0 and pos1[1] > 0:
+                return Side.N
+            else:
+                return Side.S
+        else:
+            if difx <= 0 and pos1[0] > 0:
+                return Side.W
+            else:
+                return Side.E
+    else:
+        # pick by largest difference
+        if abs(difx) >= abs(dify):
+            if difx <= 0 and pos1[0] > 0:
+                return Side.W
+            else:
+                return Side.E
+        else:
+            if dify <= 0 and pos1[1] > 0:
+                return Side.N
+            else:
+                return Side.S

@@ -38,7 +38,7 @@ class Mask:
                 r = self.__mask[self.__idx]
             except IndexError:
                 raise StopIteration()
-            
+
             self.__idx += self.__step
             return r
 
@@ -135,20 +135,20 @@ class Mask:
                 step = 1
             else:
                 step = idx.step
-            
+
             if step < 0:
                 start = min(idx.start or self.size - 1, self.size - 1)
                 stop = max(idx.stop or -1, -1)
             elif step > 0:
-                start = max(idx.start or 0, 0) 
+                start = max(idx.start or 0, 0)
                 stop = min(idx.stop or self.size, self.size)
             else:
                 raise ValueError('slice step cannot be 0')
-             
+
             idx_list = list(range(start, stop, step))
 
             return type(self)(value=(self[i] for i in idx_list), size=len(idx_list), MSB0=self.MSB0)
-        
+
         if not (0 <= idx < self.size):
             raise IndexError()
 
@@ -160,12 +160,12 @@ class Mask:
                 step = 1
             else:
                 step = idx.step
-            
+
             if step < 0:
                 start = min(idx.start or self.size - 1, self.size - 1)
                 stop = max(idx.stop or -1, -1)
             elif step > 0:
-                start = max(idx.start or 0, 0) 
+                start = max(idx.start or 0, 0)
                 stop = min(idx.stop or self.size, self.size)
             else:
                 raise ValueError('slice step cannot be 0')
@@ -173,7 +173,9 @@ class Mask:
             idx_list = list(range(start, stop, step))
 
             if isinstance(value, Iterable):
-                val_list = [v for v in value] 
+                val_list = [v for v in value]
+            elif isinstance(value, int):
+                val_list = [v for v in Mask(value, size=len(idx_list))]
             else:
                 val_list = [value]*len(idx_list)
 

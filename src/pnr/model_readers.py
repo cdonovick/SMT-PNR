@@ -1,57 +1,64 @@
-
-#hacky -- this is the same function as defined in pnr.constraints
-def _is_placeable(x) : return x.type_ in ('PE', 'IO')
+from design.module import Resource
 
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
-        state[module] = var.get_coordinates()
+        if module.resource == Resource.Reg:
+            state[module] = var.get_coordinates() + (var.get_color(),)
+        else:
+            state[module] = var.get_coordinates()
 
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
-    sources = fabric[16].sources
-    sinks = fabric[16].sinks
-    
-    for net in design.nets:
-        src = net.src
-        dst = net.dst
-        src_port = net.src_port
-        dst_port = net.dst_port
-        # contract nets with unplaced modules
-        # Note: This results in repeated constraints
-        if not _is_placeable(src):
-            assert len(src.inputs) <= 1
-            if src.inputs:
-                srcnet = next(iter(src.inputs.values()))
-                src = srcnet.src
-                src_port = srcnet.src_port
-            else:
+
+    # add a holder for the register tracks
+#    r_state[Resource.Reg] = defaultdict(set)
+
+    # hardcoded layers right now
+    for layer in {16}:
+
+        sources = fabric[layer].sources
+        sinks = fabric[layer].sinks
+
+        for net in design.physical_nets:
+            # hacky handle only one layer at a time
+            # note: won't actually need this here when
+            # routing 1 bit signals
+            if net.width != layer:
                 continue
 
-        if not _is_placeable(dst):
-            assert len(dst.outputs) <= 1
-            if dst.outputs:
-                dstnet = next(iter(dst.outputs.values()))
-                dst = dstnet.dst
-                dst_port = dstnet.dst_port
-            else:
-                continue
+            src = net.src
+            dst = net.dst
+            src_port = net.src_port
+            dst_port = net.dst_port
 
-        graph = vars[net]
+            graph = vars[net]
 
-        src_pos = p_state[src][0]
-        dst_pos = p_state[dst][0]
-        src_pe = sources[src_pos + (src_port,)]
-        dst_pe = sinks[dst_pos + (dst_port,)]
-        reaches = graph.reaches(vars[src_pe], vars[dst_pe])
-        l = graph.getPath(reaches)
-        path = tuple(graph.names[node] for node in l)
-        # record for debug printing
-        r_state[(net, 'debug')] = path
-        for n1, n2 in zip(l, l[1:]):
-            edge = graph.getEdge(n1, n2)
-            track = vars[edge]
-            src_port = track.src
-            outname = track.track_names[1]
-            inname = track.track_names[0]
-            state = (src_port.x, src_port.y, track.parent, outname, inname)
-            r_state[net] = state
+            src_index = p_state[src][0]
+            dst_index = p_state[dst][0]
+
+            # get correct tuple index
+            # registers don't need their port
+            if src.resource != Resource.Reg:
+                src_index = src_index + (src_port,)
+            if dst.resource != Resource.Reg:
+                dst_index = dst_index + (dst_port,)
+
+            src_node = vars[sources[src_index]]
+            dst_node = vars[sinks[dst_index]]
+            reaches = graph.reaches(src_node, dst_node)
+            l = graph.getPath(reaches)
+            path = tuple(graph.names[node] for node in l)
+            # record for debug printing
+            r_state[(net, 'debug')] = path
+            for n1, n2 in zip(l, l[1:]):
+                edge = graph.getEdge(n1, n2)
+                track = vars[edge]
+                src = track.src
+                outname = track.track_names[1]
+                inname = track.track_names[0]
+                state = (src.x, src.y, track.parent, outname, inname)
+                r_state[net] = state
+
+            # if this is routing to a register, add the last track
+            # as a registered track
+            #r_state[Resource.Reg][0].add(state)

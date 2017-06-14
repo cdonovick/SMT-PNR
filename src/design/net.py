@@ -2,7 +2,8 @@ from util import IDObject
 
 class Net(IDObject):
     def __init__(self, src, src_port, dst, dst_port, width=1):
-        super().__init__()
+        IDObject.__init__(self)
+
         self._src = src
         self._dst = dst
         self._src_port = src_port
@@ -31,7 +32,7 @@ class Net(IDObject):
     def width(self):
         return self._width
 
-#    def __repr__(self):
-#        return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
+    def __repr__(self):
+        return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
 
 

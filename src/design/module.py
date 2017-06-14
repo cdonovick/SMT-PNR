@@ -1,12 +1,12 @@
 from util import NamedIDObject
+from enum import Enum
 
 class Module(NamedIDObject):
-    def __init__(self, name, type_, config):
+    def __init__(self, name, attributes=dict()):
         super().__init__(name)
-        self._type_ = type_
-        self._config = config
         self._inputs = dict()
         self._outputs = dict()
+        self._resource = Resource.UNSET
 
     @property
     def inputs(self):
@@ -22,16 +22,31 @@ class Module(NamedIDObject):
         '''
         return self._outputs
 
-    @property
-    def type_(self):
-        return self._type_
-
-    @property
-    def config(self):
-        return self._config
 
     def _add_input(self, src, port):
         self._inputs[port] = src
 
     def _add_output(self, dst, port):
         self._outputs[port] = dst
+
+    @property
+    def resource(self):
+        return self._resource
+
+    @resource.setter
+    def resource(self, res):
+        if isinstance(res, Resource):
+            self._resource = res
+        else:
+            raise TypeError('Expected Resource not {}'.format(type(res)))
+
+    def __str__(self):
+        return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
+
+class Resource(Enum):
+    UNSET = 0
+    PE    = 1
+    Mem   = 2
+    IO    = 1 #HACK: IO uses PE
+    Reg   = 4
+    Fused = 5
