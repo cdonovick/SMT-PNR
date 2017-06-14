@@ -41,9 +41,14 @@ def load_core(file, *libs):
         elif inst_type[:3] == 'Mem':
             modules[inst_name]['type'] = 'Mem'
             modules[inst_name]['conf'] = {
-                    'mode'  : inst.get_config_value('mode'),
-                    'depth' : '1024', #HACK
+                    'mode'              : 'fifo', #inst.get_config_value('mode'),
+                    'fifo_depth'        : '1024', #HACK
+                    'almost_full_count' : '0', #HACK
+                    'chain_enable'      : '0', #HACK
             }
+            print(inst_name)
+            print(modules[inst_name]['conf'])
+            print()
 
             modules[inst_name]['res']  = Resource.Mem
 
@@ -57,8 +62,8 @@ def load_core(file, *libs):
 
         src_name = src[0]
         dst_name = dst[0]
-        src_port = PORT_TRANSLATION[modules[src_name]['type']]['.'.join(src[1:])]
-        dst_port = PORT_TRANSLATION[modules[dst_name]['type']]['.'.join(dst[1:])]
+        src_port = _PORT_TRANSLATION[modules[src_name]['type']]['.'.join(src[1:])]
+        dst_port = _PORT_TRANSLATION[modules[dst_name]['type']]['.'.join(dst[1:])]
 
         curr = top_def
         for select_step in src:
@@ -74,7 +79,7 @@ def load_core(file, *libs):
 
 
 
-PORT_TRANSLATION = {
+_PORT_TRANSLATION = {
     'PE' : {
         'data.in.0' : 'a',
         'data.in.1' : 'b',

@@ -9,7 +9,7 @@ import lxml.etree as ET
 from design.module import Resource
 from fabric.fabricfuns import parse_name, mapSide, parse_mem_sb_wire
 from fabric import Side
-from util import smart_open, Mask
+from util import smart_open, Mask, IdentDict
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
 
@@ -72,6 +72,18 @@ _read_wire = {
     'c'   : 11,
     'd'   : 9,
 }
+
+_mem_translate = {
+    'mode' : {
+        'linebuffer' : 0,
+        'fifo'       : 1,
+        'ram'        : 2, #sram in the CGRA
+    },
+    'fifo_depth' : IdentDict(),
+    'almost_full_count' : IdentDict(),
+    'chain_enable' : IdentDict(),
+}
+
 
 
 def write_bitstream(cgra_xml, bitstream, annotate):
@@ -146,18 +158,17 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
 
     def _proc_pe(pe):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
-        mask = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
         if (x, y) in p_state.I:
             mod = p_state.I[(x,y)][0]
+            assert mod.resource == Resource.PE
             if mod.type_ == 'PE':
                 data[_pe_reg['op']] |= _op_codes[mod.config]
                 comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
-                for port in ('a', 'b'):
-                    src = mod.inputs[port].src
-
+                for port, net in mod.inputs.items():
+                    src = net.src
                     if src.type_ == 'Const':
                         data[_pe_reg[port]] |= src.config # load 'a' reg with const
                         comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
@@ -183,6 +194,34 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
 
 
         return data, comment
+
+    def _proc_mem(mem):
+        data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
+        comment = defaultdict(dict)
+        if (x, y) in p_state.I:
+            mod = p_state.I[(x,y)][0]
+            assert mod.resource == Resource.Mem
+            for opt, value in mod.config.items():
+                if opt != 'chain_enable':
+                    bl = 'bitl'
+                    bh = 'bith'
+                else:
+                    bl = 'bit'
+                    bh = 'bit'
+
+                print(opt, value)
+                val = int(_mem_translate[opt][value])
+                for tag in mem.findall(opt):
+                    bitl = int(tag.get(bl))
+                    sel_w = int(tag.get(bh)) - bitl + 1
+                    reg = bitl // 32
+                    offset = bitl % 32
+                assert val.bit_length() <= sel_w
+                data[reg] |= val << offset
+                comment[reg][(sel_w + offset - 1, offset)] = '{} = {}'.format(opt, value)
+
+        return data, comment
+
 
     def _write(data, tile_address, feature_address, bs, comment):
         for reg in data:
@@ -217,28 +256,23 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
     # -------------------------------------------------
     tree = ET.parse(cgra_xml)
     root = tree.getroot()
+    tag2fun = {
+            'cb'  : _proc_cb,
+            'mem' : _proc_mem,
+            'pe'  : _proc_pe,
+            'sb'  : _proc_sb,
+    }
+
     with open(bitstream, 'w') as bs:
         for tile in root:
                 tile_address = int(tile.get('tile_addr'))
-
                 y = int(tile.get('row'))
                 x = int(tile.get('col'))
-                for cb in tile.findall('cb'):
-                    feature_address = int(cb.get('feature_address'))
-                    data,comment = _proc_cb(cb)
-                    _write(data, tile_address, feature_address, bs, comment)
-
-                for sb in tile.findall('sb'):
-                    feature_address = int(sb.get('feature_address'))
-                    data,comment = _proc_sb(sb)
-                    _write(data, tile_address, feature_address, bs, comment)
-
-                for pe in tile.findall('pe'):
-                    feature_address = int(pe.get('feature_address'))
-                    data,comment = _proc_pe(pe)
-                    _write(data, tile_address, feature_address, bs, comment)
-
-
+                for tag, _proc in tag2fun.items():
+                    for elem in tile.findall(tag):
+                        feature_address = int(elem.get('feature_address'))
+                        data, comment = _proc(elem)
+                        _write(data, tile_address, feature_address, bs, comment)
 
 def write_debug(design, output=sys.stdout):
     return partial(_write_debug, design, output)

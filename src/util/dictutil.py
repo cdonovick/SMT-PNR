@@ -1,6 +1,6 @@
 from collections import defaultdict, Iterable, OrderedDict, MutableMapping
 
-__all__ = ['BiMultiDict', 'BiDict', 'SortedDict']
+__all__ = ['BiMultiDict', 'BiDict', 'SortedDict', 'IdentDict']
 
 class BiMultiDict(MutableMapping):
     def __init__(self, d=dict()):
@@ -119,6 +119,7 @@ class BiDict(MutableMapping):
             for v in vs:
                 assert k in self._d[v]
 
+
 class SortedDict(MutableMapping):
     def __init__(self, d=dict()):
         self._d = OrderedDict()
@@ -158,4 +159,31 @@ class SortedDict(MutableMapping):
 
         yield from self._d.items()
 
+class IdentDict(MutableMapping):
+    def __init__(self, d=dict()):
+        self._d = dict()
+        for k,v in d.items():
+            self[k] = v
+
+    def __getitem__(self, key):
+        try:
+            return self._d[key]
+        except KeyError:
+            self._d[key] = key
+            return  self._d[key]
+
+    def __setitem__(self, key, val):
+        self._d[key] = val
+
+    def __delitem__(self, key):
+        del self._d[key]
+
+    def __iter__(self):
+        yield from self._d.keys()
+
+    def __len__(self):
+        return len(self._d)
+
+    def __contains__(self, key):
+        return key in self._d
 
