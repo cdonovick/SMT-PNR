@@ -2,7 +2,8 @@
 import sys
 import design, design.core2graph, fabric, pnr, smt
 from functools import partial
-from design.module import Resource
+from config import PNRConfig
+
 
 import argparse
 parser = argparse.ArgumentParser(description='Run place and route')
@@ -33,11 +34,12 @@ ROUTE_RELAXED = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.d
 # ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
 print("Loading design: {}".format(design_file))
+pc = PNRConfig()
 modules, nets = design.core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
-fab = fabric.pre_place_parse_xml(fabric_file)
+fab = fabric.parse_xml(fabric_file, pc)
 
 pnrdone = False
 
@@ -69,7 +71,8 @@ while not pnrdone and iterations < 10:
             sys.exit(1)
 
     if not args.noroute:
-        fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
+#        fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
+        fabric.process_regs(des, p._place_state, fab)
         print("Routing design...", end=' ')
         sys.stdout.flush()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):

@@ -63,7 +63,7 @@ class Design(NamedIDObject):
 
 
         #build modules
-        for mod_name,args in modules.items():
+        for mod_name, args in modules.items():
             mod = Module(mod_name)
             mod.type_ = args['type']
             if args['conf'] is not None:
