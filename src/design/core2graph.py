@@ -55,7 +55,7 @@ def load_core(file, *libs):
 
     nets = set()
     for con in top_module.directed_module.connections:
-        src = con.source
+        src = con.osurce
         dst = con.sink
 
         src_name = src[0]
