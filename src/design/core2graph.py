@@ -45,6 +45,7 @@ def load_core(file, *libs):
                     'fifo_depth'        : '66', #HACK
                     'almost_full_count' : '0', #HACK
                     'chain_enable'      : '0', #HACK
+                    'tile_en'           : '1', #HACK
             }
 
             modules[inst_name]['res']  = Resource.Mem

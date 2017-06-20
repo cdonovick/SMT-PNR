@@ -82,6 +82,7 @@ _mem_translate = {
     'fifo_depth' : IdentDict(),
     'almost_full_count' : IdentDict(),
     'chain_enable' : IdentDict(),
+    'tile_en' : IdentDict(),
 }
 
 
@@ -202,7 +203,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
             mod = p_state.I[(x,y)][0]
             assert mod.resource == Resource.Mem
             for opt, value in mod.config.items():
-                if opt != 'chain_enable':
+                if opt not in {'chain_enable', 'tile_en'}:
                     bl = 'bitl'
                     bh = 'bith'
                 else:
