@@ -10,14 +10,12 @@ def place_model_reader(fabric, design, state, vars, solver):
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
-    # add a holder for the register tracks
-#    r_state[Resource.Reg] = defaultdict(set)
-
     # hardcoded layers right now
     for layer in {16}:
 
         sources = fabric[layer].sources
         sinks = fabric[layer].sinks
+        pnrconfig = fabric.config
 
         for net in design.physical_nets:
             # hacky handle only one layer at a time
@@ -54,11 +52,6 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
                 edge = graph.getEdge(n1, n2)
                 track = vars[edge]
                 src = track.src
-                outname = track.track_names[1]
-                inname = track.track_names[0]
-                state = (src.x, src.y, track.parent, outname, inname)
+                c = pnrconfig.trackconfig[track]
+                state = (src.x, src.y, c[1], c[0][1], c[0][0])
                 r_state[net] = state
-
-            # if this is routing to a register, add the last track
-            # as a registered track
-            #r_state[Resource.Reg][0].add(state)

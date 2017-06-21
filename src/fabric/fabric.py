@@ -20,6 +20,7 @@ class Port(NamedIDObject):
         self._x = x
         self._y = y
         self._side = side
+        self._track = track
         self._inputs = set()
         self._outputs = set()
 
@@ -36,6 +37,10 @@ class Port(NamedIDObject):
         return self._side
 
     @property
+    def track(self):
+        return self._track
+
+    @property
     def inputs(self):
         return self._inputs
 
@@ -48,12 +53,12 @@ class Port(NamedIDObject):
         return (self._x, self._y)
 
     def split(self):
-        inport = Port(self._x, self._y, self._side, 'in', self._track)
+        inport = Port(self._x, self._y, self._side, self._track, 'in')
         inport._outputs = self._outputs
         outx, outy, outside = mapSide(self._x, self._y, self._side)
-        outport = Port(outx, outy, outside, 'out', self._track)
+        outport = Port(outx, outy, outside, self._track, 'out')
         outport._inputs = self._inputs
-        return (outport, inport)
+        return outport, inport
 
     def __repr__(self):
         return self.name
@@ -71,8 +76,8 @@ class Track(NamedIDObject):
         super().__init__('{}-{}->{}'.format(src, width, dst))
         self._src = src
         self._dst = dst
-        self._src.outputs.add(dst)
-        self._dst.inputs.add(src)
+        self._src.outputs.add(self)
+        self._dst.inputs.add(self)
         self._width = width
 
     @property
@@ -89,10 +94,13 @@ class Track(NamedIDObject):
 
 
 class FabricLayer:
-    def __init__(self, sources, sinks, routable, tracks, port_names):
+    def __init__(self, sources, sinks, ports, tracks, port_names):
         self._sources = sources
         self._sinks = sinks
-        self._routable = routable
+        self._ports = dict()
+        for port in ports:
+            if port not in list(sources.values()) + list(sinks.values()):
+                self._ports[(port.x, port.y, port.track, port.side)] = port
         self._tracks = tracks
         self._port_names = port_names
 
@@ -105,8 +113,8 @@ class FabricLayer:
         return self._sinks
 
     @property
-    def routable(self):
-        return self._routable
+    def ports(self):
+        return self._ports
 
     @property
     def tracks(self):
@@ -128,6 +136,16 @@ class Fabric:
         self._locations[Resource.Reg] = parsed_params['reg_locations'] - parsed_params['mem_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
+        self._config = parsed_params['pnrconfig']
+        self._layers = dict()
+        for bus_width in parsed_params['bus_widths']:
+            fl = FabricLayer(parsed_params['sources' + bus_width],
+                             parsed_params['sinks' + bus_width],
+                             parsed_params['ports' + bus_width],
+                             parsed_params['tracks' + bus_width],
+                             parsed_params['port_names' + bus_width])
+            self._layers[int(bus_width)] = fl
+
 
     @property
     def rows(self):
@@ -184,18 +202,12 @@ class Fabric:
     def __getitem__(self, bus_width):
         return self._layers[bus_width]
 
-    def update(self, parsed_params):
-        self._layers = dict()
-        for bus_width in parsed_params['bus_widths']:
-            fl = FabricLayer(parsed_params['sources' + bus_width],
-                             parsed_params['sinks' + bus_width],
-                             parsed_params['routable' + bus_width],
-                             parsed_params['tracks' + bus_width],
-                             parsed_params['port_names' + bus_width])
-            self._layers[int(bus_width)] = fl
+    @property
+    def config(self):
+        return self._config
 
 
-def parse_xml(filepath, fab, design, pnrconfig):
+def parse_xml(filepath, pnrconfig):
     N = Side.N
     S = Side.S
     E = Side.E
@@ -212,7 +224,7 @@ def parse_xml(filepath, fab, design, pnrconfig):
     for bus_width in params['bus_widths']:
         params['sinks' + bus_width] = dict()
         params['sources' + bus_width] = dict()
-        params['routable' + bus_width] = dict()
+        params['ports' + bus_width] = list()
         params['mem' + bus_width] = dict()
 
         SB, Mem = generate_layer(bus_width, params)
@@ -220,19 +232,19 @@ def parse_xml(filepath, fab, design, pnrconfig):
         params['Mem' + bus_width] = Mem
         params['PE' + bus_width] = dict()
 
-        connect_tiles(bus_width, params, p_state)
+        connect_tiles(bus_width, params)
         params['tracks' + bus_width] = list()
 
         connect_pe(root, bus_width, params)
         connect_memtiles_cb(root, bus_width, params)
-        connect_memtiles_internal(root, bus_width, params, p_state)
+        connect_memtiles_internal(root, bus_width, params)
         connect_sb(root, bus_width, params)
 
     return Fabric(params)
 
 
 # process the registers
-def process_regs(design, p_state):
+def process_regs(design, p_state, fabric):
     for mod in design.modules:
         if mod.resource == Resource.Reg:
             # could have multiple outputs, for now just taking random
@@ -255,6 +267,14 @@ def process_regs(design, p_state):
             newstate = p_state[mod][0] + (side,)
             del p_state[mod]
             p_state[mod] = newstate
+
+
+            # now split that port
+            origport = fabric[16].ports.pop(newstate)
+            outport, inport = origport.split()
+            fabric[16].sinks[(outport.x, outport.y, outport.track, outport.side)] = outport
+            fabric[16].sources[(inport.x, inport.y, inport.track, inport.side)] = inport
+            del origport
 
 
 def pre_process(root, params):
@@ -333,6 +353,7 @@ def generate_layer(bus_width, params):
     SB = dict()
     Mem = dict()
     sources = params['sources' + bus_width]
+    fabports = params['ports' + bus_width]
     # make regular switch boxes
     for loc in params['pe_locations'][True]:
         x = loc[0]
@@ -340,6 +361,7 @@ def generate_layer(bus_width, params):
         for side in params['sides']:
             ports = [Port(x, y, side, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
             SB[(x, y, side, 'in')] = ports
+            fabports = fabports + ports
 
         # add inputs from edges as sources
         if x == 0:
@@ -368,25 +390,26 @@ def generate_layer(bus_width, params):
         portsS = [Port(x, lowery, Side.S, t, 'i') for t in range(0, params['num_tracks'][(x, uppery, bus_width)])]
         Mem[(x, uppery, Side.S, 'in')] = portsS
 
+        fabports = fabports + portsN + portsS
+
         # create east and west ports 
         for y in range(lowery, uppery + 1):
             portsW = [Port(x, lowery, Side.W, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
             Mem[(x, y, Side.W, 'in')] = portsW
             portsE = [Port(x, lowery, Side.E, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
             Mem[(x, y, Side.E, 'in')] = portsE
+            fabports = fabports + portsW + portsE
+
+    params['ports' + bus_width] = fabports
 
     return SB, Mem
 
 
 def connect_tiles(bus_width, params):
-    rows = params['rows']
-    cols = params['cols']
     SB = params['SB' + bus_width]
     Mem = params['Mem' + bus_width]
     num_tracks = params['num_tracks']
     sinks = params['sinks' + bus_width]
-    sources = params['sources' + bus_width]
-    routable = params['routable' + bus_width]
 
     SBorMem = SB.copy()
     SBorMem.update(Mem)
@@ -520,10 +543,10 @@ def connect_memtiles_cb(root, bus_width, params):
     return True
 
 
-def connect_memtiles_internal(root, bus_width, params, p_state):
+def connect_memtiles_internal(root, bus_width, params):
     Mem = params['Mem' + bus_width]
     tracks = params['tracks' + bus_width]
-    sinks = params['sinks' + bus_width]
+    fabports = params['ports' + bus_width]
     pnrconfig = params['pnrconfig']
     sources = params['sources' + bus_width]
 
@@ -562,6 +585,7 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                 snkport = Port(x, tile_y, Side.Mem, track, 'in')
                                 Mem[(x, tile_y, snk, 'in')] = snkport
                                 Mem[(x, tile_y, snk, 'out')] = snkport
+                                fabports.append(snkport)
 
                         for src in mux.findall('src'):
                             src_name = src.text
@@ -580,6 +604,7 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                     # create new in port if not already created
                                     srcport = Port(x, tile_y, Side.Mem, src_name, 'in')
                                     Mem[(x, tile_y, src_name, 'in')] = srcport
+                                    fabports.append(srcport)
 
 
                                 # hacky: hardcoded output ports
@@ -592,6 +617,7 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                             track = Track(srcport, snkport, int(bus_width))
                             pnrconfig.trackconfig[track] = (track_names, 'SB')
                             tracks.append(track)
+    params['ports' + bus_width] = fabports
     return True
 
 
