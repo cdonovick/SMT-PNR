@@ -8,8 +8,6 @@ class Side(Enum):
     S = 1
     E = 0
     W = 2
-    PE = 4 # To/from a PE
-    Mem = 5 # To/from a SB
 
 def getSide(side_str):
     '''
@@ -23,8 +21,6 @@ def getSide(side_str):
         return fabrci.Side.E
     elif side_str == 'W':
         return Side.W
-    elif side_str == 'NS':
-        return Side.NS
     else:
         raise ValueError('Not passed a valid side string')
 
