@@ -53,11 +53,15 @@ class Port(NamedIDObject):
         return (self._x, self._y)
 
     def split(self):
-        inport = Port(self._x, self._y, self._side, self._track, 'in')
+        inport = Port(self._x, self._y, self._side, self._track, 'regi')
         inport._outputs = self._outputs
+        for track in inport._outputs:
+            track._src = inport
         outx, outy, outside = mapSide(self._x, self._y, self._side)
-        outport = Port(outx, outy, outside, self._track, 'out')
+        outport = Port(outx, outy, outside, self._track, 'rego')
         outport._inputs = self._inputs
+        for track in outport._inputs:
+            track._dst = outport
         return outport, inport
 
     def __repr__(self):
@@ -272,8 +276,9 @@ def process_regs(design, p_state, fabric):
             # now split that port
             origport = fabric[16].ports.pop(newstate)
             outport, inport = origport.split()
-            fabric[16].sinks[(outport.x, outport.y, outport.track, outport.side)] = outport
-            fabric[16].sources[(inport.x, inport.y, inport.track, inport.side)] = inport
+            # note: for now still indexing by assigned location
+            fabric[16].sinks[newstate] = outport
+            fabric[16].sources[newstate] = inport
             del origport
 
 
@@ -332,7 +337,12 @@ def pre_process(root, params):
                         snk_name = mux.get('snk')
                         # hacky just getting last character for now
                         track = snk_name[-1:]
-#                        reg_locations.add((c, r + r_incr, int(track)))
+                        # TODO: Fix indexing
+                        # Placement can place a register at switch box in a lower
+                        # nonzero memory tile row, but ports have to be indexed by
+                        # memory location i.e. row = 0
+                        # can fix this by modifying r in bitstream writer
+                        #reg_locations.add((c, r + r_incr, int(track)))
 
             # data structure for holding bounds of a memory tile
             mem_bounds.add((c, r, r + r_incr))
