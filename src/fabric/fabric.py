@@ -10,16 +10,16 @@ class Port(NamedIDObject):
        Represents a port on a fabric
        x         : x coordinate
        y         : y coordinate
-       side      : side of tile it's on
+       resource  : Side enum for regular tracks. Resource enum for CB ports
        track     : track number (or port name for PE)
        direction : in or out (i or o)
     '''
-    def __init__(self, x, y, side, track, direction='i'):
+    def __init__(self, x, y, resource, track, direction='i'):
         # naming scheme is (x, y)Side_direction[track]
-        super().__init__('({}, {}){}_{}[{}]'.format(x, y, side.name, direction, str(track)))
+        super().__init__('({}, {}){}_{}[{}]'.format(x, y, resource.name, direction, str(track)))
         self._x = x
         self._y = y
-        self._side = side
+        self._resource = resource
         self._track = track
         self._inputs = set()
         self._outputs = set()
@@ -34,7 +34,15 @@ class Port(NamedIDObject):
 
     @property
     def side(self):
-        return self._side
+        '''
+           Returns the resource assuming it's a side
+        '''
+        assert self._resource.name in Side.__members__
+        return self._resource
+
+    @property
+    def resource(self):
+        return self._resource
 
     @property
     def track(self):
@@ -53,11 +61,11 @@ class Port(NamedIDObject):
         return (self._x, self._y)
 
     def split(self):
-        inport = Port(self._x, self._y, self._side, self._track, 'regi')
+        inport = Port(self._x, self._y, self._resource, self._track, 'regi')
         inport._outputs = self._outputs
         for track in inport._outputs:
             track._src = inport
-        outx, outy, outside = mapSide(self._x, self._y, self._side)
+        outx, outy, outside = mapSide(self.x, self.y, self.side)
         outport = Port(outx, outy, outside, self._track, 'rego')
         outport._inputs = self._inputs
         for track in outport._inputs:
@@ -104,7 +112,7 @@ class FabricLayer:
         self._ports = dict()
         for port in ports:
             if port not in list(sources.values()) + list(sinks.values()):
-                self._ports[(port.x, port.y, port.track, port.side)] = port
+                self._ports[(port.x, port.y, port.track, port.resource)] = port
         self._tracks = tracks
         self._port_names = port_names
 

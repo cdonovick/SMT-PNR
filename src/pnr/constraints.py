@@ -354,7 +354,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
         src = track.src
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
-        if src.side == Side.PE and (src.x, src.y) not in p_state.I:
+        if src.resource == Resource.PE and (src.x, src.y) not in p_state.I:
             continue
         if src not in vars:
             vars[src] = graph.addNode(src.name)
