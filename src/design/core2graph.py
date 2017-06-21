@@ -42,7 +42,7 @@ def load_core(file, *libs):
             modules[inst_name]['type'] = 'Mem'
             modules[inst_name]['conf'] = {
                     'mode'              : 'linebuffer', #inst.get_config_value('mode'),
-                    'fifo_depth'        : '64', #HACK
+                    'fifo_depth'        : '66', #HACK
                     'almost_full_count' : '0', #HACK
                     'chain_enable'      : '0', #HACK
                     'tile_en'           : '1', #HACK
