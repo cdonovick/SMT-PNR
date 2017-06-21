@@ -396,13 +396,13 @@ def generate_layer(bus_width, params):
         portsN = [Port(x, lowery, Side.N, t, 'i') for t in range(0, params['num_tracks'][(x, lowery, bus_width)])]
         Mem[(x, lowery, Side.N, 'in')] = portsN
 
-        # create south ports at bottom (still use lower y -- everything in memory tile with respect to top)
         portsS = [Port(x, lowery, Side.S, t, 'i') for t in range(0, params['num_tracks'][(x, uppery, bus_width)])]
         Mem[(x, uppery, Side.S, 'in')] = portsS
 
         fabports = fabports + portsN + portsS
 
-        # create east and west ports 
+        # create east and west ports
+        # need to index by "memory location" i.e. only row=0
         for y in range(lowery, uppery + 1):
             portsW = [Port(x, lowery, Side.W, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
             Mem[(x, y, Side.W, 'in')] = portsW
@@ -491,7 +491,7 @@ def connect_pe(root, bus_width, params):
         y = int(tile.get('row'))
         x = int(tile.get('col'))
         # Hacky! Hardcoding the PE output port
-        port = Port(x, y, Side.PE, 'pe_out_res', 'o')
+        port = Port(x, y, Resource.PE, 'pe_out_res', 'o')
         PE[(x, y, 'pe_out_res')] = port
         sources[(x, y, 'pe_out_res')] = port
         # need to handle memory tiles differently
@@ -501,7 +501,7 @@ def connect_pe(root, bus_width, params):
                     for mux in cb.findall('mux'):
                         snk = mux.get('snk')
                         port_names[Resource.PE].add(snk)
-                        port = Port(x, y, Side.PE, snk, 'i')
+                        port = Port(x, y, Resource.PE, snk, 'i')
                         PE[(x, y, snk)] = port
                         sinks[(x, y, snk)] = port
                         for src in mux.findall('src'):
@@ -536,7 +536,7 @@ def connect_memtiles_cb(root, bus_width, params):
                     for mux in cb.findall('mux'):
                         snk = mux.get('snk')
                         port_names[Resource.Mem].add(snk)
-                        dstport = Port(x, y, Side.Mem, snk, 'i')
+                        dstport = Port(x, y, Resource.Mem, snk, 'i')
                         Mem[(x, y, snk)] = dstport
                         sinks[(x, y, snk)] = dstport
                         for src in mux.findall('src'):
@@ -592,7 +592,7 @@ def connect_memtiles_internal(root, bus_width, params):
                                 # make new port and set both equal to it
                                 # because no register so should be equal
                                 # hacky indices supposed to be different for y/tile_y
-                                snkport = Port(x, tile_y, Side.Mem, track, 'in')
+                                snkport = Port(x, tile_y, Resource.Mem, track, 'in')
                                 Mem[(x, tile_y, snk, 'in')] = snkport
                                 Mem[(x, tile_y, snk, 'out')] = snkport
                                 fabports.append(snkport)
@@ -612,7 +612,7 @@ def connect_memtiles_internal(root, bus_width, params):
                                     srcport = Mem[(x, tile_y, src_name, 'in')]
                                 else:
                                     # create new in port if not already created
-                                    srcport = Port(x, tile_y, Side.Mem, src_name, 'in')
+                                    srcport = Port(x, tile_y, Resource.Mem, src_name, 'in')
                                     Mem[(x, tile_y, src_name, 'in')] = srcport
                                     fabports.append(srcport)
 
