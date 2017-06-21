@@ -373,15 +373,15 @@ def generate_layer(bus_width, params):
         portsN = [Port(x, lowery, Side.N, t, 'i') for t in range(0, params['num_tracks'][(x, lowery, bus_width)])]
         Mem[(x, lowery, Side.N, 'in')] = portsN
 
-        # create south ports at bottom (i.e. upper y)
-        portsS = [Port(x, uppery, Side.S, t, 'i') for t in range(0, params['num_tracks'][(x, uppery, bus_width)])]
+        # create south ports at bottom (still use lower y -- everything in memory tile with respect to top)
+        portsS = [Port(x, lowery, Side.S, t, 'i') for t in range(0, params['num_tracks'][(x, uppery, bus_width)])]
         Mem[(x, uppery, Side.S, 'in')] = portsS
 
         # create east and west ports 
         for y in range(lowery, uppery + 1):
-            portsW = [Port(x, y, Side.W, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
+            portsW = [Port(x, lowery, Side.W, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
             Mem[(x, y, Side.W, 'in')] = portsW
-            portsE = [Port(x, y, Side.E, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
+            portsE = [Port(x, lowery, Side.E, t, 'i') for t in range(0, params['num_tracks'][(x, y, bus_width)])]
             Mem[(x, y, Side.E, 'in')] = portsE
 
     return SB, Mem
@@ -588,13 +588,13 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                 # create a different port for out
                                 # hacky! These indices are supposed to be different...
                                 # annoying property of memory tiles
-                                snkport = Port(x, y, Side.Mem, track, 'ro')
+                                snkport = Port(x, tile_y, Side.Mem, track, 'ro')
                                 Mem[(x, tile_y, snk, 'out')] = snkport
                                 sinks[potential_reg] = Mem[(x, tile_y, snk, 'out')]
 
                                 # create in port if not created already
                                 if (x, tile_y, snk, 'in') not in Mem:
-                                    Mem[(x, tile_y, snk, 'in')] = Port(x, y, Side.Mem, track, 'in')
+                                    Mem[(x, tile_y, snk, 'in')] = Port(x, tile_y, Side.Mem, track, 'in')
 
                                 sources[potential_reg] = Mem[(x, tile_y, snk, 'in')]
 
@@ -607,7 +607,7 @@ def connect_memtiles_internal(root, bus_width, params, p_state):
                                 # make new port and set both equal to it
                                 # because no register so should be equal
                                 # hacky indices supposed to be different for y/tile_y
-                                snkport = Port(x, y, Side.Mem, track, 'in')
+                                snkport = Port(x, tile_y, Side.Mem, track, 'in')
                                 Mem[(x, tile_y, snk, 'in')] = snkport
                                 Mem[(x, tile_y, snk, 'out')] = snkport
 
