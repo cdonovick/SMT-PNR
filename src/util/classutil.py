@@ -45,6 +45,47 @@ class NamedIDObject(IDObject):
     def name(self):
         return self._name
 
+class FlyWeightMeta(type):
+    '''
+        FlyWeightMeta:
+            metaclass for flyweight objects  
+
+        ------------------------------------
+
+        class A:
+            def __init__(self, a):
+                self.a = a
+
+        class B(metaclass=FlyWeightMeta):
+            def __init__(self, a):
+                self.a = a
+
+        class C(metaclass=FlyWeightMeta):
+            def __init__(self, a):
+                self.a = a
+
+        assert A(0) is not A(0)
+        assert B(0) is B(0)
+        assert B(0) is not B(1)
+        assert B(0) is not C(0)
+    '''
+
+    def __call__(cls, *pargs, **kwargs):
+        idx = (pargs, tuple(kwargs.items()))
+        try:
+            return cls.__instances[idx]
+        except KeyError:
+            obj = cls.__new__(cls, *pargs, **kwargs)
+            cls.__init__(obj, *pargs, **kwargs)
+            cls.__instances[idx] = obj
+            return obj
+
+
+    def __init__(cls, *pargs, **kwargs):
+        super().__init__(cls, pargs, kwargs)
+        cls.__instances = dict()
+
+
 
 class ValidContainer:
     '''wrapper class that allows data to marked invalid '''
