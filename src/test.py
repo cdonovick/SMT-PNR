@@ -2,6 +2,7 @@
 import sys
 import design, design.core2graph, fabric, pnr, smt
 from functools import partial
+from design.module import Resource
 
 import argparse
 parser = argparse.ArgumentParser(description='Run place and route')
@@ -37,7 +38,7 @@ des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
 fab = fabric.pre_place_parse_xml(fabric_file)
-
+print(fab.locations[Resource.Reg])
 pnrdone = False
 
 iterations = 0

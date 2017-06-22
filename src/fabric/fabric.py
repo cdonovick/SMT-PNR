@@ -115,7 +115,7 @@ class Fabric:
         self._locations = dict()
         self._locations[Resource.PE] = parsed_params['pe_locations'][True]
         self._locations[Resource.Mem] = parsed_params['mem_locations']
-        self._locations[Resource.Reg] = parsed_params['reg_locations']
+        self._locations[Resource.Reg] = parsed_params['reg_locations'] - parsed_params['mem_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
 
@@ -321,7 +321,7 @@ def pre_process(root, params):
                         snk_name = mux.get('snk')
                         # hacky just getting last character for now
                         track = snk_name[-1:]
-                        reg_locations.add((c, r + r_incr, int(track)))
+#                        reg_locations.add((c, r + r_incr, int(track)))
 
             # data structure for holding bounds of a memory tile
             mem_bounds.add((c, r, r + r_incr))
