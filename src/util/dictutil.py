@@ -1,11 +1,49 @@
-from collections import defaultdict, Iterable, OrderedDict, MutableMapping
+from collections import defaultdict, Iterable, OrderedDict, MutableMapping, MutableSet, Sequence
 
-__all__ = ['BiMultiDict', 'BiDict', 'SortedDict', 'IdentDict']
+__all__ = ['BiMultiDict', 'BiDict', 'SortedDict', 'IdentDict', 'SetList']
+
+class SetList(MutableSet, Sequence):
+    def __init__(self, iter=()):
+        self._s = set()
+        self._l = list()
+
+        for i in iter:
+            self.add(i)
+
+    def __contains__(self, val):
+        return val in self._s
+
+    def __iter__(self):
+        yield from self._l
+
+    def __len__(self):
+        return len(self._s)
+
+    def add(self, val):
+        if val not in self:
+            self._s.add(val)
+            self._l.append(val)
+
+    def discard(self, val):
+        if val in self:
+            self._s.discard(val)
+            self._l.remove(val)
+
+    def __getitem__(self, key):
+        return self._l[key]
+
+    def __repr__(self):
+        c = []
+        for v in self:
+            c.append('{}'.format(v))
+
+        s = 'SetList({' + ', '.join(c) + '})'
+        return s
 
 class BiMultiDict(MutableMapping):
     def __init__(self, d=dict()):
-        self._d = defaultdict(list)
-        self._i = defaultdict(list)
+        self._d = defaultdict(SetList)
+        self._i = defaultdict(SetList)
 
         for k,v in d.items():
             if isinstance(v, Iterable) and not isinstance(v, basestring):
@@ -18,8 +56,8 @@ class BiMultiDict(MutableMapping):
         return self._d[key]
 
     def __setitem__(self, key, val):
-        self._d[key].append(val)
-        self._i[val].append(key)
+        self._d[key].add(val)
+        self._i[val].add(key)
 
     def __delitem__(self, key):
         if key not in self._d:
@@ -43,7 +81,7 @@ class BiMultiDict(MutableMapping):
         for k,vs in self.items():
             s = '{' + ', '.join(map(str,vs)) + '}'
             c.append('{}:{}'.format(k,s))
-        s = '{' + ', '.join(c) + '}'
+        s = 'BiMultiDict({' + ', '.join(c) + '})'
         return s
 
     def __len__(self):
@@ -97,7 +135,7 @@ class BiDict(MutableMapping):
         c = []
         for k,v in self.items():
             c.append('{}:{}'.format(k,v))
-        s = '{' + ', '.join(c) + '}'
+        s = 'BiDict({' + ', '.join(c) + '})'
         return s
 
     def __len__(self):
@@ -146,7 +184,7 @@ class SortedDict(MutableMapping):
         c = []
         for k,v in self.items():
             c.append('{}:{}'.format(k,v))
-        s = '{' + ', '.join(c) + '}'
+        s = 'SortedDict({' + ', '.join(c) + '})'
         return s
 
     def __len__(self):
@@ -187,3 +225,9 @@ class IdentDict(MutableMapping):
     def __contains__(self, key):
         return key in self._d
 
+    def __repr__(self):
+        c = []
+        for k,v in self.items():
+            c.append('{}:{}'.format(k,v))
+        s = 'IdentDict({' + ', '.join(c) + '})'
+        return s
