@@ -38,7 +38,7 @@ des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
 fab = fabric.pre_place_parse_xml(fabric_file)
-print(fab.locations[Resource.Reg])
+
 pnrdone = False
 
 iterations = 0
