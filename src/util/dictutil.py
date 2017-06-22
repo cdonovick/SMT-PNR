@@ -90,7 +90,7 @@ class BiMultiDict(MutableMapping):
         return len(self._d)
 
     def keys(self):
-        return KeysView(SetList(self))
+        yield from self
 
     def values(self):
         '''
@@ -100,20 +100,17 @@ class BiMultiDict(MutableMapping):
         for k in self:
             for v in self[k]:
                 if v not in s:
+                    yield v
                     s.add(v)
         
-        return ValuesView(s)
 
     def items(self):
         '''
            Returns flat version of key, value pairs
         '''
-        s = SetList()
         for k in self:
             for v in self[k]:
-                s.add((k, v))
-
-        return ItemsView(s)
+                yield k,v 
 
 
     @property
