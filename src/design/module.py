@@ -1,11 +1,12 @@
 from util import NamedIDObject
 from enum import Enum
+from util import BiMultiDict
 
 class Module(NamedIDObject):
     def __init__(self, name, attributes=dict()):
         super().__init__(name)
-        self._inputs = dict()
-        self._outputs = dict()
+        self._inputs = BiMultiDict()
+        self._outputs = BiMultiDict()
         self._resource = Resource.UNSET
 
     @property

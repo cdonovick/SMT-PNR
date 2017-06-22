@@ -244,12 +244,12 @@ def parse_xml(filepath, fab, design, p_state):
 def process_regs(design, p_state):
     for mod in design.modules:
         if mod.resource == Resource.Reg:
-            k = 0
-            for port, net in mod.outputs.items():
-                outmod = net.dst
-                dst_port = net.dst_port 
-                k = k+1
-            assert k == 1  # should only execute loop once...
+            # could have multiple outputs, for now just taking random
+            # this is heuristic anyway
+            for net in mod.outputs.values():
+                if net.dst in p_state:
+                    outmod = net.dst
+                    dst_port = net.dst_port 
 
             modpos = p_state[mod][0][:-1]
             # get just the position (registers have extra info)

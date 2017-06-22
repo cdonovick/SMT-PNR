@@ -87,6 +87,26 @@ class BiMultiDict(MutableMapping):
     def __len__(self):
         return len(self._d)
 
+    def values(self):
+        '''
+           Returns all the values as a flat set
+        '''
+        l = list()
+        for key in self._d:
+            l = l + self._d[key]
+
+        return set(l)
+
+    def items(self):
+        '''
+           Returns flat version of key, value pairs
+        '''
+        s = set()
+        for key in self._d:
+            for value in self._d[key]:
+                s.add((key, value))
+
+        return s
 
     @property
     def I(self):
