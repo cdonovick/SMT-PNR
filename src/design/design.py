@@ -16,23 +16,34 @@ class Design(NamedIDObject):
         # HACK to make only one wire leave input
         # to help CGRA team with io hack
         # creating a dummy PE (i.e. input + 0)
+
+        # find inputs that have > 1 outputs
+        num_outputs = set()
+        inputmods = dict()
+        for src_name, src_port, dst_name, dst_port, width in nets:
+            if modules[src_name]['type'] == 'IO' and modules[src_name]['conf'] == 'i':
+                if src_name in num_outputs:
+                    # has occured more than once
+                    inputmods[src_name] = modules[src_name]
+
+                num_outputs.add(src_name)
+
         hackidx = 0
         newmodules = {}
         input2adders = {}
         input2consts = {}
-        for mod_name, args in modules.items():
-            if args['type'] == 'IO' and args['conf'] == 'i':
-                addname = 'iohackadder{}'.format(hackidx)
-                constname = 'iohackconst{}'.format(hackidx)
-                newadderargs = {'res': Resource.PE, 'type': 'PE', 'conf': 'add'}
-                newadder = {addname: newadderargs}
-                newconstargs = {'res': Resource.UNSET, 'type': 'Const', 'conf': 0}
-                newconst = {constname: newconstargs}
-                newmodules.update(newadder)
-                newmodules.update(newconst)
-                input2adders[mod_name] = addname
-                input2consts[mod_name] = constname
-                hackidx += 1
+        for mod_name, args in inputmods.items():
+            addname = 'iohackadder{}'.format(hackidx)
+            constname = 'iohackconst{}'.format(hackidx)
+            newadderargs = {'res': Resource.PE, 'type': 'PE', 'conf': 'add'}
+            newadder = {addname: newadderargs}
+            newconstargs = {'res': Resource.UNSET, 'type': 'Const', 'conf': 0}
+            newconst = {constname: newconstargs}
+            newmodules.update(newadder)
+            newmodules.update(newconst)
+            input2adders[mod_name] = addname
+            input2consts[mod_name] = constname
+            hackidx += 1
 
         # add the new hack modules to modules
         modules.update(newmodules)
