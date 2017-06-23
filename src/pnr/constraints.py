@@ -195,7 +195,7 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         inputs = {x.src for x in m1.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
-            if src.fused:
+            if src.resource == Resource.Fused:
                 assert len(src.inputs) <= 1
                 if src.inputs:
                     srcnet = next(iter(src.inputs.values()))

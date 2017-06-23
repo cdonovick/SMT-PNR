@@ -2,6 +2,7 @@
 import sys
 import design, design.core2graph, fabric, pnr, smt
 from functools import partial
+from design.module import Resource
 
 import argparse
 parser = argparse.ArgumentParser(description='Run place and route')

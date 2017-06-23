@@ -82,6 +82,7 @@ _mem_translate = {
     'fifo_depth' : IdentDict(),
     'almost_full_count' : IdentDict(),
     'chain_enable' : IdentDict(),
+    'tile_en' : IdentDict(),
 }
 
 
@@ -108,7 +109,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 if (x, y, 'CB', snk, src.text) in r_state.I:
                     # reg == 0 for all cb
                     data[0] = int(src.get('sel'))
-                    comment[0][(sel_w-1, 0)] = 'connect wire {} ({}) to {}'.format(data[0], src.text, snk)
+                    comment[0][(sel_w-1, 0)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, data[0], src.text, snk)
 
         return data, comment
 
@@ -145,13 +146,13 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                             reg = configr // 32
                             offset = configr % 32
                             data[reg] |= 1 << offset
-                            comment[reg][(offset, offset)] = 'latch wire {} ({}) before connecting to {}'.format(src.get('sel'), src.text, snk)
+                            comment[reg][(offset, offset)] = '@ tile ({}, {}) latch wire {} ({}) before connecting to {}'.format(x, y, src.get('sel'), src.text, snk)
 
                     configl = int(mux.get('configl'))
                     reg = configl // 32
                     offset = configl % 32
                     data[reg] |= int(src.get('sel')) << offset
-                    comment[reg][(sel_w + offset - 1, offset)] = 'connect wire {} ({}) to {}'.format(src.get('sel'), src.text, snk)
+                    comment[reg][(sel_w + offset - 1, offset)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, src.get('sel'), src.text, snk)
 
         return data,comment
 
@@ -202,7 +203,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
             mod = p_state.I[(x,y)][0]
             assert mod.resource == Resource.Mem
             for opt, value in mod.config.items():
-                if opt != 'chain_enable':
+                if opt not in {'chain_enable', 'tile_en'}:
                     bl = 'bitl'
                     bh = 'bith'
                 else:

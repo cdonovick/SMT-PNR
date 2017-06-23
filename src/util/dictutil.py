@@ -1,4 +1,5 @@
 from collections import defaultdict, Iterable, OrderedDict, MutableMapping, MutableSet, Sequence
+from collections import KeysView, ValuesView, ItemsView
 
 __all__ = ['BiMultiDict', 'BiDict', 'SortedDict', 'IdentDict', 'SetList']
 
@@ -78,7 +79,8 @@ class BiMultiDict(MutableMapping):
 
     def __repr__(self):
         c = []
-        for k,vs in self.items():
+        for k in self:
+            vs = self[k]
             s = '{' + ', '.join(map(str,vs)) + '}'
             c.append('{}:{}'.format(k,s))
         s = 'BiMultiDict({' + ', '.join(c) + '})'
@@ -86,6 +88,29 @@ class BiMultiDict(MutableMapping):
 
     def __len__(self):
         return len(self._d)
+
+    def keys(self):
+        yield from self
+
+    def values(self):
+        '''
+           Returns all the values as a flat set
+        '''
+        s = set()
+        for k in self:
+            for v in self[k]:
+                if v not in s:
+                    yield v
+                    s.add(v)
+        
+
+    def items(self):
+        '''
+           Returns flat version of key, value pairs
+        '''
+        for k in self:
+            for v in self[k]:
+                yield k,v 
 
 
     @property

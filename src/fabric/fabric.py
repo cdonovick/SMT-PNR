@@ -115,7 +115,7 @@ class Fabric:
         self._locations = dict()
         self._locations[Resource.PE] = parsed_params['pe_locations'][True]
         self._locations[Resource.Mem] = parsed_params['mem_locations']
-        self._locations[Resource.Reg] = parsed_params['reg_locations']
+        self._locations[Resource.Reg] = parsed_params['reg_locations'] - parsed_params['mem_locations']
         self._pe_locations = parsed_params['pe_locations']
         self._mem_locations = parsed_params['mem_locations']
 
@@ -244,12 +244,12 @@ def parse_xml(filepath, fab, design, p_state):
 def process_regs(design, p_state):
     for mod in design.modules:
         if mod.resource == Resource.Reg:
-            k = 0
-            for port, net in mod.outputs.items():
-                outmod = net.dst
-                dst_port = net.dst_port 
-                k = k+1
-            assert k == 1  # should only execute loop once...
+            # could have multiple outputs, for now just taking random
+            # this is heuristic anyway
+            for net in mod.outputs.values():
+                if net.dst in p_state:
+                    outmod = net.dst
+                    dst_port = net.dst_port 
 
             modpos = p_state[mod][0][:-1]
             # get just the position (registers have extra info)
@@ -321,7 +321,7 @@ def pre_process(root, params):
                         snk_name = mux.get('snk')
                         # hacky just getting last character for now
                         track = snk_name[-1:]
-                        reg_locations.add((c, r + r_incr, int(track)))
+#                        reg_locations.add((c, r + r_incr, int(track)))
 
             # data structure for holding bounds of a memory tile
             mem_bounds.add((c, r, r + r_incr))
