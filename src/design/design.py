@@ -1,6 +1,7 @@
 '''
     Classes for represtenting designs and various constructors
 '''
+from collections import defaultdict
 from util import NamedIDObject, SortedDict
 from .module import Module, Resource
 from .net import Net
@@ -17,58 +18,46 @@ class Design(NamedIDObject):
         # to help CGRA team with io hack
         # creating a dummy PE (i.e. input + 0)
 
-        # find inputs that have > 1 outputs
-        num_outputs = set()
-        inputmods = dict()
+        # find input modules
+        inputmods = defaultdict(int)
         for src_name, src_port, dst_name, dst_port, width in nets:
-            if modules[src_name]['type'] == 'IO' and modules[src_name]['conf'] == 'i':
-                if src_name in num_outputs:
-                    # has occured more than once
-                    inputmods[src_name] = modules[src_name]
+            if modules[src_name]['type'] == 'IO':
+                #an output should never be a src
+                assert modules[src_name]['conf'] == 'i'
+                inputmods[src_name] += 1
 
-                num_outputs.add(src_name)
+        #filter the inputs for inputs with more than one input
+        inputmods = {k for k,v in inputmods.values() if v > 1}
 
-        hackidx = 0
-        newmodules = {}
-        input2adders = {}
-        input2consts = {}
-        for mod_name, args in inputmods.items():
-            addname = 'iohackadder{}'.format(hackidx)
-            constname = 'iohackconst{}'.format(hackidx)
-            newadderargs = {'res': Resource.PE, 'type': 'PE', 'conf': 'add'}
-            newadder = {addname: newadderargs}
-            newconstargs = {'res': Resource.UNSET, 'type': 'Const', 'conf': 0}
-            newconst = {constname: newconstargs}
-            newmodules.update(newadder)
-            newmodules.update(newconst)
-            input2adders[mod_name] = addname
-            input2consts[mod_name] = constname
-            hackidx += 1
+        #we need to hack some inputs
+        if inputmods:
+            #create const_0 module
+            const_0_name = '__HACK__io_const_0'
+            assert const_0_name  not in modules, 'Hack name ({}) in use things are going to break'.format(const_0_name)
+            modules[const_0_name] = {
+                    'type' : 'Const',
+                    'conf' : 0,
+                    'res'  : Resource.UNSET,
+                }
 
-        # add the new hack modules to modules
-        modules.update(newmodules)
+            #change all the mods to be adders
+            for mod_name in inputmods:
+                saved_args = modules[mod_name].copy()
+                modules[mod_name]['type'] = 'PE'
+                modules[mod_name]['conf'] = 'add'
+                modules[mod_name]['res']  = Resource.PE
 
-        newnets = set()
-        toremove = set()
-        # replace input with dummy adder
-        for src_name, src_port, dst_name, dst_port, width in nets:
-            if src_name in input2adders:
-                toremove.add((src_name, src_port, dst_name, dst_port, width))
-                newnets.add((input2adders[src_name], src_port, dst_name, dst_port, width))
+                hack_io_name = '__HACK__' + mod_name
+                assert hack_io_name not in modules, 'Hack name ({}) in use things are going to break'.format(hack_io_name)
 
-        # remove the input elements
-        nets = nets - toremove
+                #make a hack mod
+                modules[hack_io_name] = saved_args
 
-        # replace with dummy adder
-        nets = nets.union(newnets)
-
-        # make const 0 --> dummyadder connection
-        for io, const in input2consts.items():
-            nets.add((const, 'out', input2adders[io], 'b', 16))
-
-        # connect the input to the dummy adder
-        for io, adder in input2adders.items():
-            nets.add((io, 'pe_out_res', adder, 'a', 16))
+                #make a net from the hack mod to original io (the now adder)
+                #assuming 16 width but we are fucked if its not anyway as the adder trick wont work
+                nets.add((hack_io_name, 'pe_out_res', mod_name, 'a', 16))
+                #make a net from the const 0 to original io (the now adder)
+                nets.add((const_0_name, 'out', mod_name, 'b', 16))
 
         # end HACK for IOs
 
@@ -77,7 +66,6 @@ class Design(NamedIDObject):
         for mod_name,args in modules.items():
             mod = Module(mod_name)
             mod.type_ = args['type']
-            mod.fused = False
             if args['conf'] is not None:
                 mod.config = args['conf']
 
@@ -90,7 +78,6 @@ class Design(NamedIDObject):
         fuse_no = set()
 
         #build nets
-        idx_set = set()
         for src_name, src_port, dst_name, dst_port, width in nets:
 
             src = _mods[src_name]
@@ -101,8 +88,6 @@ class Design(NamedIDObject):
                 fuse_me.add(src)
             else:
                 fuse_no.add(src)
-                #for virtual nets
-                idx_set.add(idx)
 
 
             _nets[idx] = Net(*idx)
@@ -119,11 +104,12 @@ class Design(NamedIDObject):
 
         self._p_modules = frozenset(_p_modules)
 
+
         # build _p_nets
-        net_set = set(_nets.values())
         _p_nets = set()
-        while net_set:
-            net = net_set.pop()
+        _net_cache = _nets.copy()
+        while _nets:
+            _, net = _nets.popitem()
             if net.src.resource == Resource.Fused:
                 # handle this when it's a destination
                 continue
@@ -132,10 +118,14 @@ class Design(NamedIDObject):
             else:
                 # fuse nets with a fused dst
                 for dst_net in net.dst.outputs.values():
-                    assert dst_net.width == net.width
+                    idx = net.src, net.src_port, dst_net.dst, dst_net.dst_port, net.width
                     #print("Fusing: \n({a}  ->  {b})\n ({b}  ->  {c})\n({a}  ->  {c})\n".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
-                    new_net = Net(net.src, net.src_port, dst_net.dst, dst_net.dst_port, net.width)
-                    net_set.add(new_net)
+                    assert dst_net.width == net.width
+                    assert idx not _net_cache
+                    new_net = Net(*idx)
+                    _nets[idx] = new_net
+                    _net_cache[idx] = new_net
+
 
         self._p_nets = frozenset(_p_nets)
 
@@ -148,6 +138,9 @@ class Design(NamedIDObject):
         for net in self.physical_nets:
             assert net.src.resource != Resource.Fused, 'src'
             assert net.dst.resource != Resource.Fused, 'dst'
+
+        for net in self.nets:
+            assert (net in self.physical_nets) or (net.src.resource == Resource.Fused) or (net.dst.resource == Resource.Fused)
 
         for module in self.modules:
             if module.resource == Resource.Fused:
