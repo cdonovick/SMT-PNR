@@ -27,7 +27,7 @@ class Design(NamedIDObject):
                 inputmods[src_name] += 1
 
         #filter the inputs for inputs with more than one input
-        inputmods = {k for k,v in inputmods.values() if v > 1}
+        inputmods = {k for k,v in inputmods.items() if v > 1}
 
         #we need to hack some inputs
         if inputmods:
@@ -121,7 +121,7 @@ class Design(NamedIDObject):
                     idx = net.src, net.src_port, dst_net.dst, dst_net.dst_port, net.width
                     #print("Fusing: \n({a}  ->  {b})\n ({b}  ->  {c})\n({a}  ->  {c})\n".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
                     assert dst_net.width == net.width
-                    assert idx not _net_cache
+                    assert idx not in _net_cache
                     new_net = Net(*idx)
                     _nets[idx] = new_net
                     _net_cache[idx] = new_net
