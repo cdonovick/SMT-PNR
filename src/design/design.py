@@ -108,22 +108,23 @@ class Design(NamedIDObject):
 
         self._p_modules = frozenset(_p_modules)
 
-        #build _p_nets
+        # build _p_nets
+        net_set = set(_nets.values())
         _p_nets = set()
-        while idx_set:
-            idx = idx_set.pop()
-            #idx[2] == dst
-            if idx[2].resource != Resource.Fused:
-                if idx in _nets:
-                    _p_nets.add(_nets[idx])
-                else:
-                    t = Net(*idx)
-                    _p_nets.add(t)
+        while net_set:
+            net = net_set.pop()
+            if net.src.resource == Resource.Fused:
+                # handle this when it's a destination
+                continue
+            elif net.dst.resource != Resource.Fused:
+                _p_nets.add(net)
             else:
-                for dst_net in idx[2].outputs.values():
-                    assert dst_net.width == idx[4]
+                # fuse nets with a fused dst
+                for dst_net in net.dst.outputs.values():
+                    assert dst_net.width == net.width
                     #print("Fusing: \n({a}  ->  {b})\n ({b}  ->  {c})\n({a}  ->  {c})\n".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
-                    idx_set.add((idx[0], idx[1], dst_net.dst, dst_net.dst_port, idx[4]))
+                    new_net = Net(net.src, net.src_port, dst_net.dst, dst_net.dst_port, net.width)
+                    net_set.add(new_net)
 
         self._p_nets = frozenset(_p_nets)
 
