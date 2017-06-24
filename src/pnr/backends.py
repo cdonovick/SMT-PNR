@@ -116,13 +116,17 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
     def _proc_sb(sb):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
+
         for tag in sb.findall('sel_width'):
             sel_w = int(tag.text)
+
+        row = sb.get('row')
+        row = 0 if row is None else int(row)
 
         for mux in sb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
-                r = (x, y, 'SB', snk, src.text)
+                r = (x, y+row, 'SB', snk, src.text)
                 if r in r_state.I:
                     vnet = r_state.I[r][0]
                     if vnet.dst.resource == Resource.Reg:
