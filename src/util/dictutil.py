@@ -1,7 +1,8 @@
-from collections import defaultdict, Iterable, OrderedDict, MutableMapping, MutableSet, Sequence
-from collections import KeysView, ValuesView, ItemsView
+from collections import defaultdict, OrderedDict
+from collections.abc import  Iterable, MutableMapping, MutableSet, Sequence, Set
 
-__all__ = ['BiMultiDict', 'BiDict', 'SortedDict', 'IdentDict', 'SetList']
+
+__all__ = ['BiMultiDict', 'BiDict', 'SortedDict', 'FuncDict', 'IdentDict', 'SetList']
 
 class SetList(MutableSet, Sequence):
     def __init__(self, iter=()):
@@ -41,6 +42,74 @@ class SetList(MutableSet, Sequence):
         s = 'SetList({' + ', '.join(c) + '})'
         return s
 
+#view objects for BiMultiDict as the default ones can't handle the the whole multimap thing
+class BiMultiDict_keys(Set):
+    def __init__(self, bmd):
+        self.d = bmd._d
+
+    def __contains__(self, elem):
+        return elem in self.d
+
+    def __iter__(self):
+        yield from self.d
+
+    def __len__(self):
+        return len(self.d)
+
+    def __repr__(self):
+        c = []
+        for v in self:
+            c.append('{}'.format(v))
+
+        s = 'BiMultiDict_keys({' + ', '.join(c) + '})'
+        return s
+
+
+class BiMultiDict_items(Set):
+    def __init__(self, bmd):
+        self.d = bmd._d
+        self.i = bmd._i
+
+    def __contains__(self, elem):
+        return elem[0] in self.d and elem[1] in self.i
+
+    def __iter__(self):
+        for k in self.d:
+            for v in self.d[k]:
+                yield (k, v)
+
+    def __len__(self):
+        return sum(len(v) for v in self.d.values())
+
+    def __repr__(self):
+        c = []
+        for v in self:
+            c.append('{}'.format(v))
+
+        s = 'BiMultiDict_items({' + ', '.join(c) + '})'
+        return s
+
+class BiMultiDict_values(Set):
+    def __init__(self, bmd):
+        self.i = bmd._i
+
+    def __contains__(self, elem):
+        return elem in self.i
+
+    def __iter__(self):
+        yield from self.i
+
+    def __len__(self):
+        return len(self.i)
+
+    def __repr__(self):
+        c = []
+        for v in self:
+            c.append('{}'.format(v))
+
+        s = 'BiMultiDict_values({' + ', '.join(c) + '})'
+        return s
+
 class BiMultiDict(MutableMapping):
     def __init__(self, d=dict()):
         self._d = defaultdict(SetList)
@@ -54,7 +123,10 @@ class BiMultiDict(MutableMapping):
                 self[k] = v
 
     def __getitem__(self, key):
-        return self._d[key]
+        if key in self._d:
+            return self._d[key]
+        else:
+            raise KeyError(key)
 
     def __setitem__(self, key, val):
         self._d[key].add(val)
@@ -62,7 +134,7 @@ class BiMultiDict(MutableMapping):
 
     def __delitem__(self, key):
         if key not in self._d:
-            raise KeyError()
+            raise KeyError(key)
 
         for val in self._d[key]:
             self._i[val].remove(key)
@@ -90,28 +162,19 @@ class BiMultiDict(MutableMapping):
         return len(self._d)
 
     def keys(self):
-        yield from self
-
-    def values(self):
-        '''
-           Returns all the values as a flat set
-        '''
-        s = set()
-        for k in self:
-            for v in self[k]:
-                if v not in s:
-                    yield v
-                    s.add(v)
-        
+        return BiMultiDict_keys(self)
 
     def items(self):
         '''
            Returns flat version of key, value pairs
         '''
-        for k in self:
-            for v in self[k]:
-                yield k,v 
+        return BiMultiDict_items(self)
 
+    def values(self):
+        '''
+           Returns all the values as a flat set
+        '''
+        return BiMultiDict_values(self)
 
     @property
     def I(self):
@@ -149,7 +212,6 @@ class BiDict(MutableMapping):
             raise KeyError()
 
         val = self._d[key]
-
         del self._i[val]
         del self._d[key]
 
@@ -204,7 +266,6 @@ class SortedDict(MutableMapping):
         for k, _ in self.items():
             yield k
 
-
     def __repr__(self):
         c = []
         for k,v in self.items():
@@ -222,9 +283,11 @@ class SortedDict(MutableMapping):
 
         yield from self._d.items()
 
-class IdentDict(MutableMapping):
-    def __init__(self, d=dict()):
+
+class FuncDict(MutableMapping):
+    def __init__(self, f, d=dict()):
         self._d = dict()
+        self._f = f
         for k,v in d.items():
             self[k] = v
 
@@ -232,7 +295,7 @@ class IdentDict(MutableMapping):
         try:
             return self._d[key]
         except KeyError:
-            self._d[key] = key
+            self._d[key] = self._f(key)
             return  self._d[key]
 
     def __setitem__(self, key, val):
@@ -249,6 +312,18 @@ class IdentDict(MutableMapping):
 
     def __contains__(self, key):
         return key in self._d
+
+    def __repr__(self):
+        c = []
+        for k,v in self.items():
+            c.append('{}:{}'.format(k,v))
+        s = 'FuncDict({}, {' + ', '.join(c) + '})'.format(self._f)
+        return s
+
+
+class IdentDict(FuncDict):
+    def __init__(self, d=dict()):
+        super().__init__(lambda x : x, d)
 
     def __repr__(self):
         c = []
