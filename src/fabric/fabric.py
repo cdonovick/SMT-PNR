@@ -1,6 +1,7 @@
 import lxml.etree as ET
 from util import NamedIDObject
-from .fabricfuns import Side, mapSide, parse_name, pos_to_side, parse_mem_tile_name, parse_mem_sb_wire
+from .fabricfuns import Side, mapSide, parse_name, reg_side_heuristic
+from .fabricfuns import parse_mem_tile_name, parse_mem_sb_wire, pos_to_side
 from abc import ABCMeta
 from design.module import Resource
 
@@ -14,12 +15,25 @@ class Port(NamedIDObject):
        track     : track number (or port name for PE)
        direction : in or out (i or o)
     '''
-    def __init__(self, x, y, resource, track, direction='i'):
+    def __init__(self, muxindex, direction='o'):
+        if muxindex.resource == Resource.SB:
+            # easier to look at side for naming
+            res = pos_to_side(muxindex.ps, muxindex.po, direction)
+        else:
+            res = muxindex.resource
+
         # naming scheme is (x, y)Side_direction[track]
-        super().__init__('({}, {}){}_{}[{}]'.format(x, y, resource.name, direction, str(track)))
-        self._x = x
-        self._y = y
-        self._resource = resource
+        name = '({}, {}){}_{}[{}]'.format(muxindex.ps[0],
+                                          muxindex.ps[1],
+                                          res.name,
+                                          direction,
+                                          muxindex.track if muxindex.track is not None
+                                          else muxindex.port)
+        super().__init__(name)
+        self._x = muxindex.ps[0]
+        self._y = muxindex.ps[1]
+        self._resource = res
+        self._track = muxindex.track  # could be none
         self._track = track
         self._inputs = set()
         self._outputs = set()
@@ -43,6 +57,18 @@ class Port(NamedIDObject):
     @property
     def resource(self):
         return self._resource
+
+    @property
+    def track(self):
+        return self._track
+
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @property
+    def outputs(self):
+        return self._outputs
 
     @property
     def track(self):
@@ -142,12 +168,7 @@ class Fabric:
         self._rows = parsed_params['rows']
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
-        self._locations = dict()
-        self._locations[Resource.PE] = parsed_params['pe_locations'][True]
-        self._locations[Resource.Mem] = parsed_params['mem_locations']
-        self._locations[Resource.Reg] = parsed_params['reg_locations'] - parsed_params['mem_locations']
-        self._pe_locations = parsed_params['pe_locations']
-        self._mem_locations = parsed_params['mem_locations']
+        self._locations = parsed_params['locations']
         self._config = parsed_params['pnrconfig']
         self._layers = dict()
         for bus_width in parsed_params['bus_widths']:
@@ -198,18 +219,6 @@ class Fabric:
             locs.add((x, 0))
 
         return locs
-
-    @property
-    def pe_locations(self):
-        return self._pe_locations[True]
-
-    @property
-    def npe_locations(self):
-        return self._pe_locations[False]
-
-    @property
-    def mem_locations(self):
-        return self._mem_locations
 
     def __getitem__(self, bus_width):
         return self._layers[bus_width]
@@ -275,7 +284,7 @@ def process_regs(design, p_state, fabric):
                 # check if receiving side is a vertical port
                 vertport = dst_port in {'a', 'c'}
             # take port into consideration because of vertical/horizontal track issue
-            side = pos_to_side(modpos, outmodpos, vertport)
+            side = reg_side_heuristic(modpos, outmodpos, vertport)
             newstate = p_state[mod][0] + (side,)
             del p_state[mod]
             p_state[mod] = newstate

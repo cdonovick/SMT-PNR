@@ -1,4 +1,5 @@
 import itertools as it
+import collections
 
 _object_id = it.count().__next__
 
@@ -118,3 +119,18 @@ class ValidContainer:
         else:
             return 'Invalid'
 
+
+def namedtuple_with_defaults(typename, field_names, default_values=()):
+    '''
+       Creates namedtuple with default values
+       From:
+           https://stackoverflow.com/questions/11351032/named-tuple-and-optional-keyword-arguments
+    '''
+    T = collections.namedtuple(typename, field_names)
+    T.__new__.__defaults__ = (None,) * len(T._fields)
+    if isinstance(default_values, collections.Mapping):
+        prototype = T(**default_values)
+    else:
+        prototype = T(*default_values)
+    T.__new__.__defaults__ = tuple(prototype)
+    return T
