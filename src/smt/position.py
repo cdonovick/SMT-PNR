@@ -3,12 +3,12 @@ from math import log2
 import smt.z3util as zu
 import z3
 from smt_switch import sorts
-from smt_switch import functions as funs
+from smt_switch import functions
 from util import NamedIDObject
 
-And = funs.And
-Or = funs.Or
-concat = funs.Concat
+And = functions.And()
+Or = functions.Or()
+concat = functions.concat()
 
 
 class PositionBase(NamedIDObject, metaclass=ABCMeta):
@@ -189,11 +189,13 @@ class Packed2H(Base2H):
 
     @property
     def x(self):
-        return funs.Extract(self.fabric.rows + self.fabric.cols-1, self.fabric.rows, self.flat)
+        ext = functions.extract(self.fabric.rows + self.fabric.cols-1, self.fabric.rows)
+        return ext(self.flat)
 
     @property
     def y(self):
-        return funs.Extract(self.fabric.rows-1, 0, self.flat)
+        ext = functions.extract(self.fabric.rows-1, 0)
+        return ext(self.flat)
 
     def encode(self, p):
         return concat(self.encode_x(p[0]), self.encode_y(p[1]))
@@ -276,24 +278,24 @@ class BVXY(PositionBase):
 
     @property
     def invariants(self):
-        bvult = funs.BVUlt
+        bvult = functions.bvult()
         constraint = []
         if self._is_x_pow2:
             ix = self._x_bits - 1
-            ext = funs.Extract(ix, ix)
+            ext = functions.extract(ix, ix)
             constraint.append(ext(self.x) == 0)
         else:
             constraint.append(bvult(self.x, self.fabric.cols))
         if self._is_y_pow2:
             iy = self._y_bits - 1
-            ext = funs.Extract(iy, iy)
+            ext = functions.extract(iy, iy)
             constraint.append(ext(self.y) == 0)
         else:
             constraint.append(bvult(self.y, self.fabric.rows))
 
         if self._is_c_pow2:
             ic = self._c_bits - 1
-            ext = funs.Extract(ic, ic)
+            ext = functions.extract(ic, ic)
             constraint.append(ext(self.c)  == 0)
         else:
             constraint.append(bvult(self.c, self.fabric.num_tracks))
