@@ -2,6 +2,7 @@
    Functions to be used in fabric.py
 '''
 from enum import Enum
+import re
 
 class Side(Enum):
     N = 3
@@ -39,6 +40,35 @@ def mapSide(x, y, side):
     else:
         raise ValueError('Expected a Side but got {}'.format(type(side)))
 
+
+def get_sb_params(ps, text):
+    '''
+       Takes an x, y and port name and returns
+       po: position of other (receiving) tile
+       track: the track number
+       bw: bus width
+    '''
+    x = ps[0]
+    y = ps[1]
+
+    p = re.compile(r'(?P<mem_int>sb_wire_)?(?:in|out)(?:_\d*)?_BUS(?P<bus>\d+)_S?(?P<side>\d+)_T?(?P<track>\d+)')
+    m = p.search(text)
+
+    _side = Side(int(m.group('side')))
+    _track = int(m.group('track'))
+    _bus = int(m.group('bus'))
+
+    if m.group('mem_int'):
+        # internal memory wires have non-standard sides
+        # need to do a mapping, overwriting _side
+        _, b, _side, t = parse_mem_sb_wire(snk)
+        # everything except for the side should stay the same
+        assert b == 'BUS' + str(_bus)
+        assert int(t) == _track
+
+    xn, yn, _ = mapSide(x, y, _side)
+
+    return (xn, yn), _bus, _track
 
 def parse_name(text):
     '''
