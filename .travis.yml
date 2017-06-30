@@ -38,7 +38,7 @@ before_install:
 install:
     - . ./util/get_smt_solvers.sh
     # Add smt-switch
-    - git clone https://github.com/makaimann/smt-switch.git
+    - git clone -b frf https://github.com/makaimann/smt-switch.git
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
