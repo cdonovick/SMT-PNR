@@ -4,15 +4,15 @@ Constraint generators
 from functools import partial
 import itertools
 
-from smt_switch import functions as funs
+from smt_switch import functions
 from fabric import Side
 from design.module import Resource
 
 import random
 import string
 
-And = funs.And
-Or = funs.Or
+And = functions.And()
+Or = functions.Or()
 
 
 
