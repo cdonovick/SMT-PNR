@@ -168,7 +168,15 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                 data[_pe_reg['op']] |= _op_codes[mod.config]
                 comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
-                for port, net in mod.inputs.items():
+                for port in mod.inputs:
+                    if len(mod.inputs[port]) > 1:
+                        #HACK if there are multiple drivers then grab the register
+                        for net in mod.inputs[port]:
+                            if net.src.type_ == 'Reg':
+                                break
+                    else:
+                        net = mod.inputs[port][0]
+
                     src = net.src
                     if src.type_ == 'Const':
                         data[_pe_reg[port]] |= src.config # load 'a' reg with const
