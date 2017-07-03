@@ -1,2033 +1,1205 @@
 {
-
   "namespaces": {
-
     "_G": {
-
       "modules": {
-
-        "Const_U6": {
-
+        "Const_U4": {
           "configparams": {
-
             "value": "int"
-
           },
-
           "type": [
-
             "Record",
-
             [
-
               [
-
                 "out",
-
                 [
-
                   "Array",
-
                   16,
-
                   "Bit"
-
                 ]
-
               ]
-
             ]
-
           ]
-
         },
-
-        "DesignTop": {
-
-          "def": {
-
-            "connections": [
-
-              [
-
-                [
-
-                  "add_645_649_U39",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ],
-
-                [
-
-                  "const_644_U95",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_695_696_U74",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_696_U91",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_659_660_U66",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_660_U89",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_665_666_U68",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_666_U83",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_653_654_U58",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_654_U85",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_677_678_U60",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_678_U79",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_2_2",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_695_696_U74",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_693_697_U56",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_695_696_U74",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_1_1",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_671_672_U72",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_669_673_U48",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_671_672_U72",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_681_685_U52",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_683_684_U70",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_0_1",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_665_666_U68",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_663_667_U46",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_665_666_U68",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_1_2",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_689_690_U64",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_687_691_U54",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_689_690_U64",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "io16in_U36",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_647_648_U62",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_645_649_U39",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_647_648_U62",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_651_655_U42",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_653_654_U58",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_683_684_U70",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_684_U81",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_657_661_U44",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_659_660_U66",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_2_1",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_677_678_U60",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_671_672_U72",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_672_U76",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_687_691_U54",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_693_697_U56",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "io16_U38",
-
-                  "in"
-
-                ],
-
-                [
-
-                  "add_693_697_U56",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_675_679_U50",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_681_685_U52",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_663_667_U46",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_669_673_U48",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_651_655_U42",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_657_661_U44",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_647_648_U62",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_648_U93",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_657_661_U44",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_663_667_U46",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_2",
-
-                  "rdata"
-
-                ],
-
-                [
-
-                  "mul_659_660_U66",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "io16in_U36",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
-
-                  "wdata"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "mul_689_690_U64",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "cnst_690_U87",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_669_673_U48",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_675_679_U50",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_681_685_U52",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_687_691_U54",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_1_2",
-
-                  "in"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_1_1",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_645_649_U39",
-
-                  "data",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "add_651_655_U42",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_2",
-
-                  "rdata"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_2_1",
-
-                  "in"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_0_2",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "mul_683_684_U70",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "io16in_U36",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_0_1",
-
-                  "in"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "add_675_679_U50",
-
-                  "data",
-
-                  "in",
-
-                  "1"
-
-                ],
-
-                [
-
-                  "mul_677_678_U60",
-
-                  "data",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_0_2",
-
-                  "in"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_0_1",
-
-                  "out"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
-
-                  "rdata"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_2",
-
-                  "wdata"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
-
-                  "rdata"
-
-                ],
-
-                [
-
-                  "mul_653_654_U58",
-
-                  "data",
-
-                  "in",
-
-                  "0"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_2_1",
-
-                  "out"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_2_2",
-
-                  "in"
-
-                ]
-
-              ],
-
-              [
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
-
-                  "rdata"
-
-                ],
-
-                [
-
-                  "lb_repeat_edge_2_stencil_update_stream$reg_1_1",
-
-                  "in"
-
-                ]
-
-              ]
-
-            ],
-
-            "instances": {
-
-              "add_645_649_U39": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_651_655_U42": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_657_661_U44": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_663_667_U46": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_669_673_U48": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_675_679_U50": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_681_685_U52": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_687_691_U54": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "add_693_697_U56": {
-
-                "configargs": {
-
-                  "op": "add"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "cnst_648_U93": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_654_U85": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_660_U89": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_666_U83": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_672_U76": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_678_U79": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_684_U81": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_690_U87": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "cnst_696_U91": {
-
-                "configargs": {
-
-                  "value": 1
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "const_644_U95": {
-
-                "configargs": {
-
-                  "value": 0
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "Const_U6"
-
-                ]
-
-              },
-
-              "io16_U38": {
-
-                "configargs": {
-
-                  "mode": "o"
-
-                },
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "IO"
-
-                ]
-
-              },
-
-              "io16in_U36": {
-
-                "configargs": {
-
-                  "mode": "i"
-
-                },
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "IO"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$mem_1": {
-
-                "configargs": {
-
-                  "mode": "o"
-
-                },
-
-                "genargs": {
-
-                  "depth": 66,
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Mem"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$mem_2": {
-
-                "configargs": {
-
-                  "mode": "o"
-
-                },
-
-                "genargs": {
-
-                  "depth": 66,
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Mem"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$reg_0_1": {
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Reg"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$reg_0_2": {
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Reg"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$reg_1_1": {
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Reg"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$reg_1_2": {
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Reg"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$reg_2_1": {
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Reg"
-
-                ]
-
-              },
-
-              "lb_repeat_edge_2_stencil_update_stream$reg_2_2": {
-
-                "genargs": {
-
-                  "width": 16
-
-                },
-
-                "generatorref": [
-
-                  "cgralib",
-
-                  "Reg"
-
-                ]
-
-              },
-
-              "mul_647_648_U62": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_653_654_U58": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_659_660_U66": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_665_666_U68": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_671_672_U72": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_677_678_U60": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_683_684_U70": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_689_690_U64": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              },
-
-              "mul_695_696_U74": {
-
-                "configargs": {
-
-                  "op": "mul"
-
-                },
-
-                "moduleref": [
-
-                  "_G",
-
-                  "PE_U5"
-
-                ]
-
-              }
-
-            }
-
-          },
-
-          "type": [
-
-            "Record",
-
-            [
-
-              [
-
-                "in",
-
-                [
-
-                  "Array",
-
-                  1,
-
-                  [
-
-                    "Array",
-
-                    16,
-
-                    "BitIn"
-
-                  ]
-
-                ]
-
-              ],
-
-              [
-
-                "out",
-
-                [
-
-                  "Array",
-
-                  16,
-
-                  "Bit"
-
-                ]
-
-              ]
-
-            ]
-
-          ]
-
-        },
-
-        "PE_U5": {
-
+        "Const_U6": {
           "configparams": {
-
-            "op": "string"
-
+            "value": "int"
           },
-
           "type": [
-
             "Record",
-
             [
-
               [
-
-                "data",
-
+                "out",
                 [
-
-                  "Record",
-
-                  [
-
-                    [
-
-                      "in",
-
-                      [
-
-                        "Array",
-
-                        2,
-
-                        [
-
-                          "Array",
-
-                          16,
-
-                          "BitIn"
-
-                        ]
-
-                      ]
-
-                    ],
-
-                    [
-
-                      "out",
-
-                      [
-
-                        "Array",
-
-                        16,
-
-                        "Bit"
-
-                      ]
-
-                    ]
-
-                  ]
-
+                  "Array",
+                  16,
+                  "Bit"
                 ]
-
-              ],
-
-              [
-
-                "bit",
-
-                [
-
-                  "Record",
-
-                  [
-
-                    [
-
-                      "in",
-
-                      [
-
-                        "Array",
-
-                        2,
-
-                        "BitIn"
-
-                      ]
-
-                    ],
-
-                    [
-
-                      "out",
-
-                      "Bit"
-
-                    ]
-
-                  ]
-
-                ]
-
               ]
-
             ]
-
           ]
-
+        },
+        "DesignTarget": {
+          "def": {
+            "connections": [
+              [
+                [
+                  "add_679_683_U19",
+                  "data",
+                  "out"
+                ],
+                [
+                  "add_685_689_U15",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "mul_669_670_U47",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "cnst_670_U64",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_697_701_U17",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_699_700_U33",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "mul_705_706_U35",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "cnst_706_U54",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "mul_699_700_U33",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_2",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_1",
+                  "in"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_0",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_1",
+                  "out"
+                ],
+                [
+                  "mul_687_688_U37",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "mul_663_664_U43",
+                  "data",
+                  "out"
+                ],
+                [
+                  "add_661_665_U29",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "cnst_664_U49",
+                  "out"
+                ],
+                [
+                  "mul_663_664_U43",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "add_661_665_U29",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "const_660_U62",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "mul_711_712_U31",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "cnst_712_U60",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_679_683_U19",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "add_673_677_U25",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "cnst_688_U66",
+                  "out"
+                ],
+                [
+                  "mul_687_688_U37",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "cnst_682_U68",
+                  "out"
+                ],
+                [
+                  "mul_681_682_U39",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "add_661_665_U29",
+                  "data",
+                  "out"
+                ],
+                [
+                  "add_667_671_U27",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "mul_705_706_U35",
+                  "data",
+                  "out"
+                ],
+                [
+                  "add_703_707_U21",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_2",
+                  "out"
+                ],
+                [
+                  "mul_711_712_U31",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "add_685_689_U15",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_687_688_U37",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_667_671_U27",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_669_670_U47",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_1",
+                  "out"
+                ],
+                [
+                  "mul_681_682_U39",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "add_703_707_U21",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "add_697_701_U17",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_679_683_U19",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_681_682_U39",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_0",
+                  "out"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_1",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "cnst_700_U56",
+                  "out"
+                ],
+                [
+                  "mul_699_700_U33",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "mul_705_706_U35",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_2",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_673_677_U25",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_675_676_U41",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_1",
+                  "out"
+                ],
+                [
+                  "mul_693_694_U45",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_0",
+                  "out"
+                ],
+                [
+                  "mul_663_664_U43",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "mul_693_694_U45",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "cnst_694_U52",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_709_713_U12",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_711_712_U31",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "cnst_676_U58",
+                  "out"
+                ],
+                [
+                  "mul_675_676_U41",
+                  "data",
+                  "in",
+                  "1"
+                ]
+              ],
+              [
+                [
+                  "add_691_695_U23",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "mul_693_694_U45",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_667_671_U27",
+                  "data",
+                  "out"
+                ],
+                [
+                  "add_673_677_U25",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_2",
+                  "in"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_1",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "mul_675_676_U41",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_0",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_685_689_U15",
+                  "data",
+                  "out"
+                ],
+                [
+                  "add_691_695_U23",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "add_709_713_U12",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "add_703_707_U21",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "add_697_701_U17",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "add_691_695_U23",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$mem_2",
+                  "wdata"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
+                  "rdata"
+                ]
+              ],
+              [
+                [
+                  "add_709_713_U12",
+                  "data",
+                  "out"
+                ],
+                [
+                  "io16_U11",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_2_0",
+                  "in"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$mem_2",
+                  "rdata"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
+                  "wdata"
+                ],
+                [
+                  "io16in_U9",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "io16in_U9",
+                  "out"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_0",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_0",
+                  "out"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_1",
+                  "in"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_0",
+                  "in"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$mem_1",
+                  "rdata"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_2",
+                  "in"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_0_1",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_0",
+                  "out"
+                ],
+                [
+                  "mul_669_670_U47",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_2",
+                  "in"
+                ],
+                [
+                  "lb_repeat_edge_2_stencil_update_stream$reg_1_1",
+                  "out"
+                ]
+              ]
+            ],
+            "instances": {
+              "add_661_665_U29": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_667_671_U27": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_673_677_U25": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_679_683_U19": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_685_689_U15": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_691_695_U23": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_697_701_U17": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_703_707_U21": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "add_709_713_U12": {
+                "configargs": {
+                  "op": "add"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "cnst_664_U49": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_670_U64": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_676_U58": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_682_U68": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_688_U66": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_694_U52": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_700_U56": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_706_U54": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "cnst_712_U60": {
+                "configargs": {
+                  "value": 999
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "const_660_U62": {
+                "configargs": {
+                  "value": 0
+                },
+                "moduleref": [
+                  "_G",
+                  "Const_U6"
+                ]
+              },
+              "io16_U11": {
+                "configargs": {
+                  "mode": "o"
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "IO"
+                ]
+              },
+              "io16in_U9": {
+                "configargs": {
+                  "mode": "i"
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "IO"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$mem_1": {
+                "configargs": {
+                  "mode": "o"
+                },
+                "genargs": {
+                  "depth": -1,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Mem"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$mem_2": {
+                "configargs": {
+                  "mode": "o"
+                },
+                "genargs": {
+                  "depth": -1,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Mem"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_0_0": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_0_1": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_0_2": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_1_0": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_1_1": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_1_2": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_2_0": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_2_1": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "lb_repeat_edge_2_stencil_update_stream$reg_2_2": {
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Reg"
+                ]
+              },
+              "mul_663_664_U43": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_669_670_U47": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_675_676_U41": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_681_682_U39": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_687_688_U37": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_693_694_U45": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_699_700_U33": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_705_706_U35": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              },
+              "mul_711_712_U31": {
+                "configargs": {
+                  "op": "mul"
+                },
+                "moduleref": [
+                  "_G",
+                  "PE_U5"
+                ]
+              }
+            }
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "in",
+                [
+                  "Array",
+                  1,
+                  [
+                    "Array",
+                    16,
+                    "BitIn"
+                  ]
+                ]
+              ],
+              [
+                "out",
+                [
+                  "Array",
+                  16,
+                  "Bit"
+                ]
+              ]
+            ]
+          ]
+        },
+        "PE_U3": {
+          "configparams": {
+            "op": "string"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "data",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        [
+                          "Array",
+                          16,
+                          "BitIn"
+                        ]
+                      ]
+                    ],
+                    [
+                      "out",
+                      [
+                        "Array",
+                        16,
+                        "Bit"
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "bit",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        "BitIn"
+                      ]
+                    ],
+                    [
+                      "out",
+                      "Bit"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        },
+        "PE_U5": {
+          "configparams": {
+            "op": "string"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "data",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        [
+                          "Array",
+                          16,
+                          "BitIn"
+                        ]
+                      ]
+                    ],
+                    [
+                      "out",
+                      [
+                        "Array",
+                        16,
+                        "Bit"
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "bit",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        "BitIn"
+                      ]
+                    ],
+                    [
+                      "out",
+                      "Bit"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        },
+        "PLACEHOLDER": {
+          "type": [
+            "Record",
+            [
+              [
+                "in",
+                [
+                  "Array",
+                  16,
+                  "BitIn"
+                ]
+              ],
+              [
+                "out",
+                [
+                  "Array",
+                  16,
+                  "Bit"
+                ]
+              ]
+            ]
+          ]
+        },
+        "linebuffer33": {
+          "def": null,
+          "type": [
+            "Record",
+            [
+              [
+                "in",
+                [
+                  "Array",
+                  16,
+                  "BitIn"
+                ]
+              ],
+              [
+                "out",
+                [
+                  "Array",
+                  3,
+                  [
+                    "Array",
+                    3,
+                    [
+                      "Array",
+                      16,
+                      "Bit"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
         }
-
       }
-
     }
-
   },
-
   "top": [
-
     "_G",
-
-    "DesignTop"
-
+    "DesignTarget"
   ]
-
 }

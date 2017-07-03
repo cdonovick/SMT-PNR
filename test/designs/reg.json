@@ -2,9 +2,118 @@
   "namespaces": {
     "_G": {
       "modules": {
+        "Const_U3": {
+          "configparams": {
+            "value": "int"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "out",
+                [
+                  "Array",
+                  16,
+                  "Bit"
+                ]
+              ]
+            ]
+          ]
+        },
+        "PE_U2": {
+          "configparams": {
+            "op": "string"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "data",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        [
+                          "Array",
+                          16,
+                          "BitIn"
+                        ]
+                      ]
+                    ],
+                    [
+                      "out",
+                      [
+                        "Array",
+                        16,
+                        "Bit"
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "bit",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        "BitIn"
+                      ]
+                    ],
+                    [
+                      "out",
+                      "Bit"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        },
         "Top": {
           "def": {
             "connections": [
+              [
+                [
+                  "r0",
+                  "in"
+                ],
+                [
+                  "io0",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "r1",
+                  "in"
+                ],
+                [
+                  "p0",
+                  "data",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "r2",
+                  "out"
+                ],
+                [
+                  "p0",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
               [
                 [
                   "r4",
@@ -17,6 +126,18 @@
               ],
               [
                 [
+                  "p0",
+                  "data",
+                  "in",
+                  "1"
+                ],
+                [
+                  "r0",
+                  "out"
+                ]
+              ],
+              [
+                [
                   "r3",
                   "out"
                 ],
@@ -27,83 +148,26 @@
               ],
               [
                 [
-                  "c0",
-                  "out"
-                ],
-                [
-                  "p0",
-                  "data",
-                  "in",
-                  "0"
-                ]
-              ],
-              [
-                [
-                  "p0",
-                  "data",
-                  "out"
-                ],
-                [
-                  "r1",
-                  "in"
-                ]
-              ],
-              [
-                [
-                  "r0",
-                  "out"
-                ],
-                [
-                  "p0",
-                  "data",
-                  "in",
-                  "1"
-                ]
-              ],
-              [
-                [
-                  "r2",
-                  "out"
-                ],
-                [
                   "r3",
                   "in"
-                ]
-              ],
-              [
-                [
-                  "r1",
-                  "out"
                 ],
                 [
                   "r2",
-                  "in"
+                  "out"
                 ]
               ],
               [
                 [
-                  "io0",
-                  "out"
+                  "r2",
+                  "in"
                 ],
                 [
-                  "r0",
-                  "in"
+                  "r1",
+                  "out"
                 ]
               ]
             ],
             "instances": {
-              "c0": {
-                "configargs": {
-                  "value": 795
-                },
-                "genargs": {
-                  "width": 16
-                },
-                "generatorref": [
-                  "cgralib",
-                  "Const"
-                ]
-              },
               "io0": {
                 "configargs": {
                   "mode": "i"

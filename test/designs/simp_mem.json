@@ -1,0 +1,215 @@
+{
+  "namespaces": {
+    "_G": {
+      "modules": {
+        "Const_U3": {
+          "configparams": {
+            "value": "int"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "out",
+                [
+                  "Array",
+                  16,
+                  "Bit"
+                ]
+              ]
+            ]
+          ]
+        },
+        "PE_U0": {
+          "configparams": {
+            "op": "string"
+          },
+          "type": [
+            "Record",
+            [
+              [
+                "data",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        [
+                          "Array",
+                          16,
+                          "BitIn"
+                        ]
+                      ]
+                    ],
+                    [
+                      "out",
+                      [
+                        "Array",
+                        16,
+                        "Bit"
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "bit",
+                [
+                  "Record",
+                  [
+                    [
+                      "in",
+                      [
+                        "Array",
+                        2,
+                        "BitIn"
+                      ]
+                    ],
+                    [
+                      "out",
+                      "Bit"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        },
+        "Top": {
+          "def": {
+            "connections": [
+              [
+                [
+                  "io0",
+                  "out"
+                ],
+                [
+                  "p0",
+                  "data",
+                  "in",
+                  "0"
+                ]
+              ],
+              [
+                [
+                  "p1",
+                  "data",
+                  "in",
+                  "0"
+                ],
+                [
+                  "m0",
+                  "rdata"
+                ]
+              ],
+              [
+                [
+                  "m0",
+                  "wdata"
+                ],
+                [
+                  "io0",
+                  "out"
+                ]
+              ],
+              [
+                [
+                  "io1",
+                  "in"
+                ],
+                [
+                  "m0",
+                  "rdata"
+                ]
+              ],
+              [
+                [
+                  "m0",
+                  "addr"
+                ],
+                [
+                  "p0",
+                  "data",
+                  "out"
+                ]
+              ]
+            ],
+            "instances": {
+              "io0": {
+                "configargs": {
+                  "mode": "i"
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "IO"
+                ]
+              },
+              "io1": {
+                "configargs": {
+                  "mode": "o"
+                },
+                "genargs": {
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "IO"
+                ]
+              },
+              "m0": {
+                "configargs": {
+                  "mode": "o"
+                },
+                "genargs": {
+                  "depth": 512,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "Mem"
+                ]
+              },
+              "p0": {
+                "configargs": {
+                  "op": "add"
+                },
+                "genargs": {
+                  "numin": 2,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "PE"
+                ]
+              },
+              "p1": {
+                "configargs": {
+                  "op": "mult"
+                },
+                "genargs": {
+                  "numin": 2,
+                  "width": 16
+                },
+                "generatorref": [
+                  "cgralib",
+                  "PE"
+                ]
+              }
+            }
+          },
+          "type": "Any"
+        }
+      }
+    }
+  },
+  "top": [
+    "_G",
+    "Top"
+  ]
+}
