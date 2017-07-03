@@ -218,7 +218,6 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                     bl = 'bit'
                     bh = 'bit'
 
-                print(opt, value)
                 val = int(_mem_translate[opt][value])
                 for tag in mem.findall(opt):
                     bitl = int(tag.get(bl))
