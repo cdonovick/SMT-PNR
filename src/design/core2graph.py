@@ -41,8 +41,8 @@ def load_core(file, *libs):
         elif inst_type[:3] == 'Mem':
             modules[inst_name]['type'] = 'Mem'
             modules[inst_name]['conf'] = {
-                    'mode'              : 'linebuffer', #inst.get_config_value('mode'),
-                    'fifo_depth'        : '66', #HACK
+                    'mode'              : 'linebuffer', #HACK inst.get_config_value('mode'),
+                    'fifo_depth'        : inst.generator_args['depth'].value,
                     'almost_full_count' : '0', #HACK
                     'chain_enable'      : '0', #HACK
                     'tile_en'           : '1', #HACK
