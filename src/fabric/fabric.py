@@ -1,9 +1,32 @@
 import lxml.etree as ET
-from util import NamedIDObject
+from util import NamedIDObject, namedtuple_with_defaults, namedtuple_init_eq
 from .fabricfuns import Side, mapSide, parse_name, reg_side_heuristic
 from .fabricfuns import parse_mem_tile_name, parse_mem_sb_wire, pos_to_side
-from abc import ABCMeta
 from design.module import Resource
+
+
+# useful custom types
+muxindex = namedtuple_with_defaults('muxindex', 'resource ps po bw track port')
+trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
+port_wrapper = namedtuple_init_eq('port_wrapper', 'sink source')
+
+
+# note using a class instead of named tuple for mutability reasons
+class port_names_container:
+    '''
+       Lightweight class for holding port names
+    '''
+    def __init__(self):
+        self._sinks = set()
+        self._sources = set()
+
+    @property
+    def sinks(self):
+        return self._sinks
+
+    @property
+    def sources(self):
+        return self._sources
 
 
 class Port(NamedIDObject):
@@ -36,6 +59,7 @@ class Port(NamedIDObject):
         self._track = muxindex.track  # could be none
         self._inputs = set()
         self._outputs = set()
+        self._index = muxindex
 
     @property
     def x(self):
@@ -56,6 +80,10 @@ class Port(NamedIDObject):
     @property
     def resource(self):
         return self._resource
+
+    @property
+    def index(self):
+        return self._index
 
     @property
     def track(self):
@@ -156,16 +184,23 @@ class Fabric:
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
         self._locations = parsed_params['locations']
+        # temporarily limiting register locations
+        if Resource.Reg in self._locations:
+            self._locations[Resource.Reg] = self._locations[Resource.Reg] - \
+                                            self._locations[Resource.Mem]
         self._config = parsed_params['pnrconfig']
-        self._layers = dict()
-        for bus_width in parsed_params['bus_widths']:
-            fl = FabricLayer(parsed_params['sources' + bus_width],
-                             parsed_params['sinks' + bus_width],
-                             parsed_params['ports' + bus_width],
-                             parsed_params['tracks' + bus_width],
-                             parsed_params['port_names' + bus_width])
-            self._layers[int(bus_width)] = fl
-
+        self._ports = parsed_params['ports']
+        self._tracks = parsed_params['tracks']
+        self._port_names = parsed_params['port_names']
+        # deprecating fabric layers for now
+        # self._layers = dict()
+        # for bus_width in parsed_params['bus_widths']:
+        #     fl = FabricLayer(parsed_params['sources' + bus_width],
+        #                      parsed_params['sinks' + bus_width],
+        #                      parsed_params['ports' + bus_width],
+        #                      parsed_params['tracks' + bus_width],
+        #                      parsed_params['port_names' + bus_width])
+        #     self._layers[int(bus_width)] = fl
 
     @property
     def rows(self):
@@ -190,6 +225,10 @@ class Fabric:
         return self._num_tracks
 
     @property
+    def port_names(self):
+        return self._port_names
+
+    @property
     def locations(self):
         '''
             Returns a dictionary of resource type --> set of locations
@@ -207,8 +246,12 @@ class Fabric:
 
         return locs
 
-    def __getitem__(self, bus_width):
-        return self._layers[bus_width]
+    def __getitem__(self, index):
+        return self._ports[index]
+
+    @property
+    def tracks(self):
+        return self._tracks
 
     @property
     def config(self):

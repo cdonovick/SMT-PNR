@@ -134,3 +134,28 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
         prototype = T(*default_values)
     T.__new__.__defaults__ = tuple(prototype)
     return T
+
+
+def namedtuple_init_eq(typename, field_names):
+
+    '''
+       Creates a namedtuple. If passed only one value, then it assigns
+       all field names to that value
+    '''
+
+    def _construct_namedtuple(value):
+        T = collections.namedtuple(typename, field_names)
+        names = field_names.replace(',', ' ').split()
+        if isinstance(value, collections.Sequence):
+            assert len(names) == len(value), \
+                'mismatch in length of field names and passed parameters'
+
+            d = dict()
+            for k, v in zip(names, value):
+                d[k] = v
+        else:
+            d = dict.fromkeys(names, value)
+
+        return T(**d)
+
+    return _construct_namedtuple

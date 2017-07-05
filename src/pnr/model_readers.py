@@ -1,4 +1,6 @@
 from design.module import Resource
+from .pnrutils import get_muxindices
+
 
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
@@ -13,8 +15,6 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
     # hardcoded layers right now
     for layer in {16}:
 
-        sources = fabric[layer].sources
-        sinks = fabric[layer].sinks
         pnrconfig = fabric.config
 
         for net in design.physical_nets:
@@ -24,25 +24,12 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             if net.width != layer:
                 continue
 
-            src = net.src
-            dst = net.dst
-            src_port = net.src_port
-            dst_port = net.dst_port
+            src_index, dst_index = get_muxindices(net, p_state)
 
             graph = vars[net]
 
-            src_index = p_state[src][0]
-            dst_index = p_state[dst][0]
-
-            # get correct tuple index
-            # registers don't need their port
-            if src.resource != Resource.Reg:
-                src_index = src_index + (src_port,)
-            if dst.resource != Resource.Reg:
-                dst_index = dst_index + (dst_port,)
-
-            src_node = vars[sources[src_index]]
-            dst_node = vars[sinks[dst_index]]
+            src_node = vars[fabric[src_index][0].source]
+            dst_node = vars[fabric[dst_index][0].sink]
             reaches = graph.reaches(src_node, dst_node)
             l = graph.getPath(reaches)
             path = tuple(graph.names[node] for node in l)

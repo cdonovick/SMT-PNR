@@ -39,7 +39,7 @@ modules, nets = design.core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
-fab = fabric.parse_xml(fabric_file, pc)
+fab = pnr.parse_xml(fabric_file, pc)
 
 pnrdone = False
 
