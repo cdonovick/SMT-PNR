@@ -5,15 +5,15 @@ from functools import partial
 import itertools
 
 from smt_switch import functions as funs
-from fabric import Side
 from design.module import Resource
+from .pnrutils import get_muxindex, get_muxindices
+from fabric.fabricutils import trackindex
 
 import random
 import string
 
 And = funs.And
 Or = funs.Or
-
 
 
 def init_positions(position_type):
@@ -153,46 +153,37 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
     c = []
     graph = solver.graphs[0]
 
-    PE_ports = fabric[layer].port_names[Resource.PE]
-
-    sources = fabric[layer].sources
-    sinks = fabric[layer].sinks
-
     # for connected modules, make sure it's not connected to wrong inputs
     # TODO: Fix this so doesn't assume only connected to one input port
     # there might be weird cases where you want to drive multiple inputs
     # of dst module with one output
     for net in design.physical_nets:
         # hacky don't handle wrong layer here
-        if net.width != layer:
+        # and if destination is a register, it only has one port
+        # so it doesn't need exclusivity constraints
+        if net.width != layer or net.dst.resource == Resource.Reg:
             continue
+
         src = net.src
         dst = net.dst
-        dst_port = net.dst_port
-        src_pos = p_state[src][0]
-        dst_pos = p_state[dst][0]
 
-        # find correct index tuple (based on resource type)
-        src_index = src_pos
-        if src.resource != Resource.Reg:
-            src_index = src_index + (net.src_port,)
+        src_index = get_muxindex(src, p_state, layer, net.src_port)
 
-        # TODO: Fix this so doesn't assume only connected to one input port
-        # there might be weird cases where you want to drive multiple inputs
-        # of dst module with one output
-        if dst.resource != Resource.Reg:
-            s = set()
-            s.add(dst_port)
-            for port in fabric[layer].port_names[dst.resource] - s:
-                c.append(~vars[net].reaches(vars[sources[src_index]],
-                                            vars[sinks[dst_pos + (port,)]]))
+        # get all the destination ports that connect these two modules
+        s = set([n.dst_port for n in dst.inputs.values()
+                 if n.src == src and n.src_port == net.src_port])
 
-        # if it's a register, there are no other ports
-
+        for port in fabric.port_names[(dst.resource, layer)].sinks - s:
+            dst_index = get_muxindex(dst, p_state, layer, port)
+            c.append(~vars[net].reaches(vars[fabric[src_index][0].source],
+                                        vars[fabric[dst_index][0].sink]))
 
     # make sure modules that aren't connected are not connected
-    for m1 in design.physical_modules:
-        inputs = {x.src for x in m1.inputs.values()}
+    for mdst in design.physical_modules:
+        # get contracted inputs
+        # TODO: test for correctness
+#        contracted_inputs = mdst.inputs.values() & design.physical_nets
+        inputs = {x.src for x in mdst.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
             if src.resource == Resource.Fused:
@@ -204,27 +195,20 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
                     continue
             # add the (potentially contracted) src
             contracted_inputs.add(src)
-        m1_pos = p_state[m1][0]
-        for m2 in design.physical_modules:
-            if m2 != m1 and m2 not in contracted_inputs:
-                m2_pos = p_state[m2][0]
-                m2_index = m2_pos
 
-                # hacky hardcoding ports
-                if m2.resource == Resource.PE:
-                    m2_index = m2_index + ('pe_out_res',)
+        for msrc in design.physical_modules:
+            if msrc != mdst and msrc not in contracted_inputs:
+                # iterate through all port combinations for m2-->m1 connections
+                for src_port, dst_port \
+                    in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
+                                         fabric.port_names[(mdst.resource, layer)].sinks):
 
-                if m2.resource == Resource.Mem:
-                    m2_index = m2_index + ('mem_out',)
+                    dst_index = get_muxindex(mdst, p_state, layer, dst_port)
+                    src_index = get_muxindex(msrc, p_state, layer, src_port)
 
-                if m1.resource != Resource.Reg:
-                    for port in fabric[layer].port_names[m1.resource]:
-                        c.append(~graph.reaches(vars[sources[m2_index]],
-                                                vars[sinks[m1_pos + (port,)]]))
-                else:
-                    # register -- indexed differently
-                    c.append(~graph.reaches(vars[sources[m2_index]],
-                                            vars[sinks[m1_pos]]))
+                    # assert that these modules' ports do not connect
+                    c.append(~graph.reaches(vars[fabric[src_index][0].source],
+                                            vars[fabric[dst_index][0].sink]))
 
     return solver.And(c)
 
@@ -235,27 +219,15 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         Works with build_msgraph, excl_constraints and dist_limit
     '''
     reaches = []
-    sources = fabric[layer].sources
-    sinks = fabric[layer].sinks
     for net in design.physical_nets:
         # hacky don't handle wrong layer
         if net.width != layer:
             continue
-        src = net.src
-        dst = net.dst
-        src_port = net.src_port
-        dst_port = net.dst_port
-        src_index = p_state[src][0]
-        dst_index = p_state[dst][0]
 
-        # get index tuple (if it's a PE or Mem, need to append port)
-        if src.resource != Resource.Reg:
-            src_index = src_index + (src_port,)
-        if dst.resource != Resource.Reg:
-            dst_index = dst_index + (dst_port,)
+        src_index, dst_index = get_muxindices(net, p_state)
 
-        reaches.append(vars[net].reaches(vars[sources[src_index]],
-                                         vars[sinks[dst_index]]))
+        reaches.append(vars[net].reaches(vars[fabric[src_index][0].source],
+                                         vars[fabric[dst_index][0].sink]))
 
     return solver.And(reaches)
 
@@ -272,26 +244,19 @@ def dist_limit(dist_factor, include_reg=False):
 
     def dist_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         constraints = []
-        sources = fabric[layer].sources
-        sinks = fabric[layer].sinks
         for net in design.physical_nets:
             # hacky don't handle wrong layer here
             if net.width != layer:
                 continue
+
             src = net.src
             dst = net.dst
-            src_port = net.src_port
-            dst_port = net.dst_port
+
+            src_index = get_muxindex(src, p_state, layer, net.src_port)
+            dst_index = get_muxindex(dst, p_state, layer, net.dst_port)
+
             src_pos = p_state[src][0]
             dst_pos = p_state[dst][0]
-
-            # get correct index (based on resource type)
-            src_index = src_pos
-            dst_index = dst_pos
-            if src.resource != Resource.Reg:
-                src_index = src_index + (src_port,)
-            if dst.resource != Resource.Reg:
-                dst_index = dst_index + (dst_port,)
 
             manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
 
@@ -303,17 +268,18 @@ def dist_limit(dist_factor, include_reg=False):
                 # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
                 # You can adjust it with dist_factor
                 heuristic_dist = 3*dist_factor*manhattan_dist + 1
-                constraints.append(vars[net].distance_leq(vars[sources[src_index]],
-                                                          vars[sinks[dst_index]],
+                constraints.append(vars[net].distance_leq(vars[fabric[src_index][0].source],
+                                                          vars[fabric[dst_index][0].sink],
                                                           heuristic_dist))
             elif include_reg:
                 reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
-                constraints.append(vars[net].distance_leq(vars[sources[src_index]],
-                                                          vars[sinks[dst_index]],
+                constraints.append(vars[net].distance_leq(vars[fabric[src_index][0].source],
+                                                          vars[fabric[dst_index][0].sink],
                                                           reg_heuristic_dist))                
 
         return solver.And(constraints)
     return dist_constraints
+
 
 # TODO: Fix node generation. --might be fine already?
 def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
@@ -329,32 +295,23 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     graph = solver.graphs[0]  # only one graph in this encoding
 
-    sources = fabric[layer].sources
-    sinks = fabric[layer].sinks
+    # add nodes for modules
+    for mod in design.physical_modules:
+        for _type in {'sources', 'sinks'}:
+            for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
+                index = get_muxindex(mod, p_state, layer, port_name)
+                p = getattr(fabric[index][0], _type[:-1])  # source/sink instead of sources/sinks
+                vars[p] = graph.addNode(p.name)
 
-    # add msnodes for all the used PEs first (because special naming scheme)
-    #note: still assuming the 'out' port...
-    for loc in fabric.locations[Resource.PE]:
-        x = loc[0]
-        y = loc[1]
-        if (x, y) in p_state.I:
-            vars[sources[(x, y, 'pe_out_res')]] = graph.addNode('({},{})PE_out'.format(x, y))
-            for port_name in fabric[layer].port_names[Resource.PE]:
-                vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})PE_{}'.format(x, y, port_name))
-
-    for loc in fabric.locations[Resource.Mem]:
-        x = loc[0]
-        y = loc[1]
-        if (x, y) in p_state.I:
-            vars[sources[(x, y, 'mem_out')]] = graph.addNode('({},{})Mem_out'.format(x,y))
-            for port_name in fabric[layer].port_names[Resource.Mem]:
-                vars[sinks[(x, y, port_name)]] = graph.addNode('({},{})Mem_{}'.format(x, y, port_name))
-
-    for track in fabric[layer].tracks:
+    # None means select * to SelectDict
+    tindex = trackindex(src=None, snk=None, bw=layer)
+    for track in fabric.tracks[tindex]:
         src = track.src
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
-        if src.resource == Resource.PE and (src.x, src.y) not in p_state.I:
+        # checking port resources
+        # don't make nodes for PEs/Mem that don't have anything placed there
+        if src.resource in {Resource.PE, Resource.Mem} and (src.x, src.y) not in p_state.I:
             continue
         if src not in vars:
             vars[src] = graph.addNode(src.name)
@@ -407,7 +364,9 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
                 vars[sinks[(x, y, 'b')]] = b
                 vars[sources[(x, y, 'out')]] = out
 
-    for track in fabric[layer].tracks:
+    # None is select * to a SelectDict
+    tindex = trackindex(src=None, snk=None, bw=layer)
+    for track in fabric.tracks[tindex]:
         src = track.src
         dst = track.dst
 

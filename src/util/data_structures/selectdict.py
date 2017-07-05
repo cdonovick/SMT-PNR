@@ -3,7 +3,7 @@ from collections.abc import  MutableMapping
 from .multidict import MultiDict
 from .setlist import SetList
 
-__all__ = ['SelectDict']
+__all__ = ['SelectDict', 'DefaultSelectDict']
 
 class SelectDict(MutableMapping):
     def __init__(self, d=dict()):
@@ -46,3 +46,16 @@ class SelectDict(MutableMapping):
     def __repr__(self):
         c = ['{}: {}'.format(k, v) for k,v in self._d.items()]
         return 'SelectDict({' + ', '.join(c) + '})'
+
+
+class DefaultSelectDict(SelectDict):
+    def __init__(self, default):
+        self._default = default
+        super().__init__()
+
+    def __getitem__(self, key):
+        if key not in self._d:
+            super(DefaultSelectDict, self).__setitem__(key, self._default())
+
+        # now call the super's getitem
+        return super(DefaultSelectDict, self).__getitem__(key)
