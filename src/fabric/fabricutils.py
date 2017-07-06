@@ -50,9 +50,17 @@ class port_wrapper:
     def source(self):
         return self._source
 
+    @source.setter
+    def source(self, value):
+        self._source = value
+
     @property
     def sink(self):
         return self._sink
+
+    @sink.setter
+    def sink(self, value):
+        self._sink= value
 
 
 from enum import Enum

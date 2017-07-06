@@ -20,7 +20,8 @@ def get_muxindex(mod, p_state, layer, port=None):
        into the fabric
     '''
 
-    d = {'ps': p_state[mod][0], 'bw': layer}
+    # if there's a register, don't grab the track, if it's anything else, it doesn't matter
+    d = {'ps': p_state[mod][0][:2], 'bw': layer}
 
     if mod.resource != Resource.Reg:
         assert port is not None

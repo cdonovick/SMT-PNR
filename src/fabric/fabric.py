@@ -1,6 +1,6 @@
 import lxml.etree as ET
 from util import NamedIDObject
-from .fabricutils import Side, mapSide, parse_name
+from .fabricutils import Side, mapSide, parse_name, muxindex
 from .fabricutils import parse_mem_tile_name, parse_mem_sb_wire, pos_to_side
 from design.module import Resource
 
@@ -78,15 +78,15 @@ class Port(NamedIDObject):
         return (self._x, self._y)
 
     def split(self):
-        inport = Port(self._x, self._y, self._resource, self._track, 'regi')
-        inport._outputs = self._outputs
-        for track in inport._outputs:
-            track._src = inport
-        outx, outy, outside = mapSide(self.x, self.y, self.side)
-        outport = Port(outx, outy, outside, self._track, 'rego')
+        outport = Port(self._index)
         outport._inputs = self._inputs
         for track in outport._inputs:
             track._dst = outport
+
+        inport = Port(self._index, 'i')
+        inport._outputs = self._outputs
+        for track in inport._outputs:
+            track._src = inport
         return outport, inport
 
     def __repr__(self):

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections.abc import MutableMapping
 from .setlist import SetList
 from util import class_property, FlyWeightMeta

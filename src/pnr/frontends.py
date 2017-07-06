@@ -117,8 +117,10 @@ def _scan_ports(root, params):
             for tag in tile.findall(element):
                 processor(tag)
 
-    params['rows'] = rows
-    params['cols'] = cols
+    # want the number of rows not the value
+    # i.e. 0-7 means 8
+    params['rows'] = rows + 1
+    params['cols'] = cols + 1
 
 
 def _connect_ports(root, params):
