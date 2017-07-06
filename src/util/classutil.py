@@ -118,3 +118,18 @@ class ValidContainer:
         else:
             return 'Invalid'
 
+class class_property:
+    ''' Descriptor for read only class properties '''
+    def __init__(self, fget, doc=None):
+        if doc is None and fget.__doc__ is not None:
+            doc = fget.__doc__
+
+        self.fget = fget
+        self.__doc__ = doc
+
+    def __get__(self, obj, objtype=None):
+        return self.fget(objtype)
+
+    def __set__(self, obj, objtype=None):
+        raise AttributeError('Class Properties must be read only')
+
