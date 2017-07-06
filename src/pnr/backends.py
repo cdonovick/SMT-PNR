@@ -105,7 +105,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
         for mux in cb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
-                if (x, y, 'CB', snk, src.text) in r_state.I:
+                if (x, y, Resource.CB, snk, src.text) in r_state.I:
                     # reg == 0 for all cb
                     data[0] = int(src.get('sel'))
                     comment[0][(sel_w-1, 0)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, data[0], src.text, snk)
@@ -118,10 +118,13 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
         for tag in sb.findall('sel_width'):
             sel_w = int(tag.text)
 
+        row = sb.get('row')
+        row = 0 if row is None else int(row)
+
         for mux in sb.findall('mux'):
             snk = mux.get('snk')
             for src in mux.findall('src'):
-                r = (x, y, 'SB', snk, src.text)
+                r = (x, y + row, Resource.SB, snk, src.text)
                 if r in r_state.I:
                     vnet = r_state.I[r][0]
                     if vnet.dst.resource == Resource.Reg:
@@ -145,13 +148,13 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                             reg = configr // 32
                             offset = configr % 32
                             data[reg] |= 1 << offset
-                            comment[reg][(offset, offset)] = '@ tile ({}, {}) latch wire {} ({}) before connecting to {}'.format(x, y, src.get('sel'), src.text, snk)
+                            comment[reg][(offset, offset)] = '@ tile ({}, {}) latch wire {} ({}) before connecting to {}'.format(x, y + row, src.get('sel'), src.text, snk)
 
                     configl = int(mux.get('configl'))
                     reg = configl // 32
                     offset = configl % 32
                     data[reg] |= int(src.get('sel')) << offset
-                    comment[reg][(sel_w + offset - 1, offset)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, src.get('sel'), src.text, snk)
+                    comment[reg][(sel_w + offset - 1, offset)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y + row, src.get('sel'), src.text, snk)
 
         return data,comment
 

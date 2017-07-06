@@ -1,4 +1,7 @@
 from util import namedtuple_with_defaults
+from enum import Enum
+import re
+
 '''
    Functions to be used in fabric.py
 '''
@@ -50,13 +53,17 @@ class port_wrapper:
     def source(self):
         return self._source
 
+    @source.setter
+    def source(self, value):
+        self._source = value
+
     @property
     def sink(self):
         return self._sink
 
-
-from enum import Enum
-import re
+    @sink.setter
+    def sink(self, value):
+        self._sink = value
 
 
 class Side(Enum):
@@ -68,22 +75,6 @@ class Side(Enum):
 
 # maps to opposite side
 SideMap = {'0': Side.W, '1': Side.N, '2': Side.E, '3': Side.S}
-
-
-def getSide(side_str):
-    '''
-       Takes a string and returns the corresponding side
-    '''
-    if side_str == 'N':
-        return Side.N
-    elif side_str == 'S':
-        return Side.S
-    elif side_str == 'E':
-        return Side.E
-    elif side_str == 'W':
-        return Side.W
-    else:
-        raise ValueError('Not passed a valid side string')
 
 
 def pos_to_side(ps, po, direc='o'):
@@ -110,6 +101,7 @@ def pos_to_side(ps, po, direc='o'):
         return x2side[delx]
     else:
         return y2side[dely]
+
 
 def mapSide(x, y, side):
     '''
@@ -141,7 +133,11 @@ def get_sb_params(ps, text, direc='o'):
     x = ps[0]
     y = ps[1]
 
-    p = re.compile(r'(?P<mem_int>sb_wire_)?(?:in|out)(?:_\d*)?_BUS(?P<bus>\d+)_S?(?P<side>\d+)_T?(?P<track>\d+)')
+    p = re.compile(r'(?P<mem_int>sb_wire_)?'
+                   '(?:in|out)(?:_\d*)?_'
+                   'BUS(?P<bus>\d+)_'
+                   'S?(?P<side>\d+)_'
+                   'T?(?P<track>\d+)')
     m = p.search(text)
 
     _side = Side(int(m.group('side')))
@@ -160,21 +156,13 @@ def get_sb_params(ps, text, direc='o'):
 
     return (xn, yn), _bus, _track, _side
 
+
 def parse_name(text):
     '''
         Takes a (non-PE) port name and returns direction, BUS width, side, track number
     '''
     s = text.split('_')
     return s[0], s[1], Side(int(s[2][1])), int(s[3][1])
-
-
-def parse_mem_tile_name(text):
-    '''
-       Parses the mem_tile wire format
-       Returns direc, bus_width, side, track
-    '''
-    s = text.split('_')
-    return s[0], s[2], Side(int(s[3])), int(s[4])
 
 
 def parse_mem_sb_wire(text, direc='o'):

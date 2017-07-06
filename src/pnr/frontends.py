@@ -81,7 +81,9 @@ def _scan_ports(root, params):
             _port = mux.get('snk')
             # add to sinks
             port_names[(_resource, _bw)].sinks.add(_port)
-            mindex = muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
+            mindex = _get_index(_ps, _port, _resource, bw=_bw)
+            # debugging
+            assert mindex == muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
             ports[mindex] = port_wrapper(Port(mindex))
 
     fabelements = {'sb': _scan_sb,
@@ -117,8 +119,10 @@ def _scan_ports(root, params):
             for tag in tile.findall(element):
                 processor(tag)
 
-    params['rows'] = rows
-    params['cols'] = cols
+    # want the number of rows not the value
+    # i.e. 0-7 means 8
+    params['rows'] = rows + 1
+    params['cols'] = cols + 1
 
 
 def _connect_ports(root, params):
@@ -170,7 +174,9 @@ def _connect_ports(root, params):
         _ps = (x, y)
         for mux in cb.findall("mux"):
             _port = mux.get('snk')
-            snkindex = muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
+            snkindex = _get_index(_ps, _port, _resource, bw=_bw)
+            # debugging
+            assert snkindex == muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
 
             for src in mux.findall("src"):
                 src_name = src.text
@@ -212,7 +218,7 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
     # note: sometimes need to pass bus width because can't be inferred from name
     # e.g. pe_out_res
     # also use for some sanity checks -- there will be redundancy occasionally
-    
+
     x = ps[0]
     y = ps[1]
 

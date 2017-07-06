@@ -8,6 +8,7 @@ from smt_switch import functions as funs
 from design.module import Resource
 from .pnrutils import get_muxindex, get_muxindices
 from fabric.fabricutils import trackindex
+from util import STAR
 
 import random
 import string
@@ -175,8 +176,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         for port in fabric.port_names[(dst.resource, layer)].sinks - s:
             dst_index = get_muxindex(dst, p_state, layer, port)
-            c.append(~vars[net].reaches(vars[fabric[src_index][0].source],
-                                        vars[fabric[dst_index][0].sink]))
+            c.append(~vars[net].reaches(vars[fabric[src_index].source],
+                                        vars[fabric[dst_index].sink]))
 
     # make sure modules that aren't connected are not connected
     for mdst in design.physical_modules:
@@ -207,8 +208,8 @@ def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
                     src_index = get_muxindex(msrc, p_state, layer, src_port)
 
                     # assert that these modules' ports do not connect
-                    c.append(~graph.reaches(vars[fabric[src_index][0].source],
-                                            vars[fabric[dst_index][0].sink]))
+                    c.append(~graph.reaches(vars[fabric[src_index].source],
+                                            vars[fabric[dst_index].sink]))
 
     return solver.And(c)
 
@@ -226,8 +227,8 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         src_index, dst_index = get_muxindices(net, p_state)
 
-        reaches.append(vars[net].reaches(vars[fabric[src_index][0].source],
-                                         vars[fabric[dst_index][0].sink]))
+        reaches.append(vars[net].reaches(vars[fabric[src_index].source],
+                                         vars[fabric[dst_index].sink]))
 
     return solver.And(reaches)
 
@@ -268,13 +269,13 @@ def dist_limit(dist_factor, include_reg=False):
                 # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
                 # You can adjust it with dist_factor
                 heuristic_dist = 3*dist_factor*manhattan_dist + 1
-                constraints.append(vars[net].distance_leq(vars[fabric[src_index][0].source],
-                                                          vars[fabric[dst_index][0].sink],
+                constraints.append(vars[net].distance_leq(vars[fabric[src_index].source],
+                                                          vars[fabric[dst_index].sink],
                                                           heuristic_dist))
             elif include_reg:
                 reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
-                constraints.append(vars[net].distance_leq(vars[fabric[src_index][0].source],
-                                                          vars[fabric[dst_index][0].sink],
+                constraints.append(vars[net].distance_leq(vars[fabric[src_index].source],
+                                                          vars[fabric[dst_index].sink],
                                                           reg_heuristic_dist))                
 
         return solver.And(constraints)
@@ -300,11 +301,10 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
         for _type in {'sources', 'sinks'}:
             for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
                 index = get_muxindex(mod, p_state, layer, port_name)
-                p = getattr(fabric[index][0], _type[:-1])  # source/sink instead of sources/sinks
+                p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                 vars[p] = graph.addNode(p.name)
 
-    # None means select * to SelectDict
-    tindex = trackindex(src=None, snk=None, bw=layer)
+    tindex = trackindex(src=STAR, snk=STAR, bw=layer)
     for track in fabric.tracks[tindex]:
         src = track.src
         dst = track.dst
@@ -364,8 +364,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
                 vars[sinks[(x, y, 'b')]] = b
                 vars[sources[(x, y, 'out')]] = out
 
-    # None is select * to a SelectDict
-    tindex = trackindex(src=None, snk=None, bw=layer)
+    tindex = trackindex(src=STAR, snk=STAR, bw=layer)
     for track in fabric.tracks[tindex]:
         src = track.src
         dst = track.dst

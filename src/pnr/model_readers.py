@@ -28,8 +28,8 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
             graph = vars[net]
 
-            src_node = vars[fabric[src_index][0].source]
-            dst_node = vars[fabric[dst_index][0].sink]
+            src_node = vars[fabric[src_index].source]
+            dst_node = vars[fabric[dst_index].sink]
             reaches = graph.reaches(src_node, dst_node)
             l = graph.getPath(reaches)
             path = tuple(graph.names[node] for node in l)
@@ -38,7 +38,7 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
                 track = vars[edge]
-                src = track.src
+                dst = track.dst
                 c = pnrconfig.trackconfig[track]
-                state = (src.x, src.y, c[1], c[0][1], c[0][0])
+                state = (dst.x, dst.y, c[1], c[0][1], c[0][0])
                 r_state[net] = state

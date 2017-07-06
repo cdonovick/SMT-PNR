@@ -20,7 +20,8 @@ def get_muxindex(mod, p_state, layer, port=None):
        into the fabric
     '''
 
-    d = {'ps': p_state[mod][0], 'bw': layer}
+    # if there's a register, don't grab the track, if it's anything else, it doesn't matter
+    d = {'ps': p_state[mod][0][:2], 'bw': layer}
 
     if mod.resource != Resource.Reg:
         assert port is not None
@@ -30,7 +31,8 @@ def get_muxindex(mod, p_state, layer, port=None):
         # for now, fabric uses Resource.SB everywhere -- not Resource.Reg
         assert mod.resource == Resource.Reg
         assert len(p_state[mod]) == 2, 'Expected Pself and Pother for register position'
-        return muxindex(resource=Resource.SB, **d, po=p_state[mod][1][:-1], track=p_state[mod][0][-1])
+        return muxindex(resource=Resource.SB, **d, po=p_state[mod][1][:-1],
+                        track=p_state[mod][0][-1])
 
 
 def process_regs(design, p_state, fabric):
