@@ -5,7 +5,8 @@ from util import class_property, FlyWeightMeta
 
 __all__ = ['SelectDict', 'STAR']
 
-class _STAR(object, metaclass=FlyWeightMeta):
+class _STAR(metaclass=FlyWeightMeta):
+    __slots__ = ()
     def __eq__(self, other):
         return True
 
@@ -13,7 +14,7 @@ STAR = _STAR()
 
 class SelectDict(MutableMapping):
     _STAR = _STAR()
-
+    __slots__ = '_d'
     def __init__(self, d=dict()):
         self._d = dict()
         for k,v in d.items():
