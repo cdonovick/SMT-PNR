@@ -4,6 +4,7 @@ from collections.abc import MutableMapping
 __all__ = ['SortedDict']
 
 class SortedDict(MutableMapping):
+    __slots__ = '_d', '_sorted'
     def __init__(self, d=dict()):
         self._d = OrderedDict()
         self._sorted = True
