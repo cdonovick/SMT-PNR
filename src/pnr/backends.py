@@ -1,13 +1,12 @@
 from collections import defaultdict
 from functools import partial
-import os
 import re
 import sys
 
 import lxml.etree as ET
 
 from design.module import Resource
-from fabric.fabricfuns import parse_name, mapSide, parse_mem_sb_wire
+from fabric.fabricutils import parse_mem_sb_wire
 from fabric import Side
 from util import smart_open, Mask, IdentDict
 

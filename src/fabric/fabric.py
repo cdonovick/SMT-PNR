@@ -1,32 +1,8 @@
 import lxml.etree as ET
-from util import NamedIDObject, namedtuple_with_defaults, namedtuple_init_eq
-from .fabricfuns import Side, mapSide, parse_name, reg_side_heuristic
-from .fabricfuns import parse_mem_tile_name, parse_mem_sb_wire, pos_to_side
+from util import NamedIDObject
+from .fabricutils import Side, mapSide, parse_name
+from .fabricutils import parse_mem_tile_name, parse_mem_sb_wire, pos_to_side
 from design.module import Resource
-
-
-# useful custom types
-muxindex = namedtuple_with_defaults('muxindex', 'resource ps po bw track port')
-trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
-port_wrapper = namedtuple_init_eq('port_wrapper', 'sink source')
-
-
-# note using a class instead of named tuple for mutability reasons
-class port_names_container:
-    '''
-       Lightweight class for holding port names
-    '''
-    def __init__(self):
-        self._sinks = set()
-        self._sources = set()
-
-    @property
-    def sinks(self):
-        return self._sinks
-
-    @property
-    def sources(self):
-        return self._sources
 
 
 class Port(NamedIDObject):

@@ -7,7 +7,7 @@ import itertools
 from smt_switch import functions as funs
 from design.module import Resource
 from .pnrutils import get_muxindex, get_muxindices
-from fabric import trackindex
+from fabric.fabricutils import trackindex
 
 import random
 import string

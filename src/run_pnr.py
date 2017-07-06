@@ -72,7 +72,7 @@ while not pnrdone and iterations < 10:
 
     if not args.noroute:
 #        fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
-        fabric.process_regs(des, p._place_state, fab)
+        pnr.process_regs(des, p._place_state, fab)
         print("Routing design...", end=' ')
         sys.stdout.flush()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):

@@ -1,6 +1,60 @@
+from util import namedtuple_with_defaults
 '''
    Functions to be used in fabric.py
 '''
+
+# useful custom types
+muxindex = namedtuple_with_defaults('muxindex', 'resource ps po bw track port')
+trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
+
+
+# note using a class instead of named tuple for mutability reasons
+class port_names_container:
+    '''
+       Lightweight class for holding port names
+    '''
+    def __init__(self):
+        self._sinks = set()
+        self._sources = set()
+
+    @property
+    def sinks(self):
+        return self._sinks
+
+    @property
+    def sources(self):
+        return self._sources
+
+
+# note: using  class because it's more convenient if it's mutable
+# unlike a namedtuple
+class port_wrapper:
+    '''
+       Lightweight class for holding ports
+       If the port is split, then source and sink will be different
+       Otherwise they are exactly the same
+    '''
+    def __init__(self, source=None, sink=None):
+        if source is None or sink is None:
+            if source:
+                sink = source
+            elif sink:
+                source = sink
+            else:
+                raise ValueError('Expecting at least one valid input')
+
+            self._source = source
+            self._sink = sink
+
+    @property
+    def source(self):
+        return self._source
+
+    @property
+    def sink(self):
+        return self._sink
+
+
 from enum import Enum
 import re
 
@@ -141,47 +195,3 @@ def parse_mem_sb_wire(text, direc='o'):
     else:
         # side is backwards
         return s[2], s[4], SideMap[s[5]], int(s[6])
-
-
-def reg_side_heuristic(pos1, pos2, vertport):
-    '''
-       Given two positions, returns the output side from pos1's perspective
-       For use in preprocessing registers for routing
-       Example: 
-          pos1 = (0,0)
-          pos2 = (1,0)
-         i.e. for r with pos1 and m with pos2 on a 4x4
-          r  m x x
-          x  x  x x
-          x  x  x x
-          x  x  x x
-        
-         Then the resulting side is East, because the register (r) should be placed on the east
-         side of the switch box
-    '''
-    difx = pos2[0] - pos1[0]
-    dify = pos2[1] - pos1[1]
-
-    if vertport is not None:
-        if vertport:
-            if dify <= 0 and pos1[1] > 0:
-                return Side.N
-            else:
-                return Side.S
-        else:
-            if difx <= 0 and pos1[0] > 0:
-                return Side.W
-            else:
-                return Side.E
-    else:
-        # pick by largest difference
-        if abs(difx) >= abs(dify):
-            if difx <= 0 and pos1[0] > 0:
-                return Side.W
-            else:
-                return Side.E
-        else:
-            if dify <= 0 and pos1[1] > 0:
-                return Side.N
-            else:
-                return Side.S
