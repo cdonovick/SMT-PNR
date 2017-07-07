@@ -7,6 +7,7 @@ __all__ = ['SelectDict', 'STAR', 'DefaultSelectDict']
 
 class _STAR(metaclass=FlyWeightMeta):
     __slots__ = ()
+
     def __eq__(self, other):
         return True
 
