@@ -48,7 +48,7 @@ class NamedIDObject(IDObject):
 class FlyWeightMeta(type):
     '''
         FlyWeightMeta:
-            metaclass for flyweight objects  
+            metaclass for flyweight objects
 
         ------------------------------------
 
@@ -119,8 +119,9 @@ class ValidContainer:
             return 'Invalid'
 
 class class_property:
-    ''' Descriptor for read only class properties '''
+    __slots__ = 'fget', '__doc__'
     def __init__(self, fget, doc=None):
+        ''' Descriptor for read only class properties '''
         if doc is None and fget.__doc__ is not None:
             doc = fget.__doc__
 

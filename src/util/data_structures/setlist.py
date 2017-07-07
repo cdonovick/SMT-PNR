@@ -3,6 +3,8 @@ from collections.abc import MutableSet, Sequence
 __all__ = ['SetList']
 
 class SetList(MutableSet, Sequence):
+    __slots__ = '_s', '_l'
+
     def __init__(self, iter=()):
         self._s = set()
         self._l = list()
