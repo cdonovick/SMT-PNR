@@ -4,7 +4,7 @@ TESTS=( "reg.json" "reg2.json" "conv.json" "simp_mem.json" )
 FABRICS=( "cgra8x8mr.xml" )
 LIBS="stdlib cgralib"
 ANNOTATED="${PREFIX}/annoted"
-COMMANDS="--annotate $ANNOTATED"
+COMMANDS="--annotate $ANNOTATED --print"
 LIMIT=300
 
 if [[ "$SOLVER" != "" ]]; then
@@ -20,7 +20,6 @@ for d in "${TESTS[@]}"; do
         r=$?
         if [ $r -eq 0 ]; then
             echo Success!
-            cat $ANNOTATED
             rm $ANNOTATED
         elif [ $r -eq 124 ]; then
             echo ???Timeout???
