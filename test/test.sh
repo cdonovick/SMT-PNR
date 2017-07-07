@@ -17,13 +17,13 @@ for d in "${TESTS[@]}"; do
         cmd="${PREFIX}/../src/run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS"
         echo $cmd
         timeout $LIMIT $cmd
-
-        if [ $? -eq 0 ]; then
+        r=$?
+        if [ $r -eq 0 ]; then
             echo Success!
             cat $ANNOTATED
             rm $ANNOTATED
-        elif [ $? -eq 124 ]; then
-            echo Timeout
+        elif [ $r -eq 124 ]; then
+            echo ???Timeout???
         else
             echo !!!FAILURE!!!
             code=1
