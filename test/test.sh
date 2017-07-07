@@ -5,24 +5,32 @@ FABRICS=( "cgra8x8mr.xml" )
 LIBS="stdlib cgralib"
 ANNOTATED="${PREFIX}/annoted"
 COMMANDS="--annotate $ANNOTATED"
+LIMIT=300
 
 if [[ "$SOLVER" != "" ]]; then
     COMMANDS="$COMMANDS --solver $SOLVER"
 fi
 
+code=0
 for d in "${TESTS[@]}"; do
     for f in "${FABRICS[@]}"; do
-        echo "${PREFIX}/../src/run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS"
-        ${PREFIX}/../src/run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS
+        cmd="${PREFIX}/../src/run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS"
+        echo $cmd
+        timeout $LIMIT $cmd
+
         if [ $? -eq 0 ]; then
             echo Success!
             cat $ANNOTATED
+            rm $ANNOTATED
+        elif [ $? -eq 124 ]; then
+            echo Timeout
         else
             echo !!!FAILURE!!!
+            code=1
         fi
         echo
         echo
     done
 done
 
-rm -f $ANNOTATED
+exit $code
