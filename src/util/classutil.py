@@ -1,4 +1,5 @@
 import itertools as it
+import weakref
 
 _object_id = it.count().__next__
 
@@ -51,6 +52,7 @@ class FlyWeightMeta(type):
             metaclass for flyweight objects
 
         ------------------------------------
+        import gc
 
         class A:
             def __init__(self, a):
@@ -68,24 +70,30 @@ class FlyWeightMeta(type):
         assert B(0) is B(0)
         assert B(0) is not B(1)
         assert B(0) is not C(0)
+        gc.disable()
+        ID = id(B(0))
+        assert ID == id(B(0))
+        gc.enable()
+        gc.collect()
+        assert ID != id(B(0))
     '''
 
-    def __call__(cls, *pargs, **kwargs):
-        idx = (pargs, tuple(kwargs.items()))
+    __instances = weakref.WeakValueDictionary()
+    def __call__(objtype, *pargs, **kwargs):
+        idx = (objtype, pargs, tuple(kwargs.items()))
         try:
-            return cls.__instances[idx]
+            return FlyWeightMeta.__instances[idx]
         except KeyError:
-            obj = cls.__new__(cls, *pargs, **kwargs)
-            cls.__init__(obj, *pargs, **kwargs)
-            cls.__instances[idx] = obj
+            obj = objtype.__new__(objtype, *pargs, **kwargs)
+            objtype.__init__(obj, *pargs, **kwargs)
+            FlyWeightMeta.__instances[idx] = obj
             return obj
 
 
-    def __init__(cls, *pargs, **kwargs):
-        super().__init__(cls, pargs, kwargs)
-        cls.__instances = dict()
-
-
+    def __new__(cls, name, bases, attrs, **kwargs):
+        if '__slots__' in attrs and '__weakref__' not in attrs['__slots__']:
+            attrs['__slots__'] = attrs['__slots__'] + ('__weakref__',)
+        return super().__new__(cls, name, bases, attrs, **kwargs)
 
 class ValidContainer:
     '''wrapper class that allows data to marked invalid '''
@@ -133,4 +141,3 @@ class class_property:
 
     def __set__(self, obj, objtype=None):
         raise AttributeError('Class Properties must be read only')
-
