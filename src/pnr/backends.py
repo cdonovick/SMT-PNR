@@ -182,7 +182,7 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
                         data[_pe_reg[port]] |= src.config # load 'a' reg with const
                         comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
                         comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                    elif src.type_ == 'Reg':
+                    elif src.type_ == 'Reg' and src.resource == Resource.Fused:
                         data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
                         comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
                         comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
