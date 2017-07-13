@@ -1,14 +1,11 @@
 from collections import defaultdict
 from functools import partial
-import re
 import sys
-
-import lxml.etree as ET
-
+import itertools
 from design.module import Resource
-from fabric.fabricutils import parse_mem_sb_wire
-from fabric import Side
-from util import smart_open, Mask, IdentDict
+from fabric.fabricutils import muxindex, trackindex
+from config import configindex
+from util import smart_open, Mask, IdentDict, STAR
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
 
@@ -85,152 +82,128 @@ _mem_translate = {
 }
 
 
-
-def write_bitstream(cgra_xml, bitstream, annotate):
-    return partial(_write_bitstream, cgra_xml, bitstream, annotate)
-
-
-def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
+def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state):
     # -------------------------------------------------
     # write_bitsream utilities
     # -------------------------------------------------
-    def _proc_cb(cb):
+
+    def _proc_cb(port):
         data = defaultdict(int)
         comment = defaultdict(dict)
-        for tag in cb.findall('sel_width'):
-            sel_w = int(tag.text)
+
+        feature_address = None
+
+        snkindex = muxindex(resource=mod.resource, ps=(x, y), po=STAR, bw=layer,
+                            track=STAR, port=port)
+
+        for tindex in fabric.matching_keys(trackindex(snk=snkindex, src=STAR, bw=STAR)):
+            if tindex in r_state.I:
+                c = config_engine[tindex]
+                feature_address = c.feature_address
+                data[0] = c.sel
+                comment[0][(c.sel_w-1, 0)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, data[0], c.src_name, c.snk_name)
+
+        return data, comment, feature_address
 
 
-
-        for mux in cb.findall('mux'):
-            snk = mux.get('snk')
-            for src in mux.findall('src'):
-                if (x, y, Resource.CB, snk, src.text) in r_state.I:
-                    # reg == 0 for all cb
-                    data[0] = int(src.get('sel'))
-                    comment[0][(sel_w-1, 0)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, data[0], src.text, snk)
-
-        return data, comment
-
-    def _proc_sb(sb):
+    def _proc_sb():
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
-        for tag in sb.findall('sel_width'):
-            sel_w = int(tag.text)
 
-        row = sb.get('row')
-        row = 0 if row is None else int(row)
+        feature_address = None
 
-        for mux in sb.findall('mux'):
-            snk = mux.get('snk')
-            for src in mux.findall('src'):
-                r = (x, y + row, Resource.SB, snk, src.text)
-                if r in r_state.I:
-                    vnet = r_state.I[r][0]
+        all_mux_indices = muxindex(resource=Resource.SB, ps=(x, y), po=STAR,
+                                   bw=layer, track=STAR, port=None)
+
+        for mindex in fabric.matching_keys(all_mux_indices):
+            for tindex in fabric.matching_keys(trackindex(snk=mindex, src=STAR, bw=layer)):
+                if tindex in r_state.I:
+                    c = config_engine[tindex]
+                    feature_address = c.feature_address
+                    vnet = r_state.I[tindex][0]
+
                     if vnet.dst.resource == Resource.Reg:
-                        p = re.compile(r'(?P<mem_int>sb_wire_)?(?:in|out)(?:_\d*)?_BUS(?P<bus>\d+)_S?(?P<side>\d+)_T?(?P<track>\d+)')
-                        m = p.search(snk)
-                        _side = Side(int(m.group('side')))
-                        _track = int(m.group('track'))
-                        _bus = int(m.group('bus'))
+                        assert hasattr(c, 'configr')
+                        reg = c.configr // 32
+                        offset = c.configr % 32
+                        data[reg] |= 1 << offset
+                        comment[reg][(offset, offset)] = '@ tile ({}, {}) latch wire {} ({}) before connecting to {}'.format(x, y, c.sel, c.src_name, c.snk_name)
 
-                        if m.group('mem_int'):
-                            # internal memory wires have non-standard sides
-                            # need to do a mapping, overwriting _side
-                            _, b, _side, t = parse_mem_sb_wire(snk)
-                            # everything except for the side should stay the same
-                            assert b == 'BUS' + str(_bus)
-                            assert int(t) == _track
+                    reg = c.configl // 32
+                    offset = c.configl % 32
+                    data[reg] |= c.sel << offset
+                    comment[reg][(c.sel_w + offset - 1, offset)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, c.sel, c.src_name, c.snk_name)
 
-                        if (x,y,_track,_side) == p_state[vnet.dst][0]:
-                            assert mux.get('configr') is not None
-                            configr = int(mux.get('configr'))
-                            reg = configr // 32
-                            offset = configr % 32
-                            data[reg] |= 1 << offset
-                            comment[reg][(offset, offset)] = '@ tile ({}, {}) latch wire {} ({}) before connecting to {}'.format(x, y + row, src.get('sel'), src.text, snk)
-
-                    configl = int(mux.get('configl'))
-                    reg = configl // 32
-                    offset = configl % 32
-                    data[reg] |= int(src.get('sel')) << offset
-                    comment[reg][(sel_w + offset - 1, offset)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y + row, src.get('sel'), src.text, snk)
-
-        return data,comment
+        return data, comment, feature_address
 
 
-    def _proc_pe(pe):
+    def _proc_pe(mod):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
-        if (x, y) in p_state.I:
-            mod = p_state.I[(x,y)][0]
-            assert mod.resource == Resource.PE
-            if mod.type_ == 'PE':
-                data[_pe_reg['op']] |= _op_codes[mod.config]
-                comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
+        assert mod.resource == Resource.PE
+        if mod.type_ == 'PE':
+            data[_pe_reg['op']] |= _op_codes[mod.config]
+            comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
-                for port in mod.inputs:
-                    if len(mod.inputs[port]) > 1:
-                        #HACK if there are multiple drivers then grab the register
-                        for net in mod.inputs[port]:
-                            if net.src.type_ == 'Reg':
-                                break
-                    else:
-                        net = mod.inputs[port][0]
-
-                    src = net.src
-                    if src.type_ == 'Const':
-                        data[_pe_reg[port]] |= src.config # load 'a' reg with const
-                        comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
-                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                    elif src.type_ == 'Reg':
-                        data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                        comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
-                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                    else:
-                        data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                        comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
-
-            elif mod.type_ == 'IO':
-                data[_pe_reg['op']] = _op_codes[mod.config]
-
-                if mod.config == 'i':
-                    comment[_pe_reg['op']][(4, 0)] = 'op = input'
-                    data[_pe_reg['a']]  = 0xffffffff
-                    data[_pe_reg['b']]  = 0xffffffff
+            for port in mod.inputs:
+                if len(mod.inputs[port]) > 1:
+                    #HACK if there are multiple drivers then grab the register
+                    for net in mod.inputs[port]:
+                        if net.src.type_ == 'Reg':
+                            break
                 else:
-                    comment[_pe_reg['op']][(4, 0)] = 'op = output'
-                    data[_pe_reg['b']]  = 0xffffffff
+                    net = mod.inputs[port][0]
+
+                src = net.src
+                if src.type_ == 'Const':
+                    data[_pe_reg[port]] |= src.config # load 'a' reg with const
+                    comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
+                    comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                elif src.type_ == 'Reg':
+                    data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
+                    comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
+                    comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                else:
+                    data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
+                    comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
+
+        elif mod.type_ == 'IO':
+            data[_pe_reg['op']] = _op_codes[mod.config]
+
+            if mod.config == 'i':
+                comment[_pe_reg['op']][(4, 0)] = 'op = input'
+                data[_pe_reg['a']]  = 0xffffffff
+                data[_pe_reg['b']]  = 0xffffffff
+            else:
+                comment[_pe_reg['op']][(4, 0)] = 'op = output'
+                data[_pe_reg['b']]  = 0xffffffff
 
 
-        return data, comment
+        return data, comment, config_engine[configindex(resource=Resource.PE, ps=(x, y))].feature_address
 
-    def _proc_mem(mem):
+    def _proc_mem(mod):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
-        if (x, y) in p_state.I:
-            mod = p_state.I[(x,y)][0]
-            assert mod.resource == Resource.Mem
-            for opt, value in mod.config.items():
-                if opt not in {'chain_enable', 'tile_en'}:
-                    bl = 'bitl'
-                    bh = 'bith'
-                else:
-                    bl = 'bit'
-                    bh = 'bit'
 
-                val = int(_mem_translate[opt][value])
-                for tag in mem.findall(opt):
-                    bitl = int(tag.get(bl))
-                    sel_w = int(tag.get(bh)) - bitl + 1
-                    reg = bitl // 32
-                    offset = bitl % 32
-                assert val.bit_length() <= sel_w
-                data[reg] |= val << offset
-                comment[reg][(sel_w + offset - 1, offset)] = '{} = {}'.format(opt, value)
+        assert mod.resource == Resource.Mem
+        for opt, value in mod.config.items():
 
-        return data, comment
+            val = int(_mem_translate[opt][value])
+
+            ci = configindex(resource=Resource.Mem, ps=(x, y))
+            c = config_engine[ci]
+
+            bitl = c[opt].bitl
+            sel_w = c[opt].bith - bitl + 1
+            reg = bitl // 32
+            offset = bitl % 32
+
+            assert val.bit_length() <= sel_w
+            data[reg] |= val << offset
+            comment[reg][(sel_w + offset - 1, offset)] = '{} = {}'.format(opt, value)
+
+        return data, comment, c.feature_address
 
 
     def _write(data, tile_address, feature_address, bs, comment):
@@ -264,25 +237,31 @@ def _write_bitstream(cgra_xml, bitstream, annotate, p_state, r_state):
     # -------------------------------------------------
     # write_bitsream
     # -------------------------------------------------
-    tree = ET.parse(cgra_xml)
-    root = tree.getroot()
-    tag2fun = {
-            'cb'  : _proc_cb,
-            'mem' : _proc_mem,
-            'pe'  : _proc_pe,
-            'sb'  : _proc_sb,
+    res2fun = {
+            Resource.Mem : _proc_mem,
+            Resource.PE  : _proc_pe
     }
 
+    # open bit stream then loop
     with open(bitstream, 'w') as bs:
-        for tile in root:
-                tile_address = int(tile.get('tile_addr'))
-                y = int(tile.get('row'))
-                x = int(tile.get('col'))
-                for tag, _proc in tag2fun.items():
-                    for elem in tile.findall(tag):
-                        feature_address = int(elem.get('feature_address'))
-                        data, comment = _proc(elem)
-                        _write(data, tile_address, feature_address, bs, comment)
+
+        # HACK: Hardcoded layer
+        for layer in {16}:
+            for x, y in itertools.product(range(fabric.cols), range(fabric.rows)):
+                tile_addr = config_engine[(x, y)].tile_addr
+                data, comment, feature_address = _proc_sb()
+                _write(data, tile_addr, feature_address, bs, comment)
+                if (x, y) in p_state.I:
+                    mod = p_state.I[(x, y)][0]
+
+                    if mod.resource != Resource.Reg:
+                        for port in fabric.port_names[(mod.resource, layer)].sinks:
+                            data, comment, feature_address = _proc_cb(port)
+                            _write(data, tile_addr, feature_address, bs, comment)
+
+                        data, comment, feature_address = res2fun[mod.resource](mod)
+                        _write(data, tile_addr, feature_address, bs, comment)
+
 
 def write_debug(design, output=sys.stdout):
     return partial(_write_debug, design, output)

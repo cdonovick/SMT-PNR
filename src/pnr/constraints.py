@@ -137,7 +137,7 @@ def pin_resource(fabric, design, state, vars, solver):
 
             cc = [pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1])]
             if len(p) == 3:
-                cc.append(pos.c == pos.encode_c(p[0]))
+                cc.append(pos.c == pos.encode_c(p[2]))
             c.append(And(cc))
 
         constraints.append(Or(c))
@@ -305,7 +305,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
                 vars[p] = graph.addNode(p.name)
 
     tindex = trackindex(src=STAR, snk=STAR, bw=layer)
-    for track in fabric.tracks[tindex]:
+    for track in fabric[tindex]:
         src = track.src
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
@@ -365,7 +365,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
                 vars[sources[(x, y, 'out')]] = out
 
     tindex = trackindex(src=STAR, snk=STAR, bw=layer)
-    for track in fabric.tracks[tindex]:
+    for track in fabric[tindex]:
         src = track.src
         dst = track.dst
 

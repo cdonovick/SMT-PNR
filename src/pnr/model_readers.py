@@ -1,5 +1,6 @@
 from design.module import Resource
 from .pnrutils import get_muxindices
+from fabric.fabricutils import trackindex
 
 
 def place_model_reader(fabric, design, state, vars, solver):
@@ -14,8 +15,6 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
     # hardcoded layers right now
     for layer in {16}:
-
-        pnrconfig = fabric.config
 
         for net in design.physical_nets:
             # hacky handle only one layer at a time
@@ -39,6 +38,4 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
                 edge = graph.getEdge(n1, n2)
                 track = vars[edge]
                 dst = track.dst
-                c = pnrconfig.trackconfig[track]
-                state = (dst.x, dst.y, c[1], c[0][1], c[0][0])
-                r_state[net] = state
+                r_state[net] = trackindex(snk=dst.index, src=track.src.index, bw=layer)
