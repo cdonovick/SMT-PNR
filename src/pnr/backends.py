@@ -141,29 +141,42 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
-        assert mod.resource == Resource.PE
-        if mod.type_ == 'PE':
-            data[_pe_reg['op']] |= _op_codes[mod.config]
-            comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
+        if (x, y) in p_state.I:
+            mod = p_state.I[(x,y)][0]
+            assert mod.resource == Resource.PE
+            if mod.type_ == 'PE':
+                data[_pe_reg['op']] |= _op_codes[mod.config]
+                comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
-            for port in mod.inputs:
-                if len(mod.inputs[port]) > 1:
-                    #HACK if there are multiple drivers then grab the register
-                    for net in mod.inputs[port]:
-                        if net.src.type_ == 'Reg':
-                            break
-                else:
-                    net = mod.inputs[port][0]
+                for port in mod.inputs:
+                    if len(mod.inputs[port]) > 1:
+                        #HACK if there are multiple drivers then grab the register
+                        for net in mod.inputs[port]:
+                            if net.src.type_ == 'Reg':
+                                break
+                    else:
+                        net = mod.inputs[port][0]
 
-                src = net.src
-                if src.type_ == 'Const':
-                    data[_pe_reg[port]] |= src.config # load 'a' reg with const
-                    comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
-                    comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                elif src.type_ == 'Reg':
-                    data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                    comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
-                    comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                    src = net.src
+                    if src.type_ == 'Const':
+                        data[_pe_reg[port]] |= src.config # load 'a' reg with const
+                        comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
+                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                    elif src.type_ == 'Reg' and src.resource == Resource.Fused:
+                        data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
+                        comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
+                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
+                    else:
+                        data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
+                        comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
+
+            elif mod.type_ == 'IO':
+                data[_pe_reg['op']] = _op_codes[mod.config]
+
+                if mod.config == 'i':
+                    comment[_pe_reg['op']][(4, 0)] = 'op = input'
+                    data[_pe_reg['a']]  = 0xffffffff
+                    data[_pe_reg['b']]  = 0xffffffff
                 else:
                     data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
                     comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
