@@ -37,7 +37,6 @@ class PNR:
             c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.add(c)
 
-
         if not self._place_solver.check_sat():
             self._place_solver.reset()
             # set options

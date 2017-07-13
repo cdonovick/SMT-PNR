@@ -144,9 +144,8 @@ class Fabric:
         if Resource.Reg in self._locations:
             self._locations[Resource.Reg] = self._locations[Resource.Reg] - \
                                             self._locations[Resource.Mem]
-        self._config = parsed_params['pnrconfig']
-        self._ports = parsed_params['ports']
-        self._tracks = parsed_params['tracks']
+        self._config = parsed_params['config_engine']
+        self._fab = parsed_params['fabric']
         self._port_names = parsed_params['port_names']
 
     @property
@@ -194,12 +193,11 @@ class Fabric:
         return locs
 
     def __getitem__(self, index):
-        return self._ports[index]
-
-    @property
-    def tracks(self):
-        return self._tracks
+        return self._fab[index]
 
     @property
     def config(self):
         return self._config
+
+    def matching_keys(self, named_tuple_key):
+        return self._fab._getmatching(named_tuple_key)

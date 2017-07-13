@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import sys
-import design, design.core2graph, fabric, pnr, smt
+import design, design.core2graph, pnr, smt
 from functools import partial
-from config import PNRConfig
+from config import ConfigEngine
 
 
 import argparse
@@ -34,12 +34,12 @@ ROUTE_RELAXED = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.d
 # ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
 print("Loading design: {}".format(design_file))
-pc = PNRConfig()
+ce = ConfigEngine()
 modules, nets = design.core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
-fab = pnr.parse_xml(fabric_file, pc)
+fab = pnr.parse_xml(fabric_file, ce)
 
 pnrdone = False
 
@@ -96,16 +96,19 @@ if not pnrdone:
 
 print('Successfully placed and routed in {} iterations'.format(iterations))
 
+print('Loading configuration engine with placement and route info\n')
+
+ce.load_state(p._place_state, p._route_state)
+
 if args.bitstream:
     bit_file = args.bitstream
     print("Writing bitsream to: {}".format(bit_file))
-    p.write_design(pnr.write_bitstream(fabric_file, bit_file, False))
+    ce.write_bitstream(bit_file, False)
 
 if args.annotate:
     bit_file = args.annotate
     print("Writing bitsream to: {}".format(bit_file))
-    p.write_design(pnr.write_bitstream(fabric_file, bit_file, True))
-
+    ce.write_bitstream(bit_file, True)
 
 
 if args.print or args.print_place:

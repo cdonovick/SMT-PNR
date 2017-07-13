@@ -4,6 +4,7 @@ from fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_co
 from design.module import Resource
 from fabric import Port, Track, Fabric
 from util import SelectDict
+from config import config, configindex
 from collections import defaultdict
 import re
 
@@ -15,27 +16,26 @@ SB = Resource.SB
 CB = Resource.CB
 
 resourcedict = {'pe_tile_new': Resource.PE,
-                'memory_tile': Resource.Mem}
+                'memory_tile': Resource.Mem,
+                'pe': Resource.PE,
+                'mem': Resource.Mem}
 
 
-def parse_xml(filepath, pnrconfig):
+def parse_xml(filepath, config_engine):
     tree = ET.parse(filepath)
     root = tree.getroot()
 
     params = dict()
-    params['pnrconfig'] = pnrconfig
-    params['ports'] = dict()
-    params['tracks'] = dict()
+    params['config_engine'] = config_engine
+    params['fabric'] = dict()
     _scan_ports(root, params)
     _connect_ports(root, params)
 
     # overwrite dicts with SelectDicts
-    # build a SelectDict for indexing ports
-    params['ports'] = SelectDict(params['ports'])
-    # build a SelectDict for indexing tracks
-    params['tracks'] = SelectDict(params['tracks'])
-
-    return Fabric(params)
+    params['fabric'] = SelectDict(params['fabric'])
+    fab = Fabric(params)
+    config_engine.fabric = fab
+    return fab
 
 
 def _scan_ports(root, params):
@@ -45,12 +45,13 @@ def _scan_ports(root, params):
        determining useful parameters like rows/cols
     '''
 
-    ports = params['ports']
+    fabric = params['fabric']
     locations = defaultdict(set)
     params['locations'] = locations
 
     num_tracks = dict()
     params['num_tracks'] = num_tracks
+    config_engine = params['config_engine']
 
     # port_names are
     # {(resource, layer) : port_names_container}
@@ -72,7 +73,7 @@ def _scan_ports(root, params):
 
             assert mindex not in sanitycheckset
             sanitycheckset.add(mindex)
-            ports[mindex] = port_wrapper(Port(mindex))
+            fabric[mindex] = port_wrapper(Port(mindex))
 
     def _scan_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
@@ -84,10 +85,46 @@ def _scan_ports(root, params):
             mindex = _get_index(_ps, _port, _resource, bw=_bw)
             # debugging
             assert mindex == muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
-            ports[mindex] = port_wrapper(Port(mindex))
+            fabric[mindex] = port_wrapper(Port(mindex))
+
+    def _scan_resource(res):
+        # TODO: handle attributes
+        d = dict()
+        d['feature_address'] = int(res.get('feature_address'))
+        for tag in res:
+            try:
+                dv = int(tag.text)
+            except Exception:
+                dv = tag.text
+
+            tag_d = {'val': dv}
+
+            for k, v in tag.items():
+                try:
+                    v = int(v)
+                except Exception:
+                    pass
+
+                # for memories, standardize bit to bith/bitl
+                if k == 'bit':
+                    tag_d['bith'] = v
+                    tag_d['bitl'] = v
+
+                else:
+                    tag_d[k] = v
+
+            if len(tag.keys()) > 0:
+                d[tag.tag] = config(tag_d)
+            else:
+                d[tag.tag] = dv
+
+        ci = configindex(ps=(x, y), resource=resourcedict[res.tag])
+        config_engine[ci] = config(d)
 
     fabelements = {'sb': _scan_sb,
-                   'cb': _scan_cb}
+                   'cb': _scan_cb,
+                   'pe': _scan_resource,
+                   'mem': _scan_resource}
 
     for tile in root:
         if tile.get("type"):
@@ -127,11 +164,10 @@ def _scan_ports(root, params):
 
 def _connect_ports(root, params):
 
-    ports = params['ports']
-    tracks = params['tracks']
+    fabric = params['fabric']
     locations = params['locations']
     port_names = params['port_names']
-    pnrconfig = params['pnrconfig']
+    config_engine = params['config_engine']
 
     def _connect_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -140,20 +176,37 @@ def _connect_ports(root, params):
         else:
             _ps = (x, y)
 
+        tile_addr = int(tile.get('tile_addr'))
+        tile_type = tile.get('type')
+
+        config_engine[_ps] = config(tile_addr=tile_addr,
+                                    tile_type=tile_type)
+
+        fa = int(sb.get('feature_address'))
+        sel_w = int(sb.find('sel_width').text)
+
         for mux in sb.findall("mux"):
             snk_name = mux.get('snk')
             snkindex = _get_index(_ps, snk_name, _resource)
 
+            ch = int(mux.get('configh'))
+            cl = int(mux.get('configl'))
+
             if mux.get('reg') == '1':
                 locations[Resource.Reg].add(_ps + (snkindex.track,))
+                cr = int(mux.get('configr'))
+            else:
+                cr = None
 
             for src in mux.findall('src'):
                 src_name = src.text
                 srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, tile_y)
 
+                sel = int(src.get('sel'))
+
                 # handle ports off the edge
-                if srcindex not in ports:
-                    ports[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                if srcindex not in fabric:
+                    fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
 
                     # add to sources if it has a port name
                     if srcindex.port is not None:
@@ -164,36 +217,41 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                track = Track(ports[srcindex].source, ports[snkindex].sink, srcindex.bw)
-                tracks[tindex] = track
-                track_names = (src_name, snk_name)
-                pnrconfig.trackconfig[track] = (track_names, SB)
+                track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
+                fabric[tindex] = track
+                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
+                                               configl=cl, configr=cr, sel=sel,
+                                               src_name=src_name, snk_name=snk_name)
 
     def _connect_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
         _ps = (x, y)
+
+        fa = int(cb.get('feature_address'))
+        sel_w = int(cb.find('sel_width').text)
+
         for mux in cb.findall("mux"):
             _port = mux.get('snk')
             snkindex = _get_index(_ps, _port, _resource, bw=_bw)
-            # debugging
-            assert snkindex == muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
 
             for src in mux.findall("src"):
+                sel = int(src.get('sel'))
                 src_name = src.text
                 srcindex = _get_index(_ps, src_name, _resource, 'i', _bw)
 
                 # handle ports off the edge
-                if srcindex not in ports:
-                    ports[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                if srcindex not in fabric:
+                    fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
 
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                track = Track(ports[srcindex].source, ports[snkindex].sink, _bw)
-                tracks[tindex] = track
-                track_names = (src_name, _port)
-                pnrconfig.trackconfig[track] = (track_names, CB)
+                track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
+                fabric[tindex] = track
+#                track_names = (src_name, _port)
+                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
+                                               src_name=src_name, snk_name=_port)
 
     elem2connector = {'sb': _connect_sb,
                       'cb': _connect_cb}
