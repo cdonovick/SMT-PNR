@@ -1,4 +1,5 @@
 from collections import namedtuple
+from .annotations import Annotations
 import pnr
 
 
@@ -35,7 +36,8 @@ class ConfigEngine:
         if not self._state_loaded:
             raise RuntimeError('Need to load state before writing bitstream')
 
-        pnr.write_bitstream(self._fabric, filename, self, annotate, self._p_state, self._r_state)
+        pnr.write_bitstream(self._fabric, filename, self, annotate, self._p_state,
+                            self._r_state, Annotations())
 
 
 configindex = namedtuple('configindex', 'ps resource')

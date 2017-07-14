@@ -11,6 +11,7 @@ import re
 __all__ = ['parse_xml']
 
 sanitycheckset = set()
+tracksanitycheckset = set()
 
 SB = Resource.SB
 CB = Resource.CB
@@ -92,6 +93,10 @@ def _scan_ports(root, params):
         d = dict()
         d['feature_address'] = int(res.get('feature_address'))
         for tag in res:
+            if not isinstance(tag.tag, str):
+                # skip comments in the xml
+                continue
+
             try:
                 dv = int(tag.text)
             except Exception:
@@ -194,13 +199,14 @@ def _connect_ports(root, params):
 
             if mux.get('reg') == '1':
                 locations[Resource.Reg].add(_ps + (snkindex.track,))
+                assert int(mux.get('configr')) is not None, mux.get('configr')
                 cr = int(mux.get('configr'))
             else:
                 cr = None
 
             for src in mux.findall('src'):
                 src_name = src.text
-                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, tile_y)
+                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, y)
 
                 sel = int(src.get('sel'))
 
@@ -217,6 +223,8 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+                assert tindex not in tracksanitycheckset
+                tracksanitycheckset.add(tindex)
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
                 fabric[tindex] = track
                 config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
@@ -247,6 +255,9 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+                assert tindex not in tracksanitycheckset
+                tracksanitycheckset.add(tindex)
+
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
                 fabric[tindex] = track
 #                track_names = (src_name, _port)

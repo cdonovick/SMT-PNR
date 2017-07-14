@@ -82,7 +82,7 @@ _mem_translate = {
 }
 
 
-def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state):
+def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state, annotater):
     # -------------------------------------------------
     # write_bitsream utilities
     # -------------------------------------------------
@@ -101,7 +101,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 c = config_engine[tindex]
                 feature_address = c.feature_address
                 data[0] = c.sel
-                comment[0][(c.sel_w-1, 0)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, data[0], c.src_name, c.snk_name)
+                comment[0][(c.sel_w-1, 0)] = annotater.connect_wire(data[0], c.src_name,
+                                                                    c.snk_name, row=y, col=x)
 
         return data, comment, feature_address
 
@@ -124,15 +125,16 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
 
                     if vnet.dst.resource == Resource.Reg:
                         assert hasattr(c, 'configr')
+                        assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
                         reg = c.configr // 32
                         offset = c.configr % 32
                         data[reg] |= 1 << offset
-                        comment[reg][(offset, offset)] = '@ tile ({}, {}) latch wire {} ({}) before connecting to {}'.format(x, y, c.sel, c.src_name, c.snk_name)
+                        comment[reg][(offset, offset)] = annotater.latch_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
 
                     reg = c.configl // 32
                     offset = c.configl % 32
                     data[reg] |= c.sel << offset
-                    comment[reg][(c.sel_w + offset - 1, offset)] = '@ tile ({}, {}) connect wire {} ({}) to {}'.format(x, y, c.sel, c.src_name, c.snk_name)
+                    comment[reg][(c.sel_w + offset - 1, offset)] = annotater.connect_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
 
         return data, comment, feature_address
 
@@ -141,55 +143,43 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
-        if (x, y) in p_state.I:
-            mod = p_state.I[(x,y)][0]
-            assert mod.resource == Resource.PE
-            if mod.type_ == 'PE':
-                data[_pe_reg['op']] |= _op_codes[mod.config]
-                comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
+        assert mod.resource == Resource.PE
+        if mod.type_ == 'PE':
+            data[_pe_reg['op']] |= _op_codes[mod.config]
+            comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
-                for port in mod.inputs:
-                    if len(mod.inputs[port]) > 1:
-                        #HACK if there are multiple drivers then grab the register
-                        for net in mod.inputs[port]:
-                            if net.src.type_ == 'Reg':
-                                break
-                    else:
-                        net = mod.inputs[port][0]
+            for port in mod.inputs:
+                if len(mod.inputs[port]) > 1:
+                    #HACK if there are multiple drivers then grab the register
+                    for net in mod.inputs[port]:
+                        if net.src.type_ == 'Reg' and net.src.resource == Resource.Fused:
+                            break
+                else:
+                    net = mod.inputs[port][0]
 
-                    src = net.src
-                    if src.type_ == 'Const':
-                        data[_pe_reg[port]] |= src.config # load 'a' reg with const
-                        comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
-                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                    elif src.type_ == 'Reg' and src.resource == Resource.Fused:
-                        data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                        comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
-                        comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                    else:
-                        data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                        comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
-
-            elif mod.type_ == 'IO':
-                data[_pe_reg['op']] = _op_codes[mod.config]
-
-                if mod.config == 'i':
-                    comment[_pe_reg['op']][(4, 0)] = 'op = input'
-                    data[_pe_reg['a']]  = 0xffffffff
-                    data[_pe_reg['b']]  = 0xffffffff
+                src = net.src
+                if src.type_ == 'Const':
+                    data[_pe_reg[port]] |= src.config # load 'a' reg with const
+                    comment[_pe_reg[port]][(15,0)] = annotater.load_reg(port, src.config)
+                    comment[_pe_reg['op']][_read_wire[port]] = annotater.read_from('reg', port)
+                elif src.type_ == 'Reg' and src.resource == Resource.Fused:
+                    data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
+                    comment[_pe_reg['op']][_load_reg[port]] = annotater.load_reg(port)
+                    comment[_pe_reg['op']][_read_wire[port]] = annotater.read_from('reg', port)
                 else:
                     data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                    comment[_pe_reg['op']][_read_wire[port]]  = 'read from wire `{}`'.format(port)
+                    comment[_pe_reg['op']][_read_wire[port]]  = annotater.read_from('wire', port)
+                    
 
         elif mod.type_ == 'IO':
             data[_pe_reg['op']] = _op_codes[mod.config]
 
             if mod.config == 'i':
-                comment[_pe_reg['op']][(4, 0)] = 'op = input'
+                comment[_pe_reg['op']][(4, 0)] = annotater.op_config('op', 'input')
                 data[_pe_reg['a']]  = 0xffffffff
                 data[_pe_reg['b']]  = 0xffffffff
             else:
-                comment[_pe_reg['op']][(4, 0)] = 'op = output'
+                comment[_pe_reg['op']][(4, 0)] = annotater.op_config('op', 'output')
                 data[_pe_reg['b']]  = 0xffffffff
 
 
@@ -214,19 +204,17 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
 
             assert val.bit_length() <= sel_w
             data[reg] |= val << offset
-            comment[reg][(sel_w + offset - 1, offset)] = '{} = {}'.format(opt, value)
+            comment[reg][(sel_w + offset - 1, offset)] = annotater.op_config(opt, value)
 
         return data, comment, c.feature_address
-
 
     def _write(data, tile_address, feature_address, bs, comment):
         for reg in data:
             if annotate:
-                suffix =  _format_comment(comment[reg])
+                suffix =  annotater.format_comment(comment[reg])
             else:
                 suffix = ''
             bs.write(_format_line(tile_address, feature_address, reg, int(data[reg])) + suffix)
-
 
     def _format_line(tile, feature, reg, data):
         ts = _format_elem(tile, _bit_widths['tile'])
@@ -234,14 +222,6 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
         rs = _format_elem(reg, _bit_widths['reg'])
         ds = _format_elem(data, _bit_widths['data'])
         return rs+fs+ts+' '+ds+'\n'
-
-    def _format_comment(comment):
-        s = []
-        for bit, c in comment.items():
-            s.append('# data[{}] : {}\n'.format(bit, c))
-
-        return ''.join(s)
-
 
     def _format_elem(elem, elem_bits):
         return '{:0{bits}X}'.format(elem, bits=elem_bits//4)
@@ -265,19 +245,19 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 data, comment, feature_address = _proc_sb()
                 _write(data, tile_addr, feature_address, bs, comment)
                 if (x, y) in p_state.I:
-                    mod = p_state.I[(x, y)][0]
+                    for mod in p_state.I[(x, y)]:
+                        if mod.resource != Resource.Reg:
+                            for port in fabric.port_names[(mod.resource, layer)].sinks:
+                                data, comment, feature_address = _proc_cb(port)
+                                _write(data, tile_addr, feature_address, bs, comment)
 
-                    if mod.resource != Resource.Reg:
-                        for port in fabric.port_names[(mod.resource, layer)].sinks:
-                            data, comment, feature_address = _proc_cb(port)
+                            data, comment, feature_address = res2fun[mod.resource](mod)
                             _write(data, tile_addr, feature_address, bs, comment)
-
-                        data, comment, feature_address = res2fun[mod.resource](mod)
-                        _write(data, tile_addr, feature_address, bs, comment)
 
 
 def write_debug(design, output=sys.stdout):
     return partial(_write_debug, design, output)
+
 
 def _write_debug(design, output, p_state, r_state):
     with smart_open(output) as f:
@@ -291,12 +271,10 @@ def _write_debug(design, output, p_state, r_state):
             f.write("outputs: {}\n".format(', '.join(d.dst.name for d in module.outputs.values())))
             f.write("\n")
 
-#        for net in design.nets:
-#            f.write("{} -> {}\n".format(net.src.name, net.dst.name))
-#        f.write("\n")
 
 def write_route_debug(design, output=sys.stdout):
     return partial(_write_route_debug, design, output)
+
 
 def _write_route_debug(design, output, p_state, r_state):
     '''
