@@ -3,6 +3,7 @@ from collections.abc import MutableMapping
 __all__ = ['BiDict']
 
 class BiDict(MutableMapping):
+    __slots__ = '_d', '_i'
     def __init__(self, d=dict()):
         self._d = dict()
         self._i = dict()

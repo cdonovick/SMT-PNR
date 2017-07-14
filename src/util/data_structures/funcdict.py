@@ -3,6 +3,7 @@ from collections.abc import MutableMapping
 __all__ = ['FuncDict', 'IdentDict']
 
 class FuncDict(MutableMapping):
+    __slots__ = '_d', '_f'
     def __init__(self, f, d=dict()):
         self._d = dict()
         self._f = f
@@ -41,6 +42,7 @@ class FuncDict(MutableMapping):
 def Identity(x): return x
 
 class IdentDict(FuncDict):
+    __slots__ = ()
     def __init__(self, d=dict()):
         super().__init__(Identity, d)
 

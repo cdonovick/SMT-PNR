@@ -6,17 +6,18 @@ __all__ = ['MultiDict']
 
 #view objects for BiMultiDict as the default ones can't handle the the whole multimap thing
 class MultiDict_keys(Set):
+    __slots__ = '_view'
     def __init__(self, md):
-        self.view = md._d.keys()
+        self._view = md._d.keys()
 
     def __contains__(self, elem):
-        return elem in self.view
+        return elem in self._view
 
     def __iter__(self):
-        yield from self.view
+        yield from self._view
 
     def __len__(self):
-        return len(self.view)
+        return len(self._view)
 
     def __repr__(self):
         c = []
@@ -28,22 +29,23 @@ class MultiDict_keys(Set):
 
 
 class MultiDict_items(Set):
+    __slots__ = '_d'
     def __init__(self, md):
-        self.d = md._d
+        self._d = md._d
 
     def __contains__(self, elem):
         if isinstance(elem, tuple) and len(elem) == 2:
-            return elem[0] in self.d and elem[1] in self.d[elem[0]]
+            return elem[0] in self._d and elem[1] in self._d[elem[0]]
         else:
             return False
 
     def __iter__(self):
-        for k in self.d:
-            for v in self.d[k]:
+        for k in self._d:
+            for v in self._d[k]:
                 yield (k, v)
 
     def __len__(self):
-        return sum(len(vs) for vs in self.d.values())
+        return sum(len(vs) for vs in self._d.values())
 
     def __repr__(self):
         c = []
@@ -55,22 +57,23 @@ class MultiDict_items(Set):
 
 
 class MultiDict_values(Set):
+    __slots__ = '_view'
     def __init__(self, md):
-        self.view = md._d.values()
+        self._view = md._d.values()
 
     def __contains__(self, elem):
-        return any(elem in vs for vs in self.view)
+        return any(elem in vs for vs in self._view)
 
     def __iter__(self):
         s = set()
-        for vs in self.view:
+        for vs in self._view:
             for v in vs:
                 if v not in s:
                     yield v
                     s.add(v)
 
     def __len__(self):
-        return sum(len(vs) for vs in self.view)
+        return sum(len(vs) for vs in self._view)
 
     def __repr__(self):
         c = []
@@ -82,6 +85,7 @@ class MultiDict_values(Set):
 
 
 class MultiDict(MutableMapping):
+    __slots__ = '_d', '_default'
     def __init__(self, d=dict(), default=False):
         '''
           dict    : initial key value pairs

@@ -6,17 +6,18 @@ __all__ = ['BiMultiDict']
 
 #view objects for BiMultiDict as the default ones can't handle the the whole multimap thing
 class BiMultiDict_keys(Set):
+    __slots__ = '_d'
     def __init__(self, bmd):
-        self.d = bmd._d
+        self._d = bmd._d
 
     def __contains__(self, elem):
-        return elem in self.d
+        return elem in self._d
 
     def __iter__(self):
-        yield from self.d
+        yield from self._d
 
     def __len__(self):
-        return len(self.d)
+        return len(self._d)
 
     def __repr__(self):
         c = []
@@ -28,23 +29,24 @@ class BiMultiDict_keys(Set):
 
 
 class BiMultiDict_items(Set):
+    __slots__ = '_d', '_i'
     def __init__(self, bmd):
-        self.d = bmd._d
-        self.i = bmd._i
+        self._d = bmd._d
+        self._i = bmd._i
 
     def __contains__(self, elem):
         if isinstance(elem, tuple) and len(elem) == 2:
-            return elem[0] in self.d and elem[1] in self.i
+            return elem[0] in self._d and elem[1] in self._i
         else:
             return False
 
     def __iter__(self):
-        for k in self.d:
-            for v in self.d[k]:
+        for k in self._d:
+            for v in self._d[k]:
                 yield (k, v)
 
     def __len__(self):
-        return sum(len(vs) for vs in self.d.values())
+        return sum(len(vs) for vs in self._d.values())
 
     def __repr__(self):
         c = []
@@ -55,17 +57,18 @@ class BiMultiDict_items(Set):
         return s
 
 class BiMultiDict_values(Set):
+    __slots__ = '_i'
     def __init__(self, bmd):
-        self.i = bmd._i
+        self._i = bmd._i
 
     def __contains__(self, elem):
-        return elem in self.i
+        return elem in self._i
 
     def __iter__(self):
-        yield from self.i
+        yield from self._i
 
     def __len__(self):
-        return len(self.i)
+        return len(self._i)
 
     def __repr__(self):
         c = []
@@ -76,6 +79,7 @@ class BiMultiDict_values(Set):
         return s
 
 class BiMultiDict(MutableMapping):
+    __slots__ = '_d', '_i', '_default'
     def __init__(self, d=dict(), default=False):
         '''
           dict    : initial key value pairs
