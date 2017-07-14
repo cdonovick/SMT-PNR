@@ -92,6 +92,10 @@ def _scan_ports(root, params):
         d = dict()
         d['feature_address'] = int(res.get('feature_address'))
         for tag in res:
+            if not isinstance(tag.tag, str):
+                # skip comments in the xml
+                continue
+
             try:
                 dv = int(tag.text)
             except Exception:

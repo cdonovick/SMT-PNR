@@ -150,7 +150,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 if len(mod.inputs[port]) > 1:
                     #HACK if there are multiple drivers then grab the register
                     for net in mod.inputs[port]:
-                        if net.src.type_ == 'Reg':
+                        if net.src.type_ == 'Reg' and net.src.resource == Resource.Fused:
                             break
                 else:
                     net = mod.inputs[port][0]
@@ -160,7 +160,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                     data[_pe_reg[port]] |= src.config # load 'a' reg with const
                     comment[_pe_reg[port]][(15,0)] = 'load `{}` reg with const: {}'.format(port, src.config)
                     comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
-                elif src.type_ == 'Reg':
+                elif src.type_ == 'Reg' and src.resource == Resource.Fused:
                     data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
                     comment[_pe_reg['op']][_load_reg[port]] = 'load `{}` reg with wire'.format(port)
                     comment[_pe_reg['op']][_read_wire[port]] = 'read from reg `{}`'.format(port)
