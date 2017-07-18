@@ -245,15 +245,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 data, comment, feature_address = _proc_sb()
                 _write(data, tile_addr, feature_address, bs, comment)
                 if (x, y) in p_state.I:
-                    mod = p_state.I[(x, y)][0]
+                    for mod in p_state.I[(x, y)]:
+                        if mod.resource != Resource.Reg:
+                            for port in fabric.port_names[(mod.resource, layer)].sinks:
+                                data, comment, feature_address = _proc_cb(port)
+                                _write(data, tile_addr, feature_address, bs, comment)
 
-                    if mod.resource != Resource.Reg:
-                        for port in fabric.port_names[(mod.resource, layer)].sinks:
-                            data, comment, feature_address = _proc_cb(port)
+                            data, comment, feature_address = res2fun[mod.resource](mod)
                             _write(data, tile_addr, feature_address, bs, comment)
-
-                        data, comment, feature_address = res2fun[mod.resource](mod)
-                        _write(data, tile_addr, feature_address, bs, comment)
 
 
 def write_debug(design, output=sys.stdout):
