@@ -206,7 +206,7 @@ def _connect_ports(root, params):
 
             for src in mux.findall('src'):
                 src_name = src.text
-                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, tile_y)
+                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, y)
 
                 sel = int(src.get('sel'))
 
