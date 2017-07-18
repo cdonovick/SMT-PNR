@@ -125,7 +125,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
 
                     if vnet.dst.resource == Resource.Reg:
                         assert hasattr(c, 'configr')
-                        assert c.configr is not None, 'Expecting a register at {}'.format(tindex)
+                        assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
                         reg = c.configr // 32
                         offset = c.configr % 32
                         data[reg] |= 1 << offset

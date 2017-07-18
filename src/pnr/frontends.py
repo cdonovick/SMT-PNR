@@ -198,6 +198,7 @@ def _connect_ports(root, params):
 
             if mux.get('reg') == '1':
                 locations[Resource.Reg].add(_ps + (snkindex.track,))
+                assert mux.get('configr') is not None
                 cr = int(mux.get('configr'))
             else:
                 cr = None
