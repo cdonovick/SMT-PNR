@@ -11,6 +11,7 @@ import re
 __all__ = ['parse_xml']
 
 sanitycheckset = set()
+tracksanitycheckset = set()
 
 SB = Resource.SB
 CB = Resource.CB
@@ -198,7 +199,7 @@ def _connect_ports(root, params):
 
             if mux.get('reg') == '1':
                 locations[Resource.Reg].add(_ps + (snkindex.track,))
-                assert mux.get('configr') is not None
+                assert int(mux.get('configr')) is not None, mux.get('configr')
                 cr = int(mux.get('configr'))
             else:
                 cr = None
@@ -222,6 +223,8 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+                assert tindex not in tracksanitycheckset
+                tracksanitycheckset.add(tindex)
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
                 fabric[tindex] = track
                 config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
@@ -252,6 +255,9 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+                assert tindex not in tracksanitycheckset
+                tracksanitycheckset.add(tindex)
+
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
                 fabric[tindex] = track
 #                track_names = (src_name, _port)
