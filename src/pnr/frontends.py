@@ -138,8 +138,8 @@ def _scan_ports(root, params):
             _resource = Resource.PE
 
         x = int(tile.get('col'))
-        tile_y = int(tile.get('row'))
-        y = tile_y
+        y = int(tile.get('row'))
+        # note, memory tiles will add the sb row to y
 
         if x > cols:
             cols = x
@@ -270,8 +270,8 @@ def _connect_ports(root, params):
 
     for tile in root:
         x = int(tile.get('col'))
-        tile_y = int(tile.get('row'))
-        y = tile_y
+        y = int(tile.get('row'))
+        # note, memory tiles will add the sb row to y
 
         if tile.get("type"):
             _resource = resourcedict[tile.get("type")]
