@@ -1,6 +1,5 @@
 from util import NamedIDObject, IDObject
-from .fabricutils import Side
-from .fabricutils import pos_to_side
+from .fabricutils import Side, pos_to_side
 from design.module import Resource
 
 
@@ -33,7 +32,6 @@ class Port(IDObject):
         self._y = muxindex.ps[1]
         self._resource = res
         self._track = muxindex.track  # could be none
-        self._track = track
         self._inputs = set()
         self._outputs = set()
         self._index = muxindex
@@ -61,18 +59,6 @@ class Port(IDObject):
     @property
     def index(self):
         return self._index
-
-    @property
-    def track(self):
-        return self._track
-
-    @property
-    def inputs(self):
-        return self._inputs
-
-    @property
-    def outputs(self):
-        return self._outputs
 
     @property
     def track(self):
@@ -165,6 +151,10 @@ class Fabric:
         self._fab = parsed_params['fabric']
         self._port_names = parsed_params['port_names']
 
+        # Hacky hardcoding register port names
+        self._port_names[(Resource.Reg, 16)].sources.add('out')
+        self._port_names[(Resource.Reg, 16)].sinks.add('a')
+
     @property
     def rows(self):
         return self._rows
@@ -217,4 +207,4 @@ class Fabric:
         return self._config
 
     def matching_keys(self, named_tuple_key):
-        return self._fab._getmatching(named_tuple_key)
+        return self._fab.matching_keys(named_tuple_key)
