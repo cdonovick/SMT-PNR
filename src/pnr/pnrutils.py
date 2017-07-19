@@ -68,10 +68,10 @@ def process_regs(design, p_state, fabric):
             # assert that the port hasn't already been split
             assert origport == fabric[regindex].sink
 
-            snkport, srcport = origport.split()
+            outport, inport = origport.split()
             # note: for now still indexing by assigned location
-            fabric[regindex].source = srcport
-            fabric[regindex].sink = snkport
+            fabric[regindex].source = inport
+            fabric[regindex].sink = outport
             del origport
 
 
