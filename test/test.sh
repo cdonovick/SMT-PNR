@@ -20,7 +20,7 @@ for d in "${TESTS[@]}"; do
         r=$?
         if [ $r -eq 0 ]; then
             echo Success!
-            rm $ANNOTATED
+            rm $ANNOTATED || echo "Attempted to remove ${ANNOTATED} but failed..."
         elif [ $r -eq 124 ]; then
             echo ???Timeout???
         else
