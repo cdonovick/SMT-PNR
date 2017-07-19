@@ -1,10 +1,10 @@
-from util import NamedIDObject
+from util import NamedIDObject, IDObject
 from .fabricutils import Side
 from .fabricutils import pos_to_side
 from design.module import Resource
 
 
-class Port(NamedIDObject):
+class Port(IDObject):
     '''
        Represents a port on a fabric
        x         : x coordinate
@@ -14,6 +14,7 @@ class Port(NamedIDObject):
        direction : in or out (i or o)
     '''
     def __init__(self, muxindex, direction='o'):
+        super().__init__()
         # see fabricutils for muxindex documentation
         if muxindex.resource == Resource.SB:
             # easier to look at side for naming
@@ -22,13 +23,12 @@ class Port(NamedIDObject):
             res = muxindex.resource
 
         # naming scheme is (x, y)Side_direction[track]
-        name = '({}, {}){}_{}[{}]'.format(muxindex.ps[0],
-                                          muxindex.ps[1],
-                                          res.name,
-                                          direction,
-                                          muxindex.track if muxindex.track is not None
-                                          else muxindex.port)
-        super().__init__(name)
+        self.name = '({}, {}){}_{}[{}]'.format(muxindex.ps[0],
+                                               muxindex.ps[1],
+                                               res.name,
+                                               direction,
+                                               muxindex.track if muxindex.track is not None
+                                               else muxindex.port)
         self._x = muxindex.ps[0]
         self._y = muxindex.ps[1]
         self._resource = res
@@ -91,16 +91,28 @@ class Port(NamedIDObject):
         return (self._x, self._y)
 
     def split(self):
-        outport = Port(self._index)
-        outport._inputs = self._inputs
-        for track in outport._inputs:
-            track._dst = outport
+        snkport = Port(self._index)
+        snkport._inputs = self._inputs
+        for track in snkport._inputs:
+            track._dst = snkport
 
-        inport = Port(self._index, 'i')
-        inport._outputs = self._outputs
-        for track in inport._outputs:
-            track._src = inport
-        return outport, inport
+        srcport = Port(self._index, 'i')
+        # overwrite x, y and name
+        srcport._x = self._index.po[0]
+        srcport._y = self._index.po[1]
+        # reverse positions
+        s = pos_to_side(self._index.po, self._index.ps)
+        # make the name look right/nice for printout
+        srcport.name = '({}, {}){}_{}[{}]'.format(srcport._x,
+                                                  srcport._y,
+                                                  s.name,
+                                                  'i',
+                                                  self._index.track if self._index.track is not None
+                                                  else self._index.port)
+        srcport._outputs = self._outputs
+        for track in srcport._outputs:
+            track._src = srcport
+        return snkport, srcport
 
     def __repr__(self):
         return self.name
@@ -133,6 +145,10 @@ class Track(NamedIDObject):
     @property
     def width(self):
         return self._width
+
+    # overload repr, because tracks may change when splitting ports
+    def __repr__(self):
+        return '{}-{}->{}'.format(self.src, self.width, self.dst)
 
 
 class Fabric:
