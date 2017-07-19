@@ -84,16 +84,34 @@ class FlyWeightMeta(type):
         try:
             return FlyWeightMeta.__instances[idx]
         except KeyError:
-            obj = objtype.__new__(objtype, *pargs, **kwargs)
-            objtype.__init__(obj, *pargs, **kwargs)
+            obj = super().__call__(*pargs, **kwargs)
             FlyWeightMeta.__instances[idx] = obj
             return obj
 
 
     def __new__(cls, name, bases, attrs, **kwargs):
-        if '__slots__' in attrs and '__weakref__' not in attrs['__slots__']:
-            attrs['__slots__'] = attrs['__slots__'] + ('__weakref__',)
+        if '__slots__' in attrs and '__dict__' not in attrs and '__weakref__' not in attrs['__slots__']:
+            #make sure its not in a base
+            for b in bases:
+                if hasattr(b, '__slots__') and '__weakref__' in b.__slots__:
+                    break
+            else:
+                #made through the loop not in a base
+                attrs['__slots__'] = attrs['__slots__'] + ('__weakref__',)
         return super().__new__(cls, name, bases, attrs, **kwargs)
+
+class Constant(metaclass=FlyWeightMeta):
+    __slots__ = ()
+
+    def __hash__(self):
+        return id(self)
+
+    def __eq__(self, other):
+        return self is other
+
+    def __ne__(self, other):
+        return self is not other
+
 
 class ValidContainer:
     '''wrapper class that allows data to marked invalid '''
