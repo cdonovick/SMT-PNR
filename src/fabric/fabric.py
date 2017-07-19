@@ -14,6 +14,7 @@ class Port(NamedIDObject):
        direction : in or out (i or o)
     '''
     def __init__(self, muxindex, direction='o'):
+        # see fabricutils for muxindex documentation
         if muxindex.resource == Resource.SB:
             # easier to look at side for naming
             res = pos_to_side(muxindex.ps, muxindex.po, direction)

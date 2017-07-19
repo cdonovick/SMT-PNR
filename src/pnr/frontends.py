@@ -222,6 +222,7 @@ def _connect_ports(root, params):
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
 
+                # see fabric.fabricutils for trackindex documentation
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
                 assert tindex not in tracksanitycheckset
                 tracksanitycheckset.add(tindex)
@@ -298,6 +299,8 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
                    'T?(?P<track>\d+)')
 
     m = p.search(name)
+
+    # see fabric.fabricutils for muxindex documentation
 
     if not m:
         if resource == Resource.Mem and direc == 'i':

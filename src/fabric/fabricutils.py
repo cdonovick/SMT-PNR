@@ -10,6 +10,42 @@ import re
 muxindex = namedtuple_with_defaults('muxindex', 'resource ps po bw track port')
 trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
 
+########################### Indexing Scheme ####################################
+#
+# muxindex
+#    resource: Resource Enum :: resource type from {PE, Mem, SB}
+#    ps:       tuple, len=2  :: position self in (x, y)
+#    po:       tuple, len=2  :: position other in (x, y) -- This is used in switch boxes and
+#                                                           expresses the "Side" from the xml
+#    bw:       int           :: bus width e.g. 16 bit, 1 bit, etc...
+#    track:    int           :: the track e.g. 0, 1, etc...
+#    port:     str           :: port name
+#
+# trackindex:
+#    snk:      muxindex      :: The muxindex representing the sink of this track
+#    src:      muxindex      :: The muxindex representing the source of this track
+#    bw:       int           :: the bus width -- Note this is redundant information, but is useful
+#                                                for situations where you want to select all tracks
+#                                                at a given layer, because you can set bw=STAR
+#
+#
+# PE/Mem/IO use muxindex with
+#                        resource: the resource type
+#                        ps:       the position of this resource
+#                        bw:       the layer i.e. 16 bit, 1 bit, etc...
+#                        port:     the port name
+#                        po and track set to None
+#
+# SB mux use muxindex with
+#                        resource: Resource.SB
+#                        ps:       the position of the SB
+#                        po:       the position of the SB this mux connects to
+#                        bw:       the bus width
+#                        track:    the track
+#                        port:     None
+#
+################################################################################
+
 
 # note using a class instead of named tuple for mutability reasons
 class port_names_container:
