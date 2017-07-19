@@ -19,7 +19,7 @@ class Annotations:
     def load_reg(self, reg_name, const=None, row=None, col=None):
         s = 'load `{}` reg with '.format(reg_name)
 
-        if const:
+        if const is not None:
             s = s + 'const: {}'.format(const)
         else:
             s = s + 'wire'
