@@ -42,8 +42,10 @@ class Annotations:
         return ''.join(s)
 
     def __check_tile(self, row, col, s):
+        # currently still printing (x, y) i.e. (col, row). So that it matches p_state and r_state
+        # we can transition to row/col eventually
         if row is not None and col is not None:
-            return '@ tile ({}, {}) {}'.format(row, col, s)
+            return '@ tile ({}, {}) {}'.format(col, row, s)
         else:
             return s
 

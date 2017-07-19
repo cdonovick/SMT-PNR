@@ -123,7 +123,10 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                     feature_address = c.feature_address
                     vnet = r_state.I[tindex][0]
 
-                    if vnet.dst.resource == Resource.Reg:
+                    # check if the dst is a register
+                    # and if the current track is the last track in the path
+                    # i.e. the one that should be registered
+                    if vnet.dst.resource == Resource.Reg and tindex == r_state[vnet][-1]:
                         assert hasattr(c, 'configr')
                         assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
                         reg = c.configr // 32
