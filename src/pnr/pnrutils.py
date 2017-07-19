@@ -1,6 +1,8 @@
 from fabric.fabricutils import muxindex
 from design.module import Resource
 
+# see fabric.fabricutils for muxindex documentation
+
 
 def get_muxindices(net, p_state):
     '''

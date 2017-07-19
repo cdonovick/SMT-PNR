@@ -93,6 +93,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
 
         feature_address = None
 
+        # see fabric.fabricutils for indexing scheme documentation
         snkindex = muxindex(resource=mod.resource, ps=(x, y), po=STAR, bw=layer,
                             track=STAR, port=port)
 
