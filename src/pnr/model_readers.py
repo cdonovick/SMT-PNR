@@ -13,6 +13,9 @@ def place_model_reader(fabric, design, state, vars, solver):
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
+    # make sure there are never two drivers of the same port
+    invariant_check = dict()
+
     # hardcoded layers right now
     for layer in {16}:
 
@@ -37,5 +40,11 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
                 track = vars[edge]
+
+                if track in invariant_check:
+                    assert net.src == invariant_check[track.dst], '{} driven by {} and {}'.format(track.dst, invariant_check[track.dst], net.src)
+
+                invariant_check[track.dst] = net.src
+
                 dst = track.dst
                 r_state[net] = trackindex(snk=dst.index, src=track.src.index, bw=layer)
