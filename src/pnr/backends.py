@@ -164,7 +164,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 src = net.src
                 if src.type_ == 'Const':
                     data[_pe_reg[port]] |= src.config # load 'a' reg with const
-                    comment[_pe_reg[port]][(15,0)] = Annotations.load_reg(port, src.config)
+                    comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
                     comment[_pe_reg['op']][_read_wire[port]] = Annotations.read_from('reg', port)
                 elif src.type_ == 'Reg' and src.resource == Resource.Fused:
                     data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
