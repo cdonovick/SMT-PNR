@@ -1,16 +1,16 @@
-from collections import defaultdict
-from collections.abc import  MutableMapping, Set
-import weakref
+from collections.abc import MutableMapping, Set
 from .setlist import SetList
 from util import class_property, Constant
 
 __all__ = ['SelectDict', 'STAR']
+
 
 class _STAR(Constant):
     __slots__ = ()
 
     def __eq__(self, other):
         return True
+
 
 STAR = _STAR()
 
@@ -37,6 +37,7 @@ class SelectDict_matching_keys(Set):
 
         s = 'SelectDict_matching_keys({' + ', '.join(c) + '})'
         return s
+
 
 class SelectDict(MutableMapping):
     _STAR = _STAR()
