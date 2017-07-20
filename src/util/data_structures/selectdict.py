@@ -1,11 +1,13 @@
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, defaultdict
+from collections.abc import  MutableMapping, Set
+import weakref
 from .setlist import SetList
-from util import class_property, FlyWeightMeta
+from util import class_property, Constant
 
 __all__ = ['SelectDict', 'STAR', 'DefaultSelectDict']
 
 
-class _STAR(metaclass=FlyWeightMeta):
+class _STAR(Constant):
     __slots__ = ()
 
     def __eq__(self, other):
@@ -14,33 +16,55 @@ class _STAR(metaclass=FlyWeightMeta):
 
 STAR = _STAR()
 
+class SelectDict_matching_keys(Set):
+    __slots__ = '_view', '_pattern'
+
+    def __init__(self, sd, pattern):
+        self._view = sd._d.keys()
+        self._pattern = pattern
+
+    def __contains__(self, elem):
+        return elem == self._pattern and elem in self._view
+
+    def __iter__(self):
+        yield from filter(lambda e : e == self._pattern, self._view)
+
+    def __len__(self):
+        return len(list(self))
+
+    def __repr__(self):
+        c = []
+        for k in self:
+            c.append('{}'.format(k))
+
+        s = 'SelectDict_matching_keys({' + ', '.join(c) + '})'
+        return s
+
 
 class SelectDict(MutableMapping):
     _STAR = _STAR()
     __slots__ = '_d'
     def __init__(self, d=dict()):
         self._d = dict()
-        for k, v in d.items():
+
+        for k,v in d.items():
             self[k] = v
 
     @classmethod
     def _checkstar(cls, key):
         return any(v is cls.STAR for v in key)
 
-    def _getmatching(self, key):
-        return [k for k in self._d if k == key]
-
     def __getitem__(self, key):
         if not self._checkstar(key):
             return self._d[key]
         else:
-            return SetList(self._d[k] for k in self._getmatching(key))
+            return SetList(self._d[k] for k in self.matching_keys(key))
 
     def __setitem__(self, key, value):
         if not self._checkstar(key):
             self._d[key] = value
         else:
-            for k in self._getmatching(key):
+            for k in self.matching_keys(key):
                 self._d[k] = value
 
     def __delitem__(self, key):
@@ -54,7 +78,7 @@ class SelectDict(MutableMapping):
         return len(self._d)
 
     def __contains__(self, key):
-        return bool(self._getmatching(key))
+        return bool(self.matching_keys(key))
 
     def __iter__(self):
         yield from self._d
@@ -67,18 +91,9 @@ class SelectDict(MutableMapping):
     def STAR(cls):
         return cls._STAR
 
+    def matching_keys(self, pattern):
+        return SelectDict_matching_keys(self, pattern)
 
-class DefaultSelectDict(SelectDict):
-    def __init__(self, default):
-        self._default = default
-        super().__init__()
-
-    def __getitem__(self, key):
-        if key not in self._d:
-            super(DefaultSelectDict, self).__setitem__(key, self._default())
-
-        # now call the super's getitem
-        return super(DefaultSelectDict, self).__getitem__(key)
 
 #testing stuff
 #

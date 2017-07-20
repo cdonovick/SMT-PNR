@@ -188,4 +188,4 @@ class Fabric:
         return self._config
 
     def matching_keys(self, named_tuple_key):
-        return self._fab._getmatching(named_tuple_key)
+        return self._fab.matching_keys(named_tuple_key)
