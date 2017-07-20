@@ -145,7 +145,6 @@ class ValidContainer:
         else:
             return 'Invalid'
 
-
 class class_property:
     __slots__ = 'fget', '__doc__'
     def __init__(self, fget, doc=None):
