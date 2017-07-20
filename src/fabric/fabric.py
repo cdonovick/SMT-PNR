@@ -1,6 +1,5 @@
 from util import NamedIDObject
-from .fabricutils import Side
-from .fabricutils import pos_to_side
+from .fabricutils import Side, pos_to_side
 from design.module import Resource
 
 
@@ -135,6 +134,10 @@ class Fabric:
         self._config = parsed_params['config_engine']
         self._fab = parsed_params['fabric']
         self._port_names = parsed_params['port_names']
+
+        # Hacky hardcoding register port names
+        self._port_names[(Resource.Reg, 16)].sources.add('out')
+        self._port_names[(Resource.Reg, 16)].sinks.add('a')
 
     @property
     def rows(self):
