@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections.abc import  MutableMapping, Set
 import weakref
 from .setlist import SetList
@@ -90,7 +89,6 @@ class SelectDict(MutableMapping):
 
     def matching_keys(self, pattern):
         return SelectDict_matching_keys(self, pattern)
-
 
 #testing stuff
 #

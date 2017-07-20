@@ -51,3 +51,7 @@ class Resource(Enum):
     IO    = 1 #HACK: IO uses PE
     Reg   = 4
     Fused = 5
+    # For fabric actually
+    # Eventually we should move this
+    SB    = 6
+    CB    = 7

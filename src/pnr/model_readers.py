@@ -1,4 +1,7 @@
 from design.module import Resource
+from .pnrutils import get_muxindices
+from fabric.fabricutils import trackindex
+
 
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
@@ -10,14 +13,11 @@ def place_model_reader(fabric, design, state, vars, solver):
 
 def route_model_reader(fabric, design, p_state, r_state, vars, solver):
 
-    # add a holder for the register tracks
-#    r_state[Resource.Reg] = defaultdict(set)
+    # make sure there are never two drivers of the same port
+    invariant_check = dict()
 
     # hardcoded layers right now
     for layer in {16}:
-
-        sources = fabric[layer].sources
-        sinks = fabric[layer].sinks
 
         for net in design.physical_nets:
             # hacky handle only one layer at a time
@@ -26,25 +26,12 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             if net.width != layer:
                 continue
 
-            src = net.src
-            dst = net.dst
-            src_port = net.src_port
-            dst_port = net.dst_port
+            src_index, dst_index = get_muxindices(net, p_state)
 
             graph = vars[net]
 
-            src_index = p_state[src][0]
-            dst_index = p_state[dst][0]
-
-            # get correct tuple index
-            # registers don't need their port
-            if src.resource != Resource.Reg:
-                src_index = src_index + (src_port,)
-            if dst.resource != Resource.Reg:
-                dst_index = dst_index + (dst_port,)
-
-            src_node = vars[sources[src_index]]
-            dst_node = vars[sinks[dst_index]]
+            src_node = vars[fabric[src_index].source]
+            dst_node = vars[fabric[dst_index].sink]
             reaches = graph.reaches(src_node, dst_node)
             l = graph.getPath(reaches)
             path = tuple(graph.names[node] for node in l)
@@ -53,12 +40,11 @@ def route_model_reader(fabric, design, p_state, r_state, vars, solver):
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
                 track = vars[edge]
-                src = track.src
-                outname = track.track_names[1]
-                inname = track.track_names[0]
-                state = (src.x, src.y, track.parent, outname, inname)
-                r_state[net] = state
 
-            # if this is routing to a register, add the last track
-            # as a registered track
-            #r_state[Resource.Reg][0].add(state)
+                if track in invariant_check:
+                    assert net.src == invariant_check[track.dst], '{} driven by {} and {}'.format(track.dst, invariant_check[track.dst], net.src)
+
+                invariant_check[track.dst] = net.src
+
+                dst = track.dst
+                r_state[net] = trackindex(snk=dst.index, src=track.src.index, bw=layer)
