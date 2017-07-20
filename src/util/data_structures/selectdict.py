@@ -1,10 +1,8 @@
-from collections.abc import MutableMapping, defaultdict
-from collections.abc import  MutableMapping, Set
-import weakref
+from collections.abc import MutableMapping, Set
 from .setlist import SetList
 from util import class_property, Constant
 
-__all__ = ['SelectDict', 'STAR', 'DefaultSelectDict']
+__all__ = ['SelectDict', 'STAR']
 
 
 class _STAR(Constant):
