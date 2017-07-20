@@ -1,4 +1,4 @@
-from util import NamedIDObject, IDObject
+from util import IDObject
 from .fabricutils import Side, pos_to_side
 from design.module import Resource
 
@@ -104,7 +104,7 @@ class Port(IDObject):
         return self.name
 
 
-class Track(NamedIDObject):
+class Track(IDObject):
     '''
        Holds two ports describing a single track between them
        Note: only ports for inputs are described (except for ports off the edge)
@@ -113,7 +113,7 @@ class Track(NamedIDObject):
              inflates the graph)
     '''
     def __init__(self, src, dst, width):
-        super().__init__('{}-{}->{}'.format(src, width, dst))
+        super().__init__()
         self._src = src
         self._dst = dst
         self._src.outputs.add(self)

@@ -10,9 +10,6 @@ import re
 
 __all__ = ['parse_xml']
 
-sanitycheckset = set()
-tracksanitycheckset = set()
-
 SB = Resource.SB
 CB = Resource.CB
 
@@ -23,6 +20,7 @@ resourcedict = {'pe_tile_new': Resource.PE,
 
 
 def parse_xml(filepath, config_engine):
+
     tree = ET.parse(filepath)
     root = tree.getroot()
 
@@ -45,6 +43,11 @@ def _scan_ports(root, params):
        Reads the fabric xml in a first pass, recording all muxes and 
        determining useful parameters like rows/cols
     '''
+
+    # make sure indexing is correct and that
+    # you never get the same index twice when
+    # scanning ports
+    sanitycheckset = set()
 
     fabric = params['fabric']
     locations = defaultdict(set)
@@ -168,6 +171,11 @@ def _scan_ports(root, params):
 
 
 def _connect_ports(root, params):
+
+    # make sure indexing is correct and that
+    # you never get the same index twice when
+    # scanning ports
+    tracksanitycheckset = set()
 
     fabric = params['fabric']
     locations = params['locations']

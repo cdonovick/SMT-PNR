@@ -3,6 +3,7 @@ import sys
 import design, design.core2graph, pnr, smt
 from functools import partial
 from config import ConfigEngine
+import copy
 
 
 import argparse
@@ -39,13 +40,13 @@ modules, nets = design.core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
-fab = pnr.parse_xml(fabric_file, ce)
 
 pnrdone = False
 
 iterations = 0
 
 while not pnrdone and iterations < 10:
+    fab = pnr.parse_xml(fabric_file, ce)
     p = pnr.PNR(fab, des, args.solver)
     POSITION_T = partial(smt.BVXY, solver=p._place_solver)
     print("Placing design...", end=' ')
@@ -71,7 +72,6 @@ while not pnrdone and iterations < 10:
             sys.exit(1)
 
     if not args.noroute:
-#        fabric.parse_xml(fabric_file, p._fabric, p._design, p._place_state)
         pnr.process_regs(des, p._place_state, fab)
         print("Routing design...", end=' ')
         sys.stdout.flush()
