@@ -1,4 +1,4 @@
-import lxml.etree as ET
+import xml.etree.ElementTree as ET
 from fabric.fabricutils import Side, mapSide, parse_mem_sb_wire
 from fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_container
 from design.module import Resource

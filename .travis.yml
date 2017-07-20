@@ -53,8 +53,6 @@ install:
     #- make -C src ../build/coreir.so  # For bindings tests
     #- make -C tests
     - cd $TRAVIS_BUILD_DIR
-    # Stuff needed for P&R
-    - pip install lxml
 
 script:
     - echo Running tests with $SOLVER

@@ -1,3 +1,5 @@
+from util import class_property
+
 class Annotations:
     '''
        Class to hold the annotation formats
@@ -5,48 +7,81 @@ class Annotations:
        comparison purposes
     '''
 
-    def connect_wire(self, wire_num, src_name, snk_name, row=None, col=None):
-        s = 'connect wire {} ({}) to {}'.format(wire_num, src_name, snk_name)
+    @class_property
+    def connect_wire_str(cls):
+        return 'connect wire {} ({}) to {}'
 
-        return self.__check_tile(row, col, s)
+    @classmethod
+    def connect_wire(cls, wire_num, src_name, snk_name, row=None, col=None):
+        s = cls.connect_wire_str.format(wire_num, src_name, snk_name)
 
-    def latch_wire(self, wire_num, src_name, snk_name, row=None, col=None):
-        s = 'latch wire {} ({}) before connecting to {}'.format(wire_num, src_name, snk_name)
+        return cls.__check_tile(row, col, s)
 
-        return self.__check_tile(row, col, s)
+    @class_property
+    def latch_wire_str(cls):
+        return 'latch wire {} ({}) before connecting to {}'
+
+    @classmethod
+    def latch_wire(cls, wire_num, src_name, snk_name, row=None, col=None):
+        s = cls.latch_wire_str.format(wire_num, src_name, snk_name)
+
+        return cls.__check_tile(row, col, s)
+
+    @class_property
+    def load_reg_str(cls):
+        return 'load `{}` reg with '
 
     # use same one for wire and const
-    def load_reg(self, reg_name, const=None, row=None, col=None):
-        s = 'load `{}` reg with '.format(reg_name)
+    @classmethod
+    def load_reg(cls, reg_name, const=None, row=None, col=None):
+        s = cls.load_reg_str.format(reg_name)
 
         if const is not None:
             s = s + 'const: {}'.format(const)
         else:
             s = s + 'wire'
 
-        return self.__check_tile(row, col, s)
+        return cls.__check_tile(row, col, s)
+
+    @class_property
+    def op_config_str(cls):
+        return '{} = {}'
 
     # use same for actual ops, input and output...
-    def op_config(self, op_name, value):
-        return '{} = {}'.format(op_name, value)
+    @classmethod
+    def op_config(cls, op_name, value):
+        return cls.op_config_str.format(op_name, value)
 
-    def read_from(self, _type, name):
+    @class_property
+    def read_from_str(cls):
+        return 'read from {} `{}`'
+
+    @classmethod
+    def read_from(cls, _type, name):
         assert _type in {'reg', 'wire'}
-        return 'read from {} `{}`'.format(_type, name)
+        return cls.read_from_str.format(_type, name)
 
-    def format_comment(self, comment):
+    @class_property
+    def format_comment_str(cls):
+        return '# data[{}] : {}\n'
+
+    @classmethod
+    def format_comment(cls, comment):
         s = []
         for bit, c in comment.items():
-            s.append('# data[{}] : {}\n'.format(bit, c))
+            s.append(cls.format_comment_str.format(bit, c))
 
         return ''.join(s)
 
-    def __check_tile(self, row, col, s):
+    @class_property
+    def __check_tile_str(cls):
+        return '@ tile ({}, {}) {}'
+
+    @classmethod
+    def __check_tile(cls, row, col, s):
         # currently still printing (x, y) i.e. (col, row). So that it matches p_state and r_state
         # we can transition to row/col eventually
         if row is not None and col is not None:
-            return '@ tile ({}, {}) {}'.format(col, row, s)
+            return cls.__check_tile_str.format(col, row, s)
         else:
             return s
-
-
