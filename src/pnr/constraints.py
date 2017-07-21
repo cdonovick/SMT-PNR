@@ -4,7 +4,6 @@ Constraint generators
 from functools import partial
 import itertools
 
-from smt_switch import functions as funs
 from design.module import Resource
 from .pnrutils import get_muxindex, get_muxindices
 from fabric.fabricutils import trackindex
@@ -12,9 +11,6 @@ from util import STAR
 
 import random
 import string
-
-And = funs.And
-Or = funs.Or
 
 
 def init_positions(position_type):
@@ -29,7 +25,7 @@ def init_positions(position_type):
                 p = position_type(module.name, fabric)
                 vars[module] = p
                 constraints.append(p.invariants)
-        return And(constraints)
+        return solver.And(constraints)
     return initializer
 
 
@@ -47,7 +43,7 @@ def init_random(position_type):
                 p = position_type(module.name + randstring, fabric)
                 vars[module] = p
                 constraints.append(p.invariants)
-        return And(constraints)
+        return solver.And(constraints)
     return initializer
 
 
@@ -57,12 +53,12 @@ def assert_pinned(fabric, design, state, vars, solver):
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
-    return And(constraints)
+    return solver.And(constraints)
 
 def pin_reg(reg, p):
     def _pin_reg(fabric, design, state, vars, solver):
         pos = vars[reg]
-        return And(pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1]))
+        return solver.And(pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1]))
 
     return _pin_reg
 
@@ -75,11 +71,11 @@ def distinct(fabric, design, state, vars, solver):
                 c = v1.flat != v2.flat
 
                 if m1.resource == Resource.Reg:
-                    constraints.append(Or(c,  v1.c != v2.c))
+                    constraints.append(solver.Or(c,  v1.c != v2.c))
                 else:
                     constraints.append(c)
 
-    return And(constraints)
+    return solver.And(constraints)
 
 def register_colors(fabric, design, state, vars, solver):
     constraints = []
@@ -88,7 +84,7 @@ def register_colors(fabric, design, state, vars, solver):
         dst = net.dst
         if src.resource == dst.resource == Resource.Reg:
             constraints.append(vars[src].c == vars[dst].c)
-    return And(constraints)
+    return solver.And(constraints)
 
 def nearest_neighbor(fabric, design, state, vars, solver):
     dxdy = ((0,1), (1,0))
@@ -107,13 +103,13 @@ def _neighborhood(dxdy, fabric, design, state, vars, solver):
             c = []
             dx = vars[src].delta_x_fun(vars[dst])
             dy = vars[src].delta_y_fun(vars[dst])
-            #c.append(And(dx(0), dy(0)))
+            #c.append(solver.And(dx(0), dy(0)))
             for x, y in dxdy:
-                c.append(And(dx(x), dy(y)))
-            constraints.append(Or(c))
+                c.append(solver.And(dx(x), dy(y)))
+            constraints.append(solver.Or(c))
 
 
-        return And(constraints)
+        return solver.And(constraints)
 
 
 def pin_IO(fabric, design, state, vars, solver):
@@ -122,8 +118,8 @@ def pin_IO(fabric, design, state, vars, solver):
         pos = vars[module]
         c = [pos.x == pos.encode_x(0),
              pos.y == pos.encode_y(0)]
-        constraints.append(Or(c))
-    return And(constraints)
+        constraints.append(solver.Or(c))
+    return solver.And(constraints)
 
 
 def pin_resource(fabric, design, state, vars, solver):
@@ -138,10 +134,10 @@ def pin_resource(fabric, design, state, vars, solver):
             cc = [pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1])]
             if len(p) == 3:
                 cc.append(pos.c == pos.encode_c(p[2]))
-            c.append(And(cc))
+            c.append(solver.And(cc))
 
-        constraints.append(Or(c))
-    return And(constraints)
+        constraints.append(solver.Or(c))
+    return solver.And(constraints)
 
 
 #################################### Routing Constraints ################################
