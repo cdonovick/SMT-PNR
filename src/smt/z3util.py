@@ -1,11 +1,7 @@
 import z3
 import operator
 import functools as ft
-from smt_switch import functions as funs
 from util import Mask, build_grouped_mask
-
-And = funs.And
-lshr = funs.BVLshr
 
 
 def hamming_a(bv):
@@ -52,6 +48,8 @@ def hamming_d(bv):
     '''
     bsize = bv.sort.width
     b_point = bsize.bit_length()
+
+    lshr = bv._smt.BVLshr
 
     s = 2**((bsize - 1).bit_length())
 

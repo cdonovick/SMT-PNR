@@ -1,7 +1,7 @@
 from util import BiMultiDict, BiDict
-from smt.solvers import Solver_z3, Solver_monosat
+from smt.solvers import Solver_monosat
 import itertools as it
-from smt_switch import solvers
+from smt_switch import smt
 
 
 ''' Class for handling place & route '''
@@ -16,14 +16,11 @@ class PNR:
         self._place_vars = BiDict()
         self._route_vars = BiDict()
 
-        try:
-            self._place_solver = eval('solvers.{}Solver()'.format(solver_str))
-        except AttributeError:
-            print('{} is not a supported solver'.format(solver_str))
+        self._place_solver = smt(solver_str)
         self._route_solver = Solver_monosat()
 
         # set options
-        self._place_solver.set_option('produce-models', 'true')
+        self._place_solver.SetOption('produce-models', 'true')
 
     def pin_module(self, module, placement):
         self._place_state[module] = placement
@@ -35,12 +32,12 @@ class PNR:
         constraints = []
         for f in funcs:
             c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
-            self._place_solver.add(c)
+            self._place_solver.Assert(c)
 
-        if not self._place_solver.check_sat():
+        if not self._place_solver.CheckSat():
             self._place_solver.reset()
             # set options
-            self._place_solver.set_option('produce-models', 'true')
+            self._place_solver.SetOption('produce-models', 'true')
             self._place_vars = BiDict()
             return False
 
