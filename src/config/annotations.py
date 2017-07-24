@@ -1,4 +1,4 @@
-from util import class_property
+
 
 class Annotations:
     '''
@@ -58,9 +58,9 @@ class Annotations:
 
     @classmethod
     def _check_tile(cls, row, col, s):
-        # currently still printing (x, y) i.e. (col, row). So that it matches p_state and r_state
-        # we can transition to row/col eventually
+        # note, we print (row, col) which does NOT match p_state or r_state
+        # which is (x, y)
         if row is not None and col is not None:
-            return cls._check_tile_str.format(col, row, s)
+            return cls._check_tile_str.format(row, col, s)
         else:
             return s
