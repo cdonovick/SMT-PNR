@@ -133,7 +133,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                         reg = c.configr // 32
                         offset = c.configr % 32
                         data[reg] |= 1 << offset
-                        comment[reg][(offset, offset)] = Annotations.latch_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
+                        comment[reg][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=y, col=x)
 
                     reg = c.configl // 32
                     offset = c.configl % 32
@@ -165,14 +165,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 if src.type_ == 'Const':
                     data[_pe_reg[port]] |= src.config # load 'a' reg with const
                     comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
-                    comment[_pe_reg['op']][_read_wire[port]] = Annotations.read_from('reg', port)
+                    comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
                 elif src.type_ == 'Reg' and src.resource == Resource.Fused:
                     data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                    comment[_pe_reg['op']][_load_reg[port]] = Annotations.load_reg(port)
-                    comment[_pe_reg['op']][_read_wire[port]] = Annotations.read_from('reg', port)
+                    comment[_pe_reg['op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
+                    comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
                 else:
                     data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                    comment[_pe_reg['op']][_read_wire[port]]  = Annotations.read_from('wire', port)
+                    comment[_pe_reg['op']][2*(_read_wire[port],)]  = Annotations.read_from('wire', port)
                     
 
         elif mod.type_ == 'IO':

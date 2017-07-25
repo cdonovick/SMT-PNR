@@ -79,6 +79,8 @@ def _scan_ports(root, params):
             sanitycheckset.add(mindex)
             fabric[mindex] = port_wrapper(Port(mindex))
 
+        # TODO: Handle feedthroughs -- should be simple
+
     def _scan_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
         _ps = (x, y)

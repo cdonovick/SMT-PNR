@@ -1,3 +1,4 @@
+from collections import defaultdict
 
 
 class Annotations:
@@ -9,7 +10,7 @@ class Annotations:
 
     #format strings
     _connect_wire_str = 'connect wire {} ({}) to {}'
-    _latch_wire_str   = 'latch wire {} ({}) before connecting to {}'
+    _latch_wire_str   = 'latch output wire {}'
     _load_reg_str     = 'load `{}` reg with wire'
     _init_reg_str     = 'init `{}` reg with const `{}`'
     _op_config_str    = '{} = {}'
@@ -23,8 +24,8 @@ class Annotations:
         return cls._check_tile(row, col, s)
 
     @classmethod
-    def latch_wire(cls, wire_num, src_name, snk_name, row=None, col=None):
-        s = cls._latch_wire_str.format(wire_num, src_name, snk_name)
+    def latch_wire(cls, snk_name, row=None, col=None):
+        s = cls._latch_wire_str.format(snk_name)
         return cls._check_tile(row, col, s)
 
     # use same one for wire and const
@@ -51,7 +52,9 @@ class Annotations:
     @classmethod
     def format_comment(cls, comment):
         s = []
-        for bit, c in comment.items():
+
+        # display comments sorted by bit tuples
+        for bit, c in sorted(comment.items()):
             s.append(cls._comment_str.format(bit, c))
 
         return ''.join(s)
