@@ -53,7 +53,7 @@ def load_core(file, *libs):
         else:
             raise ValueError("Unknown module_name '{}' expected <'PE', 'Const', 'IO', 'Reg', 'Mem'>".format(inst_type))
 
-    nets = set()
+    ties = set()
     for con in top_module.directed_module.connections:
         src = con.source
         dst = con.sink
@@ -69,11 +69,11 @@ def load_core(file, *libs):
 
         width = curr.type.size
 
-        net = (src_name, src_port, dst_name, dst_port, width)
-        nets.add(net)
+        tie = (src_name, src_port, dst_name, dst_port, width)
+        ties.add(tie)
 
 
-    return modules, nets
+    return modules, ties
 
 
 

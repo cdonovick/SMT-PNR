@@ -8,7 +8,8 @@ from pnrdoctor.util import namedtuple_with_defaults
 
 # useful custom types
 muxindex = namedtuple_with_defaults('muxindex', 'resource ps po bw track port')
-trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
+pathindex = namedtuple_with_defaults('pathindex', 'snk src bw')
+ftindex = namedtuple_with_defaults('ftindex', 'snk src bw')
 
 ########################### Indexing Scheme ####################################
 #
@@ -21,14 +22,12 @@ trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
 #    track:    int           :: the track e.g. 0, 1, etc...
 #    port:     str           :: port name
 #
-# trackindex:
+# pathindex:
 #    snk:      muxindex      :: The muxindex representing the sink of this track
 #    src:      muxindex      :: The muxindex representing the source of this track
 #    bw:       int           :: the bus width -- Note this is redundant information, but is useful
 #                                                for situations where you want to select all tracks
 #                                                at a given layer, because you can set bw=STAR
-#
-#
 # PE/Mem/IO use muxindex with
 #                        resource: the resource type
 #                        ps:       the position of this resource

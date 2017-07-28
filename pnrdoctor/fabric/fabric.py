@@ -138,6 +138,24 @@ class Track(IDObject):
         return '{}-{}->{}'.format(self.src, self.width, self.dst)
 
 
+class FeedthroughPath(Track):
+    '''
+       This class behaves very similarly to a Track. However, it represents an
+       entire feedthrough path. Therefore, it contains a set of pathindices representing
+       the tracks used in the path.
+    '''
+    def __init__(self, src, dst, width, trackindices):
+        super().__init__(src, dst, width)
+        self._trackindices = trackindices
+
+    @property
+    def pathindices(self):
+        return self._pathindices
+
+    def __repr__():
+        return 'ft: {]-{}->{}'.format(self.src, self.width, self.dst)
+
+
 class Fabric:
     def __init__(self, parsed_params):
         self._rows = parsed_params['rows']

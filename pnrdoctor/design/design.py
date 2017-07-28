@@ -6,14 +6,15 @@ from functools import lru_cache
 
 from pnrdoctor.util import NamedIDObject, SortedDict
 from .module import Module, Resource
-from .net import Net
+from .net import Net, Tie
+from functools import lru_cache
 
 _fusable = {(s, d) for s in ('Reg', 'Const') for d in ('PE',)}
 class Design(NamedIDObject):
-    def __init__(self, modules, nets, name=''):
+    def __init__(self, modules, ties, name=''):
         super().__init__(name)
         _mods = SortedDict()
-        _nets = dict()
+        _ties = dict()
 
         # HACK to make only one wire leave input
         # to help CGRA team with io hack
@@ -21,7 +22,7 @@ class Design(NamedIDObject):
 
         # find input modules
         inputmods = defaultdict(int)
-        for src_name, src_port, dst_name, dst_port, width in nets:
+        for src_name, src_port, dst_name, dst_port, width in ties:
             if modules[src_name]['type'] == 'IO':
                 #an output should never be a src
                 assert modules[src_name]['conf'] == 'i'
@@ -54,11 +55,11 @@ class Design(NamedIDObject):
                 #make a hack mod
                 modules[hack_io_name] = saved_args
 
-                #make a net from the hack mod to original io (the now adder)
+                #make a tie from the hack mod to original io (the now adder)
                 #assuming 16 width but we are fucked if its not anyway as the adder trick wont work
-                nets.add((hack_io_name, 'pe_out_res', mod_name, 'a', 16))
-                #make a net from the const 0 to original io (the now adder)
-                nets.add((const_0_name, 'out', mod_name, 'b', 16))
+                ties.add((hack_io_name, 'pe_out_res', mod_name, 'a', 16))
+                #make a tie from the const 0 to original io (the now adder)
+                ties.add((const_0_name, 'out', mod_name, 'b', 16))
 
         # end HACK for IOs
 
@@ -78,8 +79,8 @@ class Design(NamedIDObject):
         fuse_me = set()
         fuse_no = set()
 
-        #build nets
-        for src_name, src_port, dst_name, dst_port, width in nets:
+        #build ties
+        for src_name, src_port, dst_name, dst_port, width in ties:
 
             src = _mods[src_name]
             dst = _mods[dst_name]
@@ -91,9 +92,9 @@ class Design(NamedIDObject):
                 fuse_no.add(src)
 
 
-            _nets[idx] = Net(*idx)
+            _ties[idx] = Tie(*idx)
 
-        self._nets=frozenset(_nets.values())
+        self._ties=frozenset(_ties.values())
         #build _p_modules
         _p_modules = set()
         for m in self.modules:
@@ -106,29 +107,29 @@ class Design(NamedIDObject):
         self._p_modules = frozenset(_p_modules)
 
 
-        # build _p_nets
-        _p_nets = set()
-        _net_cache = _nets.copy()
-        while _nets:
-            _, net = _nets.popitem()
-            if net.src.resource == Resource.Fused:
+        # build _p_ties
+        _p_ties = set()
+        _tie_cache = _ties.copy()
+        while _ties:
+            _, tie = _ties.popitem()
+            if tie.src.resource == Resource.Fused:
                 # handle this when it's a destination
                 continue
-            elif net.dst.resource != Resource.Fused:
-                _p_nets.add(net)
+            elif tie.dst.resource != Resource.Fused:
+                _p_ties.add(tie)
             else:
-                # fuse nets with a fused dst
-                for dst_net in net.dst.outputs.values():
-                    idx = net.src, net.src_port, dst_net.dst, dst_net.dst_port, net.width
-                    #print("Fusing: \n({a}  ->  {b})\n ({b}  ->  {c})\n({a}  ->  {c})\n".format(a=idx[0].name, b=idx[2].name, c=dst_net.dst.name))
-                    assert dst_net.width == net.width
-                    assert idx not in _net_cache
-                    new_net = Net(*idx)
-                    _nets[idx] = new_net
-                    _net_cache[idx] = new_net
+                # fuse ties with a fused dst
+                for dst_tie in tie.dst.outputs.values():
+                    idx = tie.src, tie.src_port, dst_tie.dst, dst_tie.dst_port, tie.width
+                    #print("Fusing: \n({a}  ->  {b})\n ({b}  ->  {c})\n({a}  ->  {c})\n".format(a=idx[0].name, b=idx[2].name, c=dst_tie.dst.name))
+                    assert dst_tie.width == tie.width
+                    assert idx not in _tie_cache
+                    new_tie = Tie(*idx)
+                    _ties[idx] = new_tie
+                    _tie_cache[idx] = new_tie
 
 
-        self._p_nets = frozenset(_p_nets)
+        self._p_ties = frozenset(_p_ties)
 
         for module in self.modules:
             assert module.resource != Resource.UNSET
@@ -136,18 +137,28 @@ class Design(NamedIDObject):
         for module in self.physical_modules:
             assert module.resource != Resource.Fused
 
-        for net in self.physical_nets:
-            assert net.src.resource != Resource.Fused, 'src'
-            assert net.dst.resource != Resource.Fused, 'dst'
+        for tie in self.physical_ties:
+            assert tie.src.resource != Resource.Fused, 'src'
+            assert tie.dst.resource != Resource.Fused, 'dst'
 
-        for net in self.nets:
-            assert (net in self.physical_nets) or (net.src.resource == Resource.Fused) or (net.dst.resource == Resource.Fused)
+        for tie in self.ties:
+            assert (tie in self.physical_ties) or (tie.src.resource == Resource.Fused) or (tie.dst.resource == Resource.Fused)
 
+        _p_nets = set()
         for module in self.modules:
             if module.resource == Resource.Fused:
                 assert module not in self.physical_modules
             else:
                 assert module in self.physical_modules, module
+                if len(module.outputs) > 0:
+                    n = Net()
+                    for tie in module.outputs.values():
+                        if tie.dst.resource != Resource.Fused:
+                            n.add_tie(tie)
+
+                    _p_nets.add(n)
+
+        self._p_nets = frozenset(_p_nets)
 
 
     @property
@@ -156,8 +167,8 @@ class Design(NamedIDObject):
 
 
     @property
-    def nets(self):
-        return self._nets
+    def ties(self):
+        return self._ties
 
     @lru_cache(maxsize=32)
     def modules_with_attr(self, attr):
@@ -166,6 +177,10 @@ class Design(NamedIDObject):
     @lru_cache(maxsize=32)
     def modules_with_attr_val(self, attr, val):
         return frozenset(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
+
+    @property
+    def physical_ties(self):
+        return self._p_ties
 
     @property
     def physical_nets(self):

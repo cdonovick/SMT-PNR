@@ -32,13 +32,13 @@ ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, p
 ROUTE_RELAXED = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(3, include_reg=True)
 # To use multigraph encoding:
 # Note: This encoding does not handle fanout for now
-# Once nets represent the whole tree of connections, this will be fixed
+# Once ties represent the whole tree of connections, this will be fixed
 # ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
 
 print("Loading design: {}".format(design_file))
 ce = ConfigEngine()
-modules, nets = core2graph.load_core(design_file, *args.libs)
-des = design.Design(modules, nets)
+modules, ties = design.core2graph.load_core(design_file, *args.libs)
+des = design.Design(modules, ties)
 
 print("Loading fabric: {}".format(fabric_file))
 
