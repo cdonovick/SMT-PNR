@@ -28,12 +28,8 @@ fabric_file = args.fabric
 
 PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
 PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1, include_reg=True)
-ROUTE_RELAXED = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(3, include_reg=True)
-# To use multigraph encoding:
-# Note: This encoding does not handle fanout for now
-# Once ties represent the whole tree of connections, this will be fixed
-# ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
+ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1, include_reg=True)
+ROUTE_RELAXED = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(3, include_reg=True)
 
 print("Loading design: {}".format(design_file))
 ce = ConfigEngine()
