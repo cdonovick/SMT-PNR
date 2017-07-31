@@ -7,7 +7,7 @@ import random
 import string
 
 from pnrdoctor.design.module import Resource
-from pnrdoctor.fabric.fabricutils import trackindex
+from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.util import STAR
 
 from .pnrutils import get_muxindex, get_muxindices
@@ -140,6 +140,17 @@ def pin_resource(fabric, design, state, vars, solver):
     return solver.And(constraints)
 
 
+################################### Routing Helper Functions ###########################
+def _resource_region(loc, dist):
+    ''' returns a set of locations in a radius of magnitude, dist, around loc'''
+    s = set()
+    dxdy_set = set((x, y) for x,y in itertools.product(range(-dist, dist+1), repeat=2) if abs(x) + abs(y) <= dist)
+    for dxdy in dxdy_set:
+        s.add((loc[0] + dxdy[0], loc[1] + dxdy[1]))
+
+    return s
+
+
 #################################### Routing Constraints ################################
 
 def excl_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
@@ -227,11 +238,8 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
             continue
 
         for tie in net.ties:
-
-            src_index, dst_index = get_muxindices(tie, p_state)
-
-            reaches.append(graph.reaches(vars[fabric[src_index].source],
-                                         vars[fabric[dst_index].sink]))
+            reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
+                                         vars[(tie.dst, tie.dst_port)]))
 
     return solver.And(reaches)
 
@@ -269,14 +277,14 @@ def dist_limit(dist_factor, include_reg=False):
                     # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
                     # You can adjust it with dist_factor
                     heuristic_dist = 3*dist_factor*manhattan_dist + 1
-                    constraints.append(graph.distance_leq(vars[fabric[src_index].source],
-                                                              vars[fabric[dst_index].sink],
-                                                              heuristic_dist))
+                    constraints.append(graph.distance_leq(vars[(src, tie.src_port)],
+                                                          vars[(dst, tie.dst_port)],
+                                                          heuristic_dist))
                 elif include_reg:
                     reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
-                    constraints.append(graph.distance_leq(vars[fabric[src_index].source],
-                                                              vars[fabric[dst_index].sink],
-                                                              reg_heuristic_dist))
+                    constraints.append(graph.distance_leq(vars[(src, tie.src_port)],
+                                                          vars[(dst, tie.dst_port)],
+                                                          reg_heuristic_dist))
 
         return solver.And(constraints)
     return dist_constraints
@@ -303,6 +311,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
                 index = get_muxindex(mod, p_state, layer, port_name)
                 p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                 vars[p] = graph.addNode(p.name)
+                vars[(mod, port_name)] = vars[p]
 
     pindex = pathindex(src=STAR, snk=STAR, bw=layer)
     for track in fabric[pindex]:
@@ -310,9 +319,12 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
         dst = track.dst
         # naming scheme is (x, y)Side_direction[track]
         # checking port resources
+
+        # want all resource for build_spnr
+        # TODO: make this an option -- maybe using a closure
         # don't make nodes for PEs/Mem that don't have anything placed there
-        if src.resource in {Resource.PE, Resource.Mem} and (src.x, src.y) not in p_state.I:
-            continue
+        # if src.resource in {Resource.PE, Resource.Mem} and (src.x, src.y) not in p_state.I:
+        #     continue
         if src not in vars:
             vars[src] = graph.addNode(src.name)
         if dst not in vars:
@@ -399,3 +411,62 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
         solver.AssertAtMostOne(node_in_graphs)
 
     return solver.And([])
+
+
+def build_spnr(fabric, design, p_state, r_state, vars, solver, layer=16):
+
+
+    # Now, for each port of each module, create an external node
+    # make undirected edges to each location
+
+    node_dict = dict()
+    graph = solver.graphs[0]
+
+    # list for holding edge equality constraints
+    edge_constraints = list()
+
+    for mod in design.physical_modules:
+        for _type in {'sources', 'sinks'}:
+            for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
+                n = graph.addNode('{}_{}'.format(mod.name, port_name))
+                vars[(mod, port_name)] = n
+                node_dict[n] = list()
+
+        for loc in _resource_region(p_state[mod][0], 0):
+            eqedges = list()
+
+            for _type in {'sources', 'sinks'}:
+                for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
+                    if mod.resource != Resource.Reg:
+                        mindex = muxindex(resource=mod.resource, ps=loc, bw=layer, port=port_name)
+                        e = graph.addUndirectedEdge(vars[(mod, port_name)],
+                                                    vars[getattr(fabric[mindex], _type[:-1])])
+                                                    # source/sink instead of sources/sinks
+                        eqedges.append(e)
+                        node_dict[vars[(mod, port_name)]].append(e)
+
+                    else:
+                        # this is a register
+
+                        # get all of the switch box muxes at the current location
+                        mindices_pattern = muxindex(resource=Resource.SB, ps=loc, bw=layer)
+
+                        # take only the ones with registeres
+                        mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
+
+                        for mindex in mindices:
+                            e = graph.addUndirectedEdge(vars[(mod, port_name)],
+                                                        vars[getattr(fabric[mindex], _type[:-1])])
+                                                        # source/sink instead of sources/sinks
+                            eqedges.append(e)
+                            node_dict[vars[(mod, port_name)]].append(e)
+
+            # assert that a placement places all ports of a given module in the same location
+            for e1, e2 in zip(eqedges, eqedges[1:]):
+                edge_constraints.append(solver.Eq(e1, e2))
+
+    # assert that modules are only placed in one location
+    for n, edges in node_dict.items():
+        solver.AssertAtMostOne(edges)
+
+    return solver.And(edge_constraints)

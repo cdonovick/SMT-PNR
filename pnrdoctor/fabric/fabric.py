@@ -166,6 +166,7 @@ class Fabric:
         if Resource.Reg in self._locations:
             self._locations[Resource.Reg] = self._locations[Resource.Reg] - \
                                             self._locations[Resource.Mem]
+        self._muxindex_locations = parsed_params['muxindex_locations']
         self._config = parsed_params['config_engine']
         self._fab = parsed_params['fabric']
         self._port_names = parsed_params['port_names']
@@ -203,9 +204,16 @@ class Fabric:
     @property
     def locations(self):
         '''
-            Returns a dictionary of resource type --> set of locations
+            Returns a dictionary of resource type --> set of (x, y, [track]) locations
         '''
         return self._locations
+
+    @property
+    def muxindex_locations(self):
+        '''
+           Returns a dictionary of resource type --> set of muxindex locations
+        '''
+        return self._muxindex_locations
 
     # hacky returns all x==0 or y==0 locations for ios
     @property

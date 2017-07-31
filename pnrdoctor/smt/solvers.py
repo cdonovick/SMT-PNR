@@ -96,6 +96,9 @@ class Solver_monosat(Solver_base):
         else:
             return ms.Or(*pargs, **kwargs)
 
+    def Eq(self, *pargs, **kwargs):
+        return ms.Eq(*pargs, **kwargs)
+
     def Not(self, *args):
         return ms.Not(*args)
 

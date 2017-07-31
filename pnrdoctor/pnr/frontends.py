@@ -69,6 +69,8 @@ def _scan_ports(root, params):
     fabric = params['fabric']
     locations = defaultdict(set)
     params['locations'] = locations
+    muxindex_locations = defaultdict(set)
+    params['muxindex_locations'] = muxindex_locations
 
     num_tracks = dict()
     params['num_tracks'] = num_tracks
@@ -90,7 +92,12 @@ def _scan_ports(root, params):
             _ps = (x, y)
 
         for mux in sb.findall('mux'):
+
             mindex = _get_index(_ps, mux.get('snk'), _resource)
+
+            if mux.get('reg') == '1':
+                # add to register muxindex_locations
+                muxindex_locations[Resource.Reg].add(mindex)
 
             assert mindex not in sanitycheckset
             sanitycheckset.add(mindex)
@@ -111,8 +118,13 @@ def _scan_ports(root, params):
             # add to sinks
             port_names[(_resource, _bw)].sinks.add(_port)
             mindex = _get_index(_ps, _port, _resource, bw=_bw)
-            # debugging
-            assert mindex == muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
+            # add to muxindex_locations
+            muxindex_locations[_resource].add(mindex)
+
+            # sanity check
+            assert mindex == muxindex(resource=_resource, ps=_ps,
+                                      bw=_bw, port=_port), \
+                                      'mismatch in get_index and expected index'
             fabric[mindex] = port_wrapper(Port(mindex))
 
     def _scan_resource(res):
@@ -206,6 +218,7 @@ def _connect_ports(root, params):
     port_names = params['port_names']
     config_engine = params['config_engine']
     ftdata = params['ftdata']
+    muxindex_locations = params['muxindex_locations']
 
     def _connect_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -253,6 +266,7 @@ def _connect_ports(root, params):
                     if srcindex.port is not None:
                         assert srcindex.resource != SB
                         port_names[(srcindex.resource, snkindex.bw)].sources.add(srcindex.port)
+                        muxindex_locations[srcindex.resource].add(srcindex)
 
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
@@ -289,6 +303,7 @@ def _connect_ports(root, params):
                 # handle ports off the edge
                 if srcindex not in fabric and srcindex not in ftdata.muxindices:
                     fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                    muxindex_locations[srcindex.resource].add(srcindex)
 
                 assert srcindex.bw == snkindex.bw, \
                   'Attempting to connect ports with different bust widths'
@@ -448,7 +463,7 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
         xn, yn, _ = mapSide(x, y, _side)
 
         if direc == 'o':
-            return muxindex(resource=SB, ps=ps, po=(xn, yn), bw=_bus, track=_track)
+            return muxindex(resource=Resource.SB, ps=ps, po=(xn, yn), bw=_bus, track=_track)
         else:
             # pself and pother swapped for in wires
-            return muxindex(resource=SB, ps=(xn, yn), po=ps, bw=_bus, track=_track)
+            return muxindex(resource=Resource.SB, ps=(xn, yn), po=ps, bw=_bus, track=_track)
