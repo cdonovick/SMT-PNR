@@ -115,6 +115,21 @@ class BiMultiDict(MutableMapping):
 
         del self._d[key]
 
+    def del_kvpair(self, key, val):
+        if key not in self._d:
+            raise KeyError(key)
+
+        for v in self._d[key]:
+            if v == val:
+                self._d[key].remove(val)
+                self._i[v].remove(key)                
+                if not self._i[val]:
+                    del self._i[val]
+                if not self._d[key]:
+                    del self._d[key]
+                break
+
+
     def __contains__(self, key):
         return key in self._d
 
@@ -128,7 +143,7 @@ class BiMultiDict(MutableMapping):
             s = '{' + ', '.join(map(str,vs)) + '}'
             c.append('{}:{}'.format(k,s))
 
-        s = 'BiMultiDict({' + ', '.join(c) + '}, default={})'.format(self._default)
+        s = 'BiMultiDict({' + ', '.join(c) + '}}, default={})'.format(self._default)
         return s
 
     def __len__(self):

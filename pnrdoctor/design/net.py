@@ -12,6 +12,8 @@ class Tie(IDObject):
         dst._add_input(self, dst_port)
         self._width = width
         self._net = None
+        self._regs = []
+        self._fused = None
 
     @property
     def src(self):
@@ -40,6 +42,22 @@ class Tie(IDObject):
     @net.setter
     def net(self, val):
         self._net = val
+
+    @property
+    def regs(self):
+        return self._regs
+
+    @regs.setter
+    def regs(self, val):
+        self._regs = val
+
+    @property
+    def fused(self):
+        return self._fused
+
+    @fused.setter
+    def fused(self, val):
+        self._fused = val
 
     def __repr__(self):
         return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
@@ -91,4 +109,4 @@ class Net(IDObject):
 
         tie_strs = tie_strs[:-2]
 
-        return 'Net: <{}>'.tie_strs
+        return 'Net: <{}>'.format(tie_strs)

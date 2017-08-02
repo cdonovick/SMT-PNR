@@ -5,8 +5,7 @@ from collections import defaultdict
 from util import NamedIDObject
 from .module import Resource
 from .net import Net
-from .passes import io_hack, build_modules, build_ties, fuse_regs
-
+from .passes import io_hack, build_modules, build_ties, fuse_regs, build_nets
 from functools import lru_cache
 
 class Design(NamedIDObject):
@@ -19,14 +18,16 @@ class Design(NamedIDObject):
         io_hack(modules, ties)  # this function modifies modules and ties
 
         _mods = build_modules(modules)
-        _ties, fuse_me, fuse_no = build_ties(_mods, ties)
+        _ties = build_ties(_mods, ties)
         self._modules=frozenset(_mods.values())
         # TODO: Decide if we want ties to be pre or post processing
         self._ties=frozenset(_ties.values())
 
-        _p_modules, _p_ties = fuse_regs(_mods, _ties, fuse_me, fuse_no)
+        _p_modules, _p_ties = fuse_regs(_mods, _ties)
         self._p_modules = frozenset(_p_modules)
         self._p_ties = frozenset(_p_ties)
+
+        # assertions
 
         for module in self.modules:
             assert module.resource != Resource.UNSET
@@ -38,23 +39,16 @@ class Design(NamedIDObject):
             assert tie.src.resource != Resource.Fused, 'src'
             assert tie.dst.resource != Resource.Fused, 'dst'
 
+        _fusable_resources = {Resource.Reg, Resource.Fused}
         for tie in self.ties:
-            assert (tie in self.physical_ties) or (tie.src.resource == Resource.Fused) or (tie.dst.resource == Resource.Fused)
+            assert (tie in self.physical_ties) or \
+              (tie.src.resource in _fusable_resources) or \
+              (tie.dst.resource in _fusable_resources)
 
-        _p_nets = set()
-        for module in self.modules:
-            if module.resource == Resource.Fused:
-                assert module not in self.physical_modules
-            else:
-                assert module in self.physical_modules, module
-                if len(module.outputs) > 0:
-                    n = Net()
-                    for tie in module.outputs.values():
-                        if tie.dst.resource != Resource.Fused:
-                            n.add_tie(tie)
+        # end assertions
 
-                    _p_nets.add(n)
-
+        # currently only building physical_nets
+        _p_nets = build_nets(self._p_modules)
         self._p_nets = frozenset(_p_nets)
 
 
