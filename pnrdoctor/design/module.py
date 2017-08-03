@@ -79,13 +79,26 @@ class Module(NamedIDObject):
 
         new_tie = Tie(new_src, input_tie.src_port, self, dst_port, tie.width)
 
-        regs = []
-        if src.resource == Resource.Reg:
-            regs.append(src)
-        elif src.resource == Resource.Fused:
-            new_tie.fused = src
+        # if there's a fused reg anywhere on the path, then it should
+        # carry through
+        new_tie.fused_reg = input_tie.fused_reg | tie.fused_reg
 
-        new_tie.regs += input_tie.regs + regs + tie.regs  # order matters!
+        if src.resource == Resource.Fused:
+            new_tie.fused_reg = True
+        elif src.resource == Resource.Reg:
+            if len(input_tie.regs) > 0:
+                front_ties = input_tie.regs
+            else:
+                front_ties = [input_tie]
+
+            if len(tie.regs) > 0:
+                rear_ties = tie.regs
+            else:
+                rear_ties = [tie]
+
+            new_tie.regs = front_ties + rear_ties
+        else:
+            raise NotImplementedError("Unhandled case in collapse_input")
 
         return new_tie
 

@@ -5,6 +5,7 @@ from functools import partial
 import itertools
 import random
 import string
+from collections import defaultdict
 
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
@@ -231,16 +232,35 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         Works with build_msgraph, excl_constraints and dist_limit
     '''
     reaches = []
-    for net in design.physical_nets:
+    graph = solver.graphs[0]
+
+    for tie in design.physical_ties:
+        # hacky don't handle wrong layer
+        if tie.width != layer:
+            continue
+
+        reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
+                                     vars[(tie.dst, tie.dst_port)]))
+    
+    return solver.And(reaches)
+
+
+def netgraph_reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
+    '''
+       Enforces reachability for ties in multigraph encoding
+       Works with build_net_graphs, build_spnr (optional), and dist_limit
+    '''
+    reaches = []
+    for net in design.nets:
         graph = vars[net]
         # hacky don't handle wrong layer
         if net.width != layer:
             continue
 
         for tie in net.ties:
-            reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
-                                         vars[(tie.dst, tie.dst_port)]))
-
+            for dsttie in tie.regs + [tie]:
+                reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
+                                             vars[(dsttie.dst, dsttie.dst_port)]))
     return solver.And(reaches)
 
 
@@ -256,35 +276,40 @@ def dist_limit(dist_factor, include_reg=False):
 
     def dist_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         constraints = []
-            for tie in net.ties:
+        graph = solver.graphs[0]
+        
+        for tie in design.physical_ties:
+            # hacky don't handle wrong layer
+            if tie.width != layer:
+                continue
 
-                src = tie.src
-                dst = tie.dst
+            src = tie.src
+            dst = tie.dst
 
-                src_index = get_muxindex(src, p_state, layer, tie.src_port)
-                dst_index = get_muxindex(dst, p_state, layer, tie.dst_port)
+            src_index = get_muxindex(src, p_state, layer, tie.src_port)
+            dst_index = get_muxindex(dst, p_state, layer, tie.dst_port)
 
-                src_pos = p_state[src][0]
-                dst_pos = p_state[dst][0]
+            src_pos = p_state[src][0]
+            dst_pos = p_state[dst][0]
 
-                manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
+            manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
 
-                # not imposing distance constraints for reg-->reg ties -- because sometimes needs to take weird path
-                if dst.resource != Resource.Reg:
-                    # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
-                    # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
-                    # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
-                    # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
-                    # You can adjust it with dist_factor
-                    heuristic_dist = 3*dist_factor*manhattan_dist + 1
-                    constraints.append(graph.distance_leq(vars[(src, tie.src_port)],
-                                                          vars[(dst, tie.dst_port)],
-                                                          heuristic_dist))
-                elif include_reg:
-                    reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
-                    constraints.append(graph.distance_leq(vars[(src, tie.src_port)],
-                                                          vars[(dst, tie.dst_port)],
-                                                          reg_heuristic_dist))
+            # not imposing distance constraints for reg-->reg ties -- because sometimes needs to take weird path
+            if dst.resource != Resource.Reg:
+                # This is just a weird heuristic for now. We have to have at least 2*manhattan_dist because
+                # for each jump it needs to go through a port. So 1 in manhattan distance is 2 in monosat distance
+                # Additionally, because the way ports are connected (i.e. only accessible from horizontal or vertical tracks)
+                # It often happens that a routing is UNSAT for just 2*manhattan_dist so instead we use a factor of 3 and add 1
+                # You can adjust it with dist_factor
+                heuristic_dist = 3*dist_factor*manhattan_dist + 1
+                constraints.append(graph.distance_leq(vars[(src, tie.src_port)],
+                                                      vars[(dst, tie.dst_port)],
+                                                      heuristic_dist))
+            elif include_reg:
+                reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
+                constraints.append(graph.distance_leq(vars[(src, tie.src_port)],
+                                                      vars[(dst, tie.dst_port)],
+                                                      reg_heuristic_dist))
 
         return solver.And(constraints)
     return dist_constraints
@@ -296,13 +321,15 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     # note: in this case, all point to the same graph
     # this allows us to reuse constraints such as dist_limit and use the same model_reader
     solver.add_graph()
-    for net in design.physical_nets:
+    for net in design.nets:
         # hacky don't make graph for different layer nets
         if net.width != layer:
             continue
         vars[net] = solver.graphs[0]
 
     graph = solver.graphs[0]  # only one graph in this encoding
+
+    node_inedges = defaultdict(list)
 
     # add nodes for modules
     for mod in design.physical_modules:
@@ -332,7 +359,15 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
 
         # create a monosat edge
         e = graph.addEdge(vars[src], vars[dst])
+
+        node_inedges[vars[dst]].append(e)
+        
         vars[e] = track  # we need to recover the track in model_reader
+
+    # assert that each node acting as a dst has at most one driver
+    for inedges in node_inedges.values():
+        if len(inedges) > 1:
+            solver.AssertAtMostOne(inedges)
 
     return solver.And([])
 
@@ -351,7 +386,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     # create graphs for each tie
     node_dict = dict()  # used to keep track of nodes in each graph
-    for net in design.physical_nets:
+    for net in design.nets:
         vars[net] = solver.add_graph()
         node_dict[net] = dict()
 
@@ -365,7 +400,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
                 index = get_muxindex(mod, p_state, layer, port_name)
                 p = getattr(fabric[index], _type[:-1]) # source/sink instead of sources/sinks
                 # add to each graph
-                for net in design.physical_nets:
+                for net in design.nets:
                     graph = vars[net]
                     n = graph.addNode(p.name)
                     # these will be overwritten each time, but that's fine
@@ -384,18 +419,18 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
         # if port does not have a node yet, add one for each net
         # and keep track of them in vars
         if src not in vars:
-            for net in design.physical_nets:
+            for net in design.nets:
                 u = vars[net].addNode(src.name)
                 node_dict[net][u] = solver.false()
             vars[src] = u
         if dst not in vars:
-            for net in design.physical_nets:
+            for net in design.nets:
                 v = vars[net].addNode(dst.name)
                 node_dict[net][v] = solver.false()
             vars[dst] = v
 
         # keep track of whether a node is 'active' based on connected edges
-        for net in design.physical_nets:
+        for net in design.nets:
             e = vars[net].addEdge(vars[src], vars[dst])
             node_dict[net][vars[src]] = solver.Or(node_dict[net][vars[src]], e)
             node_dict[net][vars[dst]] = solver.Or(node_dict[net][vars[dst]], e)
@@ -407,7 +442,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
     # now enforce that each node is only used in one of the graphs
     # Note: all graphs have same nodes, so can get them from any graph
     for node in range(0, solver.graphs[0].nodes):
-        node_in_graphs = [node_dict[net][node] for net in design.physical_nets]
+        node_in_graphs = [node_dict[net][node] for net in design.nets]
         solver.AssertAtMostOne(node_in_graphs)
 
     return solver.And([])

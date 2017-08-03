@@ -23,9 +23,11 @@ class Design(NamedIDObject):
         # TODO: Decide if we want ties to be pre or post processing
         self._ties=frozenset(_ties.values())
 
-        _p_modules, _p_ties = fuse_regs(_mods, _ties)
+        _p_modules, _rf_modules, _p_ties, _rf_ties = fuse_regs(_mods, _ties)
         self._p_modules = frozenset(_p_modules)
+        self._rf_modules = frozenset(_rf_modules)
         self._p_ties = frozenset(_p_ties)
+        self._rf_ties = frozenset(_rf_ties)
 
         # assertions
 
@@ -39,17 +41,16 @@ class Design(NamedIDObject):
             assert tie.src.resource != Resource.Fused, 'src'
             assert tie.dst.resource != Resource.Fused, 'dst'
 
-        _fusable_resources = {Resource.Reg, Resource.Fused}
         for tie in self.ties:
             assert (tie in self.physical_ties) or \
-              (tie.src.resource in _fusable_resources) or \
-              (tie.dst.resource in _fusable_resources)
+              (tie.src.resource == Resource.Fused) or \
+              (tie.dst.resource == Resource.Fused)
 
         # end assertions
 
-        # currently only building physical_nets
-        _p_nets = build_nets(self._p_modules)
-        self._p_nets = frozenset(_p_nets)
+        # currently only building register free nets
+        _rf_nets = build_nets(self._rf_modules)
+        self._rf_nets = frozenset(_rf_nets)
 
 
     @property
@@ -74,8 +75,12 @@ class Design(NamedIDObject):
         return self._p_ties
 
     @property
-    def physical_nets(self):
-        return self._p_nets
+    def regfree_ties(self):
+        return self._rf_ties
+
+    @property
+    def nets(self):
+        return self._rf_nets
 
     @property
     def physical_modules(self):

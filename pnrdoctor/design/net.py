@@ -13,7 +13,7 @@ class Tie(IDObject):
         self._width = width
         self._net = None
         self._regs = []
-        self._fused = None
+        self._fused_reg = False
 
     @property
     def src(self):
@@ -52,12 +52,12 @@ class Tie(IDObject):
         self._regs = val
 
     @property
-    def fused(self):
-        return self._fused
+    def fused_reg(self):
+        return self._fused_reg
 
-    @fused.setter
-    def fused(self, val):
-        self._fused = val
+    @fused_reg.setter
+    def fused_reg(self, b):
+        self._fused_reg = b
 
     def __repr__(self):
         return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
@@ -79,6 +79,8 @@ class Net(IDObject):
                 assert tie.width == self._width, \
                   'Expecting net to contain ties of the same width'
                 tie.net = self
+                for rtie in tie.regs:
+                    rtie.net = self
 
 
     def add_tie(self, tie):

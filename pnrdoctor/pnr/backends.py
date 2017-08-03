@@ -163,20 +163,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
             for port in mod.inputs:
-                if len(mod.inputs[port]) > 1:
-                    #HACK if there are multiple drivers then grab the register
-                    for tie in mod.inputs[port]:
-                        if tie.src.type_ == 'Reg' and tie.src.resource == Resource.Fused:
-                            break
-                else:
-                    tie = mod.inputs[port][0]
+                tie = mod.inputs[port]
 
                 src = tie.src
                 if src.type_ == 'Const':
                     data[_pe_reg[port]] |= src.config # load 'a' reg with const
                     comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
                     comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
-                elif src.type_ == 'Reg' and src.resource == Resource.Fused:
+                elif tie.fused_reg:
                     data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
                     comment[_pe_reg['op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
                     comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)

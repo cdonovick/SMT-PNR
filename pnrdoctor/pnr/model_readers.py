@@ -17,47 +17,41 @@ def route_model_reader(simultaneous=False):
         invariant_check = dict()
 
         # hardcoded layers right now
+        graph = solver.graphs[0]
         for layer in {16}:
-
-            for net in design.physical_nets:
-                graph = vars[net]
-
+            for tie in design.physical_ties:
                 # hacky handle only one layer at a time
                 # note: won't actually need this here when
-                # routing 1 bit signals
-                if net.width != layer:
-                    continue
+                # routing one bit signals
 
-                for tie in net.ties:
+                src_node = vars[(tie.src, tie.src_port)]
+                dst_node = vars[(tie.dst, tie.dst_port)]
+                reaches = graph.reaches(src_node, dst_node)
+                l = graph.getPath(reaches)
+                path = tuple(graph.names[node] for node in l)
+                # record for debug printing
+                r_state[(tie, 'debug')] = path
 
-                    src_node = vars[(tie.src, tie.src_port)]
-                    dst_node = vars[(tie.dst, tie.dst_port)]
-                    reaches = graph.reaches(src_node, dst_node)
-                    l = graph.getPath(reaches)
-                    path = tuple(graph.names[node] for node in l)
-                    # record for debug printing
-                    r_state[(tie, 'debug')] = path
+                # when simultaneous, the edges on the end are virtual
+                if simultaneous:
+                    l = l[1:-1]
 
-                    # when simultaneous, the edges on the end are virtual
-                    if simultaneous:
-                        l = l[1:-1]
+                for n1, n2 in zip(l, l[1:]):
+                    edge = graph.getEdge(n1, n2)
+                    track = vars[edge]
 
-                    for n1, n2 in zip(l, l[1:]):
-                        edge = graph.getEdge(n1, n2)
-                        track = vars[edge]
+                    if track in invariant_check:
+                        assert tie.src == invariant_check[track.dst], '{} driven by {} and {}'.format(track.dst, invariant_check[track.dst], tie.src)
 
-                        if track in invariant_check:
-                            assert tie.src == invariant_check[track.dst], '{} driven by {} and {}'.format(track.dst, invariant_check[track.dst], tie.src)
+                    invariant_check[track.dst] = tie.src
 
-                        invariant_check[track.dst] = tie.src
+                    dst = track.dst
 
-                        dst = track.dst
-
-                        # check for feedthrough
-                        if hasattr(track, 'trackindices'):
-                            for pindex in track.pathindices:
-                                r_state[tie] = pindex
-                        else:
-                            r_state[tie] = pathindex(snk=dst.index, src=track.src.index, bw=layer)
+                    # check for feedthrough
+                    if hasattr(track, 'trackindices'):
+                        for pindex in track.pathindices:
+                            r_state[tie] = pindex
+                    else:
+                        r_state[tie] = pathindex(snk=dst.index, src=track.src.index, bw=layer)
 
     return _route_model_reader
