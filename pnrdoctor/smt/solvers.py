@@ -58,7 +58,7 @@ class Solver_monosat(Solver_base):
         super().__init__()
         ms.Monosat().init('-decide-theories')
         self.graphs = []
-        self.at_most_one_builtin_size = 20
+        self.at_most_one_builtin_size = 10
 
     def solve(self):
         ms.Assert(self.And(self.constraints))

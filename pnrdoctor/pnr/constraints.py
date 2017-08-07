@@ -460,45 +460,63 @@ def build_spnr(fabric, design, p_state, r_state, vars, solver, layer=16):
     # list for holding edge equality constraints
     edge_constraints = list()
 
+    # add virtual nodes for modules
     for mod in design.physical_modules:
-        for _type in {'sources', 'sinks'}:
-            for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                n = graph.addNode('{}_{}'.format(mod.name, port_name))
-                vars[(mod, port_name)] = n
-                node_dict[n] = list()
-
-        for loc in _resource_region(p_state[mod][0], 0):
-            eqedges = list()
-
+        if mod.resource != Resource.Reg:
             for _type in {'sources', 'sinks'}:
                 for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                    if mod.resource != Resource.Reg:
+                    n = graph.addNode('{}_{}'.format(mod.name, port_name))
+                    vars[(mod, port_name)] = n
+                    node_dict[n] = list()
+        else:
+            # registers are not split
+            # i.e. both port names point to same node
+            regnode = graph.addNode(mod.name)
+            vars[mod] = regnode  # have one index just for mod
+            node_dict[regnode] = list()
+            for _type in {'sources', 'sinks'}:
+                for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
+                    vars[(mod, port_name)] = regnode  # convenient to also index the same as other modules
+
+    # for mod in design.physical_modules:
+    #     for _type in {'sources', 'sinks'}:
+    #         for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
+    #             n = graph.addNode('{}_{}'.format(mod.name, port_name))
+    #             vars[(mod, port_name)] = n
+    #             node_dict[n] = list()
+
+        # take intersection with possible locations
+        # register locations include the track, so remove track using map
+        for loc in _resource_region(p_state[mod][0], 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
+            if mod.resource != Resource.Reg:
+                eqedges = list()
+                for _type in {'sources', 'sinks'}:
+                    for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
                         mindex = muxindex(resource=mod.resource, ps=loc, bw=layer, port=port_name)
                         e = graph.addUndirectedEdge(vars[(mod, port_name)],
                                                     vars[getattr(fabric[mindex], _type[:-1])])
                                                     # source/sink instead of sources/sinks
                         eqedges.append(e)
                         node_dict[vars[(mod, port_name)]].append(e)
+            
+                # assert that a placement places all ports of a given module in the same location
+                for e1, e2 in zip(eqedges, eqedges[1:]):
+                    edge_constraints.append(solver.Eq(e1, e2))
 
-                    else:
-                        # this is a register
+            else:
+                # this is a register
 
-                        # get all of the switch box muxes at the current location
-                        mindices_pattern = muxindex(resource=Resource.SB, ps=loc, bw=layer)
+                # get all of the switch box muxes at the current location
+                mindices_pattern = muxindex(resource=Resource.SB, ps=loc,
+                                            po=STAR, bw=layer, track=STAR)
 
-                        # take only the ones with registeres
-                        mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
+                # take only the ones with registers
+                mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
 
-                        for mindex in mindices:
-                            e = graph.addUndirectedEdge(vars[(mod, port_name)],
-                                                        vars[getattr(fabric[mindex], _type[:-1])])
-                                                        # source/sink instead of sources/sinks
-                            eqedges.append(e)
-                            node_dict[vars[(mod, port_name)]].append(e)
-
-            # assert that a placement places all ports of a given module in the same location
-            for e1, e2 in zip(eqedges, eqedges[1:]):
-                edge_constraints.append(solver.Eq(e1, e2))
+                for mindex in mindices:
+                    e = graph.addUndirectedEdge(vars[mod],
+                                                vars[fabric[mindex]])
+                    node_dict[vars[mod]].append(e)
 
     # assert that modules are only placed in one location
     for n, edges in node_dict.items():
