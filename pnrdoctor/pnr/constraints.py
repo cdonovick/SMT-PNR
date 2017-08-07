@@ -367,7 +367,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     # assert that each node acting as a dst has at most one driver
     for inedges in node_inedges.values():
         if len(inedges) > 1:
-            solver.AssertAtMostOne(inedges)
+            solver.AtMostOne(inedges)
 
     return solver.And([])
 
@@ -443,7 +443,7 @@ def build_net_graphs(fabric, design, p_state, r_state, vars, solver, layer=16):
     # Note: all graphs have same nodes, so can get them from any graph
     for node in range(0, solver.graphs[0].nodes):
         node_in_graphs = [node_dict[net][node] for net in design.nets]
-        solver.AssertAtMostOne(node_in_graphs)
+        solver.AtMostOne(node_in_graphs)
 
     return solver.And([])
 
@@ -502,6 +502,6 @@ def build_spnr(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     # assert that modules are only placed in one location
     for n, edges in node_dict.items():
-        solver.AssertAtMostOne(edges)
+        solver.AtMostOne(edges)
 
     return solver.And(edge_constraints)
