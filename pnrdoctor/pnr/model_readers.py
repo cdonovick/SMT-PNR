@@ -47,11 +47,6 @@ def route_model_reader(simultaneous=False):
 
                     dst = track.dst
 
-                    # check for feedthrough
-                    if hasattr(track, 'trackindices'):
-                        for pindex in track.pathindices:
-                            r_state[tie] = pindex
-                    else:
-                        r_state[tie] = pathindex(snk=dst.index, src=track.src.index, bw=layer)
+                    r_state[tie] = trackindex(snk=dst.index, src=track.src.index, bw=layer)
 
     return _route_model_reader

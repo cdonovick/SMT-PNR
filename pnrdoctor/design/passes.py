@@ -1,10 +1,11 @@
 '''
    Passes for transforming the design
 '''
-from util import SortedDict
+from collections import defaultdict
+
+from pnrdoctor.util import SortedDict
 from .module import Module, Resource
 from .net import Tie, Net
-from collections import defaultdict
 
 _fusable = {(s, d) for s in ('Reg', 'Const') for d in ('PE',)}
 
@@ -55,7 +56,7 @@ def io_hack(mods, ties):
 
 def build_modules(mods):
     _mods = SortedDict()
-    
+
     for mod_name, args in mods.items():
         mod = Module(mod_name)
         mod.type_ = args['type']
@@ -73,7 +74,7 @@ def build_ties(mods, ties):
     fuse_me = set()
     fuse_no = set()
 
-    _ties = dict()    
+    _ties = dict()
     for src_name, src_port, dst_name, dst_port, width in ties:
 
         src = mods[src_name]
@@ -95,46 +96,46 @@ def build_ties(mods, ties):
     return _ties
 
 
-def fuse_regs(mods, ties):
-
-    def _input_collapse_pass(_new_ties, mods, resource):
-        for mod in mods:
-            if mod.resource == resource:
-                for tie in mod.outputs.values():
-                    if mod.type_ == 'Reg':
-                        new_tie = tie.dst.collapse_input(tie.dst_port)
-                        _new_ties.add(new_tie)
-                    # if it's a Const, it will be fused but the tie will
-                    # still be an input -- nothing needs to be done
+def fuse_comps(mods, ties):
     _new_ties = set()
 
-    _input_collapse_pass(_new_ties, mods.values(), Resource.Fused)
+    for mod in mods.values():
+        if mod.resource == Resource.Fused:
+            for tie in mod.outputs.values():
+                if mod.type_ == 'Reg':
+                    new_tie = tie.dst.collapse_input(tie.dst_port)
+                    _new_ties.add(new_tie)
+                # if it's a Const, it will be fused but the tie will
+                # still be an input -- nothing needs to be done
 
     _p_ties = set([tie for tie in _new_ties.union(ties.values()) \
                 if tie.src.resource != Resource.Fused and \
                 tie.dst.resource != Resource.Fused])
 
-    nonfused_mods = [mod for mod in mods.values() if mod.resource != Resource.Fused]
-    _input_collapse_pass(_new_ties, nonfused_mods, Resource.Reg)
+    _p_modules = [mod for mod in mods.values() if mod.resource != Resource.Fused]
+
+    return _p_modules, _p_ties
+
+
+def collapse_all_regs(mods, ties, p_ties):
+    _new_ties = set()
+    for mod in mods.values():
+        if mod.resource == Resource.Reg:
+            for tie in mod.outputs.values():
+                    new_tie = tie.dst.collapse_input(tie.dst_port)
+                    _new_ties.add(new_tie)
 
     # remove register ties
-    _rf_ties = set([tie for tie in _new_ties.union(_p_ties) \
+    _rf_ties = set([tie for tie in _new_ties.union(p_ties) \
                     if tie.src.resource != Resource.Reg and \
                     tie.dst.resource != Resource.Reg])
 
-    _p_modules = set()
     _rf_modules = set()
-    for p_tie in _p_ties:
-        _p_modules.add(p_tie.src)
-        _p_modules.add(p_tie.dst)
+    for rf_tie in _rf_ties:
+        _rf_modules.add(rf_tie.src)
+        _rf_modules.add(rf_tie.dst)
 
-        if p_tie.src.resource != Resource.Reg:
-            _rf_modules.add(p_tie.src)
-
-        if p_tie.dst.resource != Resource.Reg:
-            _rf_modules.add(p_tie.dst)
-    
-    return _p_modules, _rf_modules, _p_ties, _rf_ties
+    return _rf_modules, _rf_ties
 
 
 def build_nets(rf_mods):

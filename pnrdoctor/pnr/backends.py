@@ -6,8 +6,8 @@ import itertools
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.config import Annotations
+from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList
 from .pnrutils import configindex
-from pnrdoctor.util import smart_open, Mask, IdentDict, STAR
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
 
@@ -102,14 +102,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         snkindex = muxindex(resource=mod.resource, ps=(x, y), po=STAR, bw=layer,
                             track=STAR, port=port)
 
-        pindexlist = [pindex for pindex in t_indices if pindex.snk == snkindex]
+        tindexlist = [tindex for tindex in t_indices if tindex.snk == snkindex]
 
-        assert len(pindexlist) <= 1, \
-          'There should only be one driver of a PE input but have \n{}'.format(pindexlist)
+        assert len(tindexlist) <= 1, \
+          'There should only be one driver of a PE input but have \n{}'.format(tindexlist)
 
         # will loop at most once
-        for pindex in pindexlist:
-            c = config_engine[pindex]
+        for tindex in tindexlist:
+            c = config_engine[tindex]
             feature_address = c.feature_address
             data[0] = c.sel
             comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
@@ -124,22 +124,22 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
         feature_address = None
 
-        for pindex in t_indices:
-            if pindex.snk.port:
+        for tindex in t_indices:
+            if tindex.snk.port:
                 # this is a connection box, because it has a port
                 # ignore it
                 continue
-            
-            c = config_engine[pindex]
+
+            c = config_engine[tindex]
             feature_address = c.feature_address
-            vtie = r_state.I[pindex][0]
+            vtie = r_state.I[tindex][0]
 
             # check if the dst is a register
             # and if the current track is the last track in the path
             # i.e. the one that should be registered
-            if vtie.dst.resource == Resource.Reg and pindex == r_state[vtie][-1]:
+            if vtie.dst.resource == Resource.Reg and tindex == r_state[vtie][-1]:
                 assert hasattr(c, 'configr')
-                assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(pindex, c.__dict__)
+                assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
                 reg = c.configr // 32
                 offset = c.configr % 32
                 data[reg] |= 1 << offset
@@ -249,12 +249,12 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         # TODO: Filter, sort and iterate through r_state instead of going through whole fabric
         # Process r_state
         processed_r_state = defaultdict(SetList)
-        for k, pindex in r_state.items():
+        for k, tindex in r_state.items():
             if isinstance(k, tuple):
                 # this is debug information
                 continue
 
-            processed_r_state[pindex.snk.ps].add(pindex)
+            processed_r_state[tindex.snk.ps].add(tindex)
 
         # HACK hardcoded layer
         for layer in {16}:

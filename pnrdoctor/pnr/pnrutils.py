@@ -40,7 +40,7 @@ def get_muxindex(mod, p_state, layer, port=None):
                         track=p_state[mod][0][-1], **d)
 
 
-def process_regs(design, p_state, fabric):
+def process_regs(design, p_state, fabric, split_regs=False):
     for mod in design.modules:
         if mod.resource == Resource.Reg:
             # could have multiple outputs, for now just taking random
@@ -66,16 +66,17 @@ def process_regs(design, p_state, fabric):
 
             regindex = get_muxindex(mod, p_state, tie.width)
 
-            # now split that port
-            origport = fabric[regindex].source
-            # assert that the port hasn't already been split
-            assert origport == fabric[regindex].sink
+            if split_regs:
+                # now split that port
+                origport = fabric[regindex].source
+                # assert that the port hasn't already been split
+                assert origport == fabric[regindex].sink
 
-            snkport, srcport = origport.split()
-            # note: for now still indexing by assigned location
-            fabric[regindex].source = srcport
-            fabric[regindex].sink = snkport
-            del origport
+                snkport, srcport = origport.split()
+                # note: for now still indexing by assigned location
+                fabric[regindex].source = srcport
+                fabric[regindex].sink = snkport
+                del origport
 
 
 def _reg_heuristic(pos1, pos2, vertport):

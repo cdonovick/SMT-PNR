@@ -2,10 +2,10 @@
     Classes for represtenting designs and various constructors
 '''
 from collections import defaultdict
-from util import NamedIDObject
+from pnrdoctor.util import NamedIDObject
 from .module import Resource
 from .net import Net
-from .passes import io_hack, build_modules, build_ties, fuse_regs, build_nets
+from .passes import io_hack, build_modules, build_ties, fuse_comps
 from functools import lru_cache
 
 class Design(NamedIDObject):
@@ -23,11 +23,9 @@ class Design(NamedIDObject):
         # TODO: Decide if we want ties to be pre or post processing
         self._ties=frozenset(_ties.values())
 
-        _p_modules, _rf_modules, _p_ties, _rf_ties = fuse_regs(_mods, _ties)
+        _p_modules, _p_ties = fuse_comps(_mods, _ties)
         self._p_modules = frozenset(_p_modules)
-        self._rf_modules = frozenset(_rf_modules)
         self._p_ties = frozenset(_p_ties)
-        self._rf_ties = frozenset(_rf_ties)
 
         # assertions
 
@@ -48,9 +46,11 @@ class Design(NamedIDObject):
 
         # end assertions
 
-        # currently only building register free nets
-        _rf_nets = build_nets(self._rf_modules)
-        self._rf_nets = frozenset(_rf_nets)
+        # if it ever becomes useful, can fuse the rest of the
+        # registers and build nets -- functions are in design/passes.py
+        # rf_modules, rf_ties = collapse_all_regs(mods, ties, self._p_ties)
+        # _rf_nets = build_nets(self._rf_modules)
+        # self._rf_nets = frozenset(_rf_nets)
 
 
     @property
@@ -73,14 +73,6 @@ class Design(NamedIDObject):
     @property
     def physical_ties(self):
         return self._p_ties
-
-    @property
-    def regfree_ties(self):
-        return self._rf_ties
-
-    @property
-    def nets(self):
-        return self._rf_nets
 
     @property
     def physical_modules(self):

@@ -8,7 +8,7 @@ from pnrdoctor.util import namedtuple_with_defaults
 
 # useful custom types
 muxindex = namedtuple_with_defaults('muxindex', 'resource ps po bw track port')
-pathindex = namedtuple_with_defaults('pathindex', 'snk src bw')
+trackindex = namedtuple_with_defaults('trackindex', 'snk src bw')
 ftindex = namedtuple_with_defaults('ftindex', 'snk src bw')
 
 ########################### Indexing Scheme ####################################
@@ -22,7 +22,7 @@ ftindex = namedtuple_with_defaults('ftindex', 'snk src bw')
 #    track:    int           :: the track e.g. 0, 1, etc...
 #    port:     str           :: port name
 #
-# pathindex:
+# trackindex:
 #    snk:      muxindex      :: The muxindex representing the sink of this track
 #    src:      muxindex      :: The muxindex representing the source of this track
 #    bw:       int           :: the bus width -- Note this is redundant information, but is useful

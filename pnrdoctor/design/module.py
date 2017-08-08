@@ -68,7 +68,7 @@ class Module(NamedIDObject):
         new_src = input_tie.src
 
         del self._inputs[dst_port]
-        
+
         if input_tie in new_src.outputs.I:
             # this tie could have already been removed in a previous call
             # to collapse_input
