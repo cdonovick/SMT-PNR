@@ -41,7 +41,7 @@ def parse_xml(filepath, config_engine):
 def _scan_ports(root, params):
 
     '''
-       Reads the fabric xml in a first pass, recording all muxes and 
+       Reads the fabric xml in a first pass, recording all muxes and
        determining useful parameters like rows/cols
     '''
 

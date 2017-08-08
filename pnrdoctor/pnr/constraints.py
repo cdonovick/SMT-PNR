@@ -272,7 +272,7 @@ def dist_limit(dist_factor, include_reg=False):
                 reg_heuristic_dist = 4*dist_factor*manhattan_dist + 1
                 constraints.append(vars[net].distance_leq(vars[fabric[src_index].source],
                                                           vars[fabric[dst_index].sink],
-                                                          reg_heuristic_dist))                
+                                                          reg_heuristic_dist))
 
         return solver.And(constraints)
     return dist_constraints

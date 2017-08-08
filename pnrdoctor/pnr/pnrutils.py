@@ -47,7 +47,7 @@ def process_regs(design, p_state, fabric):
             for net in mod.outputs.values():
                 if net.dst in p_state:
                     outmod = net.dst
-                    dst_port = net.dst_port 
+                    dst_port = net.dst_port
 
             modpos = p_state[mod][0][:-1]
             # get just the position (registers have extra info)
@@ -81,7 +81,7 @@ def _reg_heuristic(pos1, pos2, vertport):
     '''
        Given two positions, returns the other position
        For use in preprocessing registers for routing
-       Example: 
+       Example:
           pos1 = (0,0)
           pos2 = (1,0)
          i.e. for r with pos1 and m with pos2 on a 4x4

@@ -174,7 +174,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state
                 else:
                     data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
                     comment[_pe_reg['op']][2*(_read_wire[port],)]  = Annotations.read_from('wire', port)
-                    
+
 
         elif mod.type_ == 'IO':
             data[_pe_reg['op']] = _op_codes[mod.config]
