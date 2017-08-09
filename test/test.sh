@@ -14,7 +14,7 @@ fi
 code=0
 for d in "${TESTS[@]}"; do
     for f in "${FABRICS[@]}"; do
-        cmd="${PREFIX}/../src/run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS"
+        cmd="${PREFIX}/../run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS"
         echo $cmd
         timeout $LIMIT $cmd
         r=$?
