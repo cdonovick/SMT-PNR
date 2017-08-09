@@ -1,7 +1,7 @@
-from util import namedtuple_with_defaults
 from enum import Enum
 import re
 
+from pnrdoctor.util import namedtuple_with_defaults
 '''
    Functions to be used in fabric.py
 '''

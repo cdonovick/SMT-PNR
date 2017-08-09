@@ -2,11 +2,12 @@ from collections import defaultdict
 from functools import partial
 import sys
 import itertools
-from design.module import Resource
-from fabric.fabricutils import muxindex, trackindex
-from config import Annotations
+
+from pnrdoctor.design.module import Resource
+from pnrdoctor.fabric.fabricutils import muxindex, trackindex
+from pnrdoctor.config import Annotations
 from .pnrutils import configindex
-from util import smart_open, Mask, IdentDict, STAR
+from pnrdoctor.util import smart_open, Mask, IdentDict, STAR
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
 

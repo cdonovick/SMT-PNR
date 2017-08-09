@@ -1,6 +1,7 @@
-from util import IDObject
+from pnrdoctor.design.module import Resource
+from pnrdoctor.util import IDObject
+
 from .fabricutils import Side, pos_to_side
-from design.module import Resource
 
 
 class Port(IDObject):

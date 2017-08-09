@@ -1,7 +1,8 @@
 from collections.abc import  MutableMapping, Set
 import weakref
+
 from .setlist import SetList
-from util import class_property, Constant
+from pnrdoctor.util import class_property, Constant
 
 __all__ = ['SelectDict', 'STAR']
 

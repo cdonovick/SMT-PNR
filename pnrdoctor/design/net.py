@@ -1,4 +1,4 @@
-from util import IDObject
+from pnrdoctor.util import IDObject
 
 class Net(IDObject):
     def __init__(self, src, src_port, dst, dst_port, width=1):

@@ -1,8 +1,9 @@
-from util import BiMultiDict, BiDict
-from smt.solvers import Solver_monosat
 import itertools as it
+
 from smt_switch import smt
 
+from pnrdoctor.smt.solvers import Solver_monosat
+from pnrdoctor.util import BiMultiDict, BiDict
 
 ''' Class for handling place & route '''
 class PNR:

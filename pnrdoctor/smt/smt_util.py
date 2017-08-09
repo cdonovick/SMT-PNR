@@ -1,7 +1,7 @@
 import z3
 import operator
 import functools as ft
-from util import Mask, build_grouped_mask
+from pnrdoctor.util import Mask, build_grouped_mask
 
 
 def hamming_a(bv):

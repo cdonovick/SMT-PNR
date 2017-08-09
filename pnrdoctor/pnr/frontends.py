@@ -1,13 +1,15 @@
-import xml.etree.ElementTree as ET
-from fabric.fabricutils import Side, mapSide, parse_mem_sb_wire
-from fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_container
-from design.module import Resource
-from fabric import Port, Track, Fabric
-from util import SelectDict
-from config import config
-from .pnrutils import configindex
 from collections import defaultdict
 import re
+import xml.etree.ElementTree as ET
+
+
+from pnrdoctor.config import config
+from pnrdoctor.design.module import Resource
+from pnrdoctor.fabric.fabricutils import Side, mapSide, parse_mem_sb_wire
+from pnrdoctor.fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_container
+from pnrdoctor.fabric import Port, Track, Fabric
+from pnrdoctor.util import SelectDict
+from .pnrutils import configindex
 
 __all__ = ['parse_xml']
 

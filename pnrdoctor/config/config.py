@@ -1,5 +1,4 @@
-import pnr
-
+from pnrdoctor import pnr
 
 class ConfigEngine:
     def __init__(self):

@@ -1,6 +1,7 @@
-from fabric.fabricutils import muxindex
-from design.module import Resource
 from collections import namedtuple
+
+from pnrdoctor.fabric.fabricutils import muxindex
+from pnrdoctor.design.module import Resource
 
 # see fabric.fabricutils for muxindex documentation
 

@@ -3,14 +3,14 @@ Constraint generators
 '''
 from functools import partial
 import itertools
-
-from design.module import Resource
-from .pnrutils import get_muxindex, get_muxindices
-from fabric.fabricutils import trackindex
-from util import STAR
-
 import random
 import string
+
+from pnrdoctor.design.module import Resource
+from pnrdoctor.fabric.fabricutils import trackindex
+from pnrdoctor.util import STAR
+
+from .pnrutils import get_muxindex, get_muxindices
 
 
 def init_positions(position_type):

@@ -1,6 +1,7 @@
-from util import NamedIDObject
 from enum import Enum
-from util import BiMultiDict
+
+from pnrdoctor.util import NamedIDObject
+from pnrdoctor.util import BiMultiDict
 
 class Module(NamedIDObject):
     def __init__(self, name, attributes=dict()):

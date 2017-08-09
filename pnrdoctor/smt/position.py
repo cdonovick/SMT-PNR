@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from math import log2
-import smt.z3util as zu
-from util import NamedIDObject
+
+from pnrdoctor.util import NamedIDObject
+import pnrdoctor.smt.smt_util as su
 
 
 class PositionBase(NamedIDObject, metaclass=ABCMeta):
@@ -157,7 +158,7 @@ class Base2H(PositionBase):
 
     @property
     def invariants(self):
-        return self.solver.And(zu.hamming(self.x) == 1, zu.hamming(self.y) == 1)
+        return self.solver.And(su.hamming(self.x) == 1, su.hamming(self.y) == 1)
 
     def get_coordinates(self):
         return (int(log2(self.solver.GetValue(self.x).as_int())), int(log2(self.solver.GetValue(self.y).as_int())))
@@ -234,10 +235,10 @@ class BVXY(PositionBase):
         self._c = solver.DeclareConst(self.name + '_color', self.solver.BitVec(self._c_bits))
 
     def delta_x(self, other):
-        return [], zu.absolute_value(self.x - other.x)
+        return [], su.absolute_value(self.x - other.x)
 
     def delta_y(self, other):
-        return [], zu.absolute_value(self.y - other.y)
+        return [], su.absolute_value(self.y - other.y)
 
     def delta_x_fun(self, other):
         def delta_fun(constant):

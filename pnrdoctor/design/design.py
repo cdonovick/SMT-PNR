@@ -2,10 +2,11 @@
     Classes for represtenting designs and various constructors
 '''
 from collections import defaultdict
-from util import NamedIDObject, SortedDict
+from functools import lru_cache
+
+from pnrdoctor.util import NamedIDObject, SortedDict
 from .module import Module, Resource
 from .net import Net
-from functools import lru_cache
 
 _fusable = {(s, d) for s in ('Reg', 'Const') for d in ('PE',)}
 class Design(NamedIDObject):
