@@ -53,7 +53,7 @@ install:
     #- make -C src ../build/coreir.so  # For bindings tests
     #- make -C tests
     - cd $TRAVIS_BUILD_DIR
-    - pip install -e .
+    - pip install -e package
 
 script:
     - echo Running tests with $SOLVER
