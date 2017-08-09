@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from math import log2
 
 from pnrdoctor.util import NamedIDObject
-import pnrdoctor.smt.smt_util as su
+from . import smt_util as su
 
 
 class PositionBase(NamedIDObject, metaclass=ABCMeta):
