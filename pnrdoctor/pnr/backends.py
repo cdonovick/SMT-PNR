@@ -84,10 +84,13 @@ _mem_translate = {
 }
 
 
-def write_bitstream(fabric, bitstream, config_engine, annotate, p_state, r_state):
+def write_bitstream(fabric, bitstream, config_engine, annotate):
     # -------------------------------------------------
     # write_bitsream utilities
     # -------------------------------------------------
+
+    p_state = config_engine.p_state
+    r_state = config_engine.r_state
 
     def _proc_cb(port):
         data = defaultdict(int)

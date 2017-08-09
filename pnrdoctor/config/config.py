@@ -1,5 +1,3 @@
-from pnrdoctor import pnr
-
 class ConfigEngine:
     def __init__(self):
         self._config = dict()
@@ -29,12 +27,13 @@ class ConfigEngine:
         self._r_state = r_state
         self._state_loaded = True
 
-    def write_bitstream(self, filename, annotate=True):
-        if not self._state_loaded:
-            raise RuntimeError('Need to load state before writing bitstream')
+    @property
+    def p_state(self):
+        return self._p_state
 
-        pnr.write_bitstream(self._fabric, filename, self, annotate, self._p_state,
-                            self._r_state)
+    @property
+    def r_state(self):
+        return self._r_state
 
 
 class config:

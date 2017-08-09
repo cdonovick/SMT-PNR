@@ -103,12 +103,12 @@ ce.load_state(p._place_state, p._route_state)
 if args.bitstream:
     bit_file = args.bitstream
     print("Writing bitsream to: {}".format(bit_file))
-    ce.write_bitstream(bit_file, False)
+    pnr.write_bitstream(fab, bit_file, ce, False)
 
 if args.annotate:
     bit_file = args.annotate
     print("Writing bitsream to: {}".format(bit_file))
-    ce.write_bitstream(bit_file, True)
+    pnr.write_bitstream(fab, bit_file, ce, True)
 
 
 if args.print or args.print_place:
