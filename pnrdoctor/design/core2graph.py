@@ -1,6 +1,6 @@
 import coreir
 from .module import Resource
-from util import SortedDict
+from pnrdoctor.util import SortedDict
 
 def load_core(file, *libs):
     context = coreir.Context()

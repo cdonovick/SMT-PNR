@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import sys
-import design, design.core2graph, pnr, smt
+from pnrdoctor import design,  pnr, smt
 from functools import partial
-from config import ConfigEngine
+from pnrdoctor.config import ConfigEngine
+from pnrdoctor.design import core2graph
 import copy
 
 
@@ -36,7 +37,7 @@ ROUTE_RELAXED = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.d
 
 print("Loading design: {}".format(design_file))
 ce = ConfigEngine()
-modules, nets = design.core2graph.load_core(design_file, *args.libs)
+modules, nets = core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, nets)
 
 print("Loading fabric: {}".format(fabric_file))
