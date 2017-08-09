@@ -4,7 +4,8 @@ from fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_co
 from design.module import Resource
 from fabric import Port, Track, Fabric
 from util import SelectDict
-from config import config, configindex
+from config import config
+from .pnrutils import configindex
 from collections import defaultdict
 import re
 

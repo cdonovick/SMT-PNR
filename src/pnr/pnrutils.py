@@ -1,8 +1,10 @@
 from fabric.fabricutils import muxindex
 from design.module import Resource
+from collections import namedtuple
 
 # see fabric.fabricutils for muxindex documentation
 
+configindex = namedtuple('configindex', 'ps resource')
 
 def get_muxindices(net, p_state):
     '''

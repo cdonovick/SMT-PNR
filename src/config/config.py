@@ -1,4 +1,3 @@
-from collections import namedtuple
 import pnr
 
 
@@ -37,9 +36,6 @@ class ConfigEngine:
 
         pnr.write_bitstream(self._fabric, filename, self, annotate, self._p_state,
                             self._r_state)
-
-
-configindex = namedtuple('configindex', 'ps resource')
 
 
 class config:

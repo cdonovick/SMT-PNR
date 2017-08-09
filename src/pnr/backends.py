@@ -4,7 +4,8 @@ import sys
 import itertools
 from design.module import Resource
 from fabric.fabricutils import muxindex, trackindex
-from config import configindex, Annotations
+from config import Annotations
+from .pnrutils import configindex
 from util import smart_open, Mask, IdentDict, STAR
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
