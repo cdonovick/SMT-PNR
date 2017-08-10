@@ -48,6 +48,19 @@ class Module(NamedIDObject):
         return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
 
     def collapse_input(self, idx):
+        '''
+           Given a module or tie (where self == tie.dst), this method fuses the input module
+           and returns a new tie with the input module collapsed.
+
+           The module to be fused must have at most one input.
+
+           Example:
+           m1 --> r1 --> m2
+
+           m2.collapse_input(r1) returns m1-->m2
+
+           Function side effect is to modify m1.outputs and m2.inputs
+        '''
         if idx in self._inputs:
             dst_port = idx
             tie = self._inputs[idx]
