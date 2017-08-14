@@ -304,7 +304,7 @@ def _write_route_debug(design, output, p_state, r_state):
        which is unfortunately verbose...
     '''
     with smart_open(output) as f:
-        for tie in design.physical_ties:
+        for tie in design.ties:
             f.write('{} -> {}:\n'.format(tie.src.name, tie.dst.name))
             f.write(str(r_state[(tie, 'debug')]))
             f.write("\n")

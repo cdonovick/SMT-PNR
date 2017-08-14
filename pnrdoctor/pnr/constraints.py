@@ -80,7 +80,7 @@ def distinct(fabric, design, state, vars, solver):
 
 def register_colors(fabric, design, state, vars, solver):
     constraints = []
-    for tie in design.physical_ties:
+    for tie in design.ties:
         src = tie.src
         dst = tie.dst
         if src.resource == dst.resource == Resource.Reg:
@@ -98,7 +98,7 @@ def neighborhood(dist):
 
 def _neighborhood(dxdy, fabric, design, state, vars, solver):
         constraints = []
-        for tie in design.physical_ties:
+        for tie in design.ties:
             src = tie.src
             dst = tie.dst
             c = []
@@ -285,7 +285,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     reaches = []
     graph = solver.graphs[0]
 
-    for tie in design.physical_ties:
+    for tie in design.ties:
         # hacky don't handle wrong layer
         if tie.width != layer:
             continue
@@ -316,7 +316,7 @@ def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     graph = solver.graphs[0]
 
     # for connected modules, make sure it's not connected to wrong inputs
-    for tie in design.physical_ties:
+    for tie in design.ties:
         # hacky don't handle wrong layer here
         # and if destination is a register, it only has one port
         # so it doesn't need exclusivity constraints
@@ -341,7 +341,7 @@ def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     for mdst in design.physical_modules:
         # get contracted inputs
         # TODO: test for correctness
-#        contracted_inputs = mdst.inputs.values() & design.physical_ties
+#        contracted_inputs = mdst.inputs.values() & design.ties
         inputs = {x.src for x in mdst.inputs.values()}
         contracted_inputs = set()
         for src in inputs:
@@ -386,7 +386,7 @@ def dist_limit(dist_factor, include_reg=False):
         constraints = []
         graph = solver.graphs[0]
 
-        for tie in design.physical_ties:
+        for tie in design.ties:
             # hacky don't handle wrong layer
             if tie.width != layer:
                 continue

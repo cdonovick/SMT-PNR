@@ -26,20 +26,19 @@ class Design(NamedIDObject):
         # ties: unchanged
         modules, ties = _build_modules(modules, ties)
 
+        self._modules=frozenset(modules.values())
+
         # modules: unchanged
         # ties: tuple representation --> {tuple: Tie}
         modules, ties = _build_ties(modules, ties)
 
-        self._modules=frozenset(modules.values())
-        self._ties=frozenset(ties.values())
-
-        # produce physical modules and physical ties
+        # produce physical modules and modify ties
         # modules: {mod_name: Module} --> set of physical modules
         # ties: {tuple: Tie} --> set of physical ties
         p_modules, p_ties = _fuse_comps(modules, ties)
 
         self._p_modules = frozenset(p_modules)
-        self._p_ties = frozenset(p_ties)
+        self._ties = frozenset(p_ties)
 
         # assertions
         for module in self.modules:
@@ -48,23 +47,15 @@ class Design(NamedIDObject):
         for module in self.physical_modules:
             assert module.resource != Resource.Fused
 
-        for tie in self.physical_ties:
-            assert tie.src.resource != Resource.Fused, 'src'
-            assert tie.dst.resource != Resource.Fused, 'dst'
+        for tie in self.ties:
+            assert (tie in self.ties) or \
+              (tie.src.resource in {Resource.Reg, Resource.Fused}) or \
+              (tie.dst.resource in {Resource.Reg, Resource.Fused}), tie
 
         for tie in self.ties:
-            assert (tie in self.physical_ties) or \
-              (tie.src.resource == Resource.Fused) or \
-              (tie.dst.resource == Resource.Fused)
+            assert tie in tie.dst.inputs.values(), tie
 
         # end assertions
-
-        # if it ever becomes useful, can fuse the rest of the
-        # registers and build nets -- functions are in design/passes.py
-        # rf_modules, rf_ties = collapse_all_regs(mods, ties, self._p_ties)
-        # _rf_nets = build_nets(self._rf_modules)
-        # self._rf_nets = frozenset(_rf_nets)
-
 
     @property
     def modules(self):
@@ -81,10 +72,6 @@ class Design(NamedIDObject):
     @lru_cache(maxsize=32)
     def modules_with_attr_val(self, attr, val):
         return frozenset(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
-
-    @property
-    def physical_ties(self):
-        return self._p_ties
 
     @property
     def physical_modules(self):
@@ -155,12 +142,6 @@ def _build_modules(mods, ties):
 
 def _build_ties(mods, ties):
 
-    # fusable combination of resource types
-    _fusable = {(s, d) for s in ('Reg', 'Const') for d in ('PE',)}
-
-    fuse_me = set()
-    fuse_no = set()
-
     _ties = dict()
     for src_name, src_port, dst_name, dst_port, width in ties:
 
@@ -168,77 +149,69 @@ def _build_ties(mods, ties):
         dst = mods[dst_name]
         idx = (src, src_port, dst, dst_port, width)
 
-        if (src.type_, dst.type_) in _fusable:
-            fuse_me.add(src)
-        else:
-            fuse_no.add(src)
-
         _ties[idx] = Tie(*idx)
-
-    # mark fused mods
-    for m in mods.values():
-        if m not in fuse_no and m in fuse_me:
-            m.resource = Resource.Fused
 
     return mods, _ties
 
 
 def _fuse_comps(mods, ties):
+    '''
+       Inputs
+       mods: {module_name: Module}
+       ties: {tie_index_tuple: Tie}
+
+       Fuses all constants
+       Fuses registers -- preference is to put as many registers as possible in PEs
+       For more detailed documentation see the comments at the top of the function
+    '''
+
+    # This function fuses Const and Reg components
+    # Consts are all assigned Resource.Fused, but no new ties need to be created, because Consts
+    #    are always sources with no inputs.
+    # Regs are assigned Resource.Fused if all of their outputs are PEs or IO
+    # However, Regs that are not "fully fused" can still be fused on some ties
+    # Example:
+    #      m1 --> r1 --> r2 --> m3
+    #             |
+    #             --> m2
+    # r2 can be completely fused into m3's input
+    # However, r1 cannot be fused because there is only one available register on a PE's input port,
+    # but m1 and m3 must be connected by two registers
+    #
+    # That being said, r1 could be fused into m2
+    #
+    # Therefore, we fuse r1 into m2, but leave it there for the r2 connection.
+    # This corresponds to modifying the ties
+    #
+    # The set of ties becomes (fr denotes a tie with a fused register on it):
+    # m1 --> r1
+    # r1 --> m3 fr
+    # m1 --> m2 fr
+
+    for m in mods.values():
+        if m.type_ == 'Const':
+            m.resource = Resource.Fused
+        elif m.resource == Resource.Reg:
+            if all([om.dst.resource != Resource.Reg for om in m.outputs.values()]):
+                m.resource = Resource.Fused
 
     _new_ties = set()
+    _ties2remove = set()
 
     for mod in mods.values():
-        if mod.resource == Resource.Fused:
+        if mod.resource in {Resource.Fused, Resource.Reg} and mod.type_ == "Reg":
             for tie in mod.outputs.values():
-                if mod.type_ == 'Reg':
-                    new_tie = tie.dst.collapse_input(tie.dst_port)
+                if not tie.fused_reg and tie.dst.resource not in {Resource.Reg, Resource.Fused}:
+                    new_tie = tie.dst.fuse_reg(tie.dst_port)
                     _new_ties.add(new_tie)
-                # if it's a Const, it will be fused but the tie will
-                # still be an input -- nothing needs to be done
+                    _ties2remove.add(tie)
+        # if it's a Const, it will be fused but the tie will
+        # still be an input -- nothing needs to be done
 
     _p_ties = set([tie for tie in _new_ties.union(ties.values()) \
                 if tie.src.resource != Resource.Fused and \
-                tie.dst.resource != Resource.Fused])
+                tie.dst.resource != Resource.Fused]) - _ties2remove
 
     _p_modules = [mod for mod in mods.values() if mod.resource != Resource.Fused]
 
     return _p_modules, _p_ties
-
-
-def _collapse_all_regs(mods, ties, p_ties):
-    _new_ties = set()
-    for mod in mods.values():
-        if mod.resource == Resource.Reg:
-            for tie in mod.outputs.values():
-                    new_tie = tie.dst.collapse_input(tie.dst_port)
-                    _new_ties.add(new_tie)
-
-    # remove register ties
-    _rf_ties = set([tie for tie in _new_ties.union(p_ties) \
-                    if tie.src.resource != Resource.Reg and \
-                    tie.dst.resource != Resource.Reg])
-
-    _rf_modules = set()
-    for rf_tie in _rf_ties:
-        _rf_modules.add(rf_tie.src)
-        _rf_modules.add(rf_tie.dst)
-
-    return _rf_modules, _rf_ties
-
-
-def _build_nets(rf_mods):
-    '''
-       Takes in modules and returns regfree nets
-       Nets are a collection of ties that share a source
-    '''
-    _p_nets = set()
-
-    for mod in rf_mods:
-        if len(mod.outputs) > 0:
-            n = Net()
-            for tie in mod.outputs.values():
-                n.add_tie(tie)
-
-            _p_nets.add(n)
-
-    return _p_nets

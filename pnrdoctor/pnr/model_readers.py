@@ -19,7 +19,7 @@ def route_model_reader(simultaneous=False):
         # hardcoded layers right now
         graph = solver.graphs[0]
         for layer in {16}:
-            for tie in design.physical_ties:
+            for tie in design.ties:
                 # hacky handle only one layer at a time
                 # note: won't actually need this here when
                 # routing one bit signals
