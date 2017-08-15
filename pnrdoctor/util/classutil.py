@@ -53,7 +53,6 @@ class FlyWeightMeta(type):
             metaclass for flyweight objects
 
         ------------------------------------
-        import gc
 
         class A:
             def __init__(self, a):
@@ -64,44 +63,61 @@ class FlyWeightMeta(type):
                 self.a = a
 
         class C(metaclass=FlyWeightMeta):
+            __slots__ = 'a',
             def __init__(self, a):
                 self.a = a
+
+        class D(C, gc=False):
+            __slots__ = ()
 
         assert A(0) is not A(0)
         assert B(0) is B(0)
         assert B(0) is not B(1)
         assert B(0) is not C(0)
-        gc.disable()
         ID = id(B(0))
-        assert ID == id(B(0))
-        gc.enable()
-        gc.collect()
         assert ID != id(B(0))
+        ID = id(D(0))
+        assert ID == id(D(0))
     '''
 
-    __instances = weakref.WeakValueDictionary()
+    __instances = {
+        True  : weakref.WeakValueDictionary(),
+        False : dict(),
+    }
+    __gc = dict()
+
     def __call__(objtype, *pargs, **kwargs):
         idx = (objtype, pargs, tuple(kwargs.items()))
         try:
-            return FlyWeightMeta.__instances[idx]
+            return FlyWeightMeta.__instances[FlyWeightMeta.__gc[objtype]][idx]
         except KeyError:
             obj = super().__call__(*pargs, **kwargs)
-            FlyWeightMeta.__instances[idx] = obj
+            FlyWeightMeta.__instances[FlyWeightMeta.__gc[objtype]][idx] = obj
             return obj
 
-
-    def __new__(cls, name, bases, attrs, **kwargs):
-        if '__slots__' in attrs and '__dict__' not in attrs and '__weakref__' not in attrs['__slots__']:
+    def __new__(cls, name, bases, namespace, gc=True, **kwargs):
+        if gc and '__slots__' in namespace and '__dict__' not in namespace and '__weakref__' not in namespace['__slots__']:
             #make sure its not in a base
-            for b in bases:
-                if hasattr(b, '__slots__') and '__weakref__' in b.__slots__:
-                    break
-            else:
-                #made through the loop not in a base
-                attrs['__slots__'] = attrs['__slots__'] + ('__weakref__',)
-        return super().__new__(cls, name, bases, attrs, **kwargs)
+            seen = set()
+            for base in bases:
+                if base in seen:
+                    continue
+                for b in base.mro():
+                    if b in seen:
+                        continue
+                    if hasattr(b, '__slots__') and '__weakref__' in b.__slots__:
+                        return super().__new__(cls, name, bases, namespace, **kwargs)
+                    else:
+                        seen.add(b)
+            #'__weakref__' not in a base
+            namespace['__slots__'] = namespace['__slots__'] + ('__weakref__',)
+        return super().__new__(cls, name, bases, namespace, **kwargs)
 
-class Constant(metaclass=FlyWeightMeta):
+    def __init__(cls, name, bases, namespace, gc=True, **kwargs):
+        FlyWeightMeta.__gc[cls] = gc
+        return super().__init__(name, bases, namespace, **kwargs)
+
+class Constant(metaclass=FlyWeightMeta, gc=False):
     __slots__ = ()
 
     def __hash__(self):
