@@ -170,7 +170,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                     data[_pe_reg[port]] |= src.config # load 'a' reg with const
                     comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
                     comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
-                elif tie.fused_reg:
+                elif port in mod.registered_ports:
                     data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
                     comment[_pe_reg['op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
                     comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)

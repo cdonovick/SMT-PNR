@@ -26,7 +26,7 @@ def load_core(file, *libs):
         elif inst_type[:5] == 'Const':
             modules[inst_name]['type'] = 'Const'
             modules[inst_name]['conf'] = inst.get_config_value('value')
-            modules[inst_name]['res']  = Resource.UNSET
+            modules[inst_name]['res']  = Resource.Fused # always fuse constants
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'

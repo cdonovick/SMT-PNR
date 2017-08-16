@@ -9,6 +9,7 @@ class Module(NamedIDObject):
         # outputs should be a BiMultiDict to support fanout
         self._outputs = BiMultiDict()
         self._resource = Resource.UNSET
+        self._registered_ports = set()
 
     @property
     def inputs(self):
@@ -32,6 +33,14 @@ class Module(NamedIDObject):
 
     def _add_output(self, dst, port):
         self._outputs[port] = dst
+
+    def add_registered_input(self, port):
+        assert port in self._inputs
+        self._registered_ports.add(port)
+
+    @property
+    def registered_ports(self):
+        return self._registered_ports
 
     @property
     def resource(self):

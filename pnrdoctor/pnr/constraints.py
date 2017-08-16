@@ -21,7 +21,7 @@ def init_positions(position_type):
     '''
     def initializer(fabric, design, state, vars, solver):
         constraints = []
-        for module in design.physical_modules:
+        for module in design.modules:
             if module not in vars:
                 p = position_type(module.name, fabric)
                 vars[module] = p
@@ -34,9 +34,9 @@ def init_random(position_type):
     def initializer(fabric, design, state, vars, solver):
         constraints = []
         # random.shuffle shuffles in place and needs indexable data type
-        physical_modules = list(design.physical_modules)
-        random.shuffle(physical_modules)
-        for module in physical_modules:
+        modules = list(design.modules)
+        random.shuffle(modules)
+        for module in modules:
             if module not in vars:
                 randstring = ''
                 for s in random.sample(string.ascii_letters + string.digits, 5):
@@ -50,7 +50,7 @@ def init_random(position_type):
 
 def assert_pinned(fabric, design, state, vars, solver):
     constraints = []
-    for module in design.physical_modules:
+    for module in design.modules:
         if module in state:
             pos = vars[module]
             constraints.append(pos == pos.encode(state[module][0]))
@@ -65,8 +65,8 @@ def pin_reg(reg, p):
 
 def distinct(fabric, design, state, vars, solver):
     constraints = []
-    for m1 in design.physical_modules:
-        for m2 in design.physical_modules:
+    for m1 in design.modules:
+        for m2 in design.modules:
             if m1 != m2 and m1.resource == m2.resource:
                 v1,v2 = vars[m1],vars[m2]
                 c = v1.flat != v2.flat
@@ -125,7 +125,7 @@ def pin_IO(fabric, design, state, vars, solver):
 
 def pin_resource(fabric, design, state, vars, solver):
     constraints = []
-    for module in design.physical_modules:
+    for module in design.modules:
         pos = vars[module]
         c = []
         for p in fabric.locations[module.resource]:
@@ -162,7 +162,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
     node_inedges = defaultdict(list)
 
     # add nodes for modules
-    for mod in design.physical_modules:
+    for mod in design.modules:
         for _type in {'sources', 'sinks'}:
             for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
                 index = get_muxindex(mod, p_state, layer, port_name)
@@ -215,7 +215,7 @@ def build_spnr(region=0):
         edge_constraints = list()
 
         # add virtual nodes for modules
-        for mod in design.physical_modules:
+        for mod in design.modules:
             if mod.resource != Resource.Reg:
                 for _type in {'sources', 'sinks'}:
                     for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
@@ -338,25 +338,11 @@ def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
                                     vars[fabric[dst_index].sink]))
 
     # make sure modules that aren't connected are not connected
-    for mdst in design.physical_modules:
-        # get contracted inputs
-        # TODO: test for correctness
-#        contracted_inputs = mdst.inputs.values() & design.ties
+    for mdst in design.modules:
         inputs = {x.src for x in mdst.inputs.values()}
-        contracted_inputs = set()
-        for src in inputs:
-            if src.resource == Resource.Fused:
-                assert len(src.inputs) <= 1
-                if src.inputs:
-                    srctie = next(iter(src.inputs.values()))
-                    src = srctie.src
-                else:
-                    continue
-            # add the (potentially contracted) src
-            contracted_inputs.add(src)
 
-        for msrc in design.physical_modules:
-            if msrc != mdst and msrc not in contracted_inputs:
+        for msrc in design.modules:
+            if msrc != mdst and msrc not in inputs:
                 # iterate through all port combinations for m2-->m1 connections
                 for src_port, dst_port \
                     in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,

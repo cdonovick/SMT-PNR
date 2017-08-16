@@ -22,30 +22,26 @@ class Design(NamedIDObject):
         # ties: tuple representation --> tuple representation
         modules, ties = _io_hack(modules, ties)
 
+        modules, ties = _split_registers(modules, ties)
+
         # modules: dict representation --> {mod_name: Module}
         # ties: unchanged
         modules, ties = _build_modules(modules, ties)
-
-        self._modules=frozenset(modules.values())
 
         # modules: unchanged
         # ties: tuple representation --> {tuple: Tie}
         modules, ties = _build_ties(modules, ties)
 
-        # produce physical modules and modify ties
-        # modules: {mod_name: Module} --> set of physical modules
-        # ties: {tuple: Tie} --> set of physical ties
-        p_modules, p_ties = _fuse_comps(modules, ties)
+        # modules: {mod_name: Module} --> set of final modules
+        # ties: {tuple: Tie} --> set of final ties
+        modules, ties = _fuse_regs(modules, ties)
 
-        self._p_modules = frozenset(p_modules)
-        self._ties = frozenset(p_ties)
+        self._modules = frozenset(modules)
+        self._ties = frozenset(ties)
 
         # assertions
         for module in self.modules:
-            assert module.resource != Resource.UNSET
-
-        for module in self.physical_modules:
-            assert module.resource != Resource.Fused
+            assert module.resource != Resource.UNSET, module
 
         for tie in self.ties:
             assert tie in tie.dst.inputs.values(), tie
@@ -74,10 +70,6 @@ class Design(NamedIDObject):
     def modules_with_attr_val(self, attr, val):
         return frozenset(filter(lambda x : hasattr(x, attr) and getattr(x, attr) == val, self.modules))
 
-    @property
-    def physical_modules(self):
-        return self._p_modules
-
 
 def _io_hack(mods, ties):
     # to help CGRA team with io hack
@@ -102,7 +94,7 @@ def _io_hack(mods, ties):
         mods[const_0_name] = {
                 'type' : 'Const',
                 'conf' : 0,
-                'res'  : Resource.UNSET,
+                'res'  : Resource.Fused,  # always fuse constants
             }
 
         #change all the mods to be adders
@@ -137,7 +129,7 @@ def _split_registers(mods, ties):
         if mods[src_name]['type'] == 'Reg':
             if mods[dst_name]['type'] == 'PE':
                 fusable[src_name] = tie
-            elif mods[dst_name]['type'] = 'Reg':
+            elif mods[dst_name]['type'] == 'Reg':
                 has_register_out.add(src_name)
 
     for r_name in fusable:
@@ -146,14 +138,14 @@ def _split_registers(mods, ties):
             assert src_name == r_name, "Something is broken with my logic"
 
             f_name = '__FUSED__{}_{}'.format(k, r_name)
-            assert fuse_name not in mods, 'Fused name ({}) in use things are going to break'.format(fuse_name)
+            assert f_name not in mods, 'Fused name ({}) in use things are going to break'.format(f_name)
             fuse_names[r_name] = f_name
 
             # add new register
             mods[f_name] = dict()
             mods[f_name]['type'] = 'Reg'
             mods[f_name]['conf'] = None
-            mods[f_name]['res']  = Resource.Reg
+            mods[f_name]['res']  = Resource.Fused  # mark the new register as fused
 
             # add new tie
             ties.add((f_name, src_port, dst_name, dst_port, width))
@@ -165,17 +157,21 @@ def _split_registers(mods, ties):
             #mark old register for deletion
             m_delete.add(r_name)
 
+    ties2add = set()
+
     for tie in ties:
         src_name, src_port, dst_name, dst_port, width = tie
         #find all ties with a fused register as dst and create new tie
         if dst_name in fusable:
             assert dst_name in fuse_names
             for f_name in fuse_names[dst_name]:
-                ties.add((src_name, src_port, f_name, dst_port, width))
+                ties2add.add((src_name, src_port, f_name, dst_port, width))
 
         #if dst is marked for deletation delete tie
         if dst_name in m_delete:
             t_delete.add(tie)
+
+    ties = ties.union(ties2add)
 
     for mod in m_delete:
         del mods[mod]
@@ -184,7 +180,6 @@ def _split_registers(mods, ties):
         ties.remove(tie)
 
     return mods, ties
-
 
 
 def _build_modules(mods, ties):
@@ -216,64 +211,37 @@ def _build_ties(mods, ties):
     return mods, _ties
 
 
-def _fuse_comps(mods, ties):
-    '''
-       Inputs
-       mods: {module_name: Module}
-       ties: {tie_index_tuple: Tie}
-
-       Fuses all constants
-       Fuses registers -- preference is to put as many registers as possible in PEs
-       For more detailed documentation see the comments at the top of the function
-    '''
-
-    # This function fuses Const and Reg components
-    # Consts are all assigned Resource.Fused, but no new ties need to be created, because Consts
-    #    are always sources with no inputs.
-    # Regs are assigned Resource.Fused if all of their outputs are PEs or IO
-    # However, Regs that are not "fully fused" can still be fused on some ties
-    # Example:
-    #      m1 --> r1 --> r2 --> m3
-    #             |
-    #             --> m2
-    # r2 can be completely fused into m3's input
-    # However, r1 cannot be fused because there is only one available register on a PE's input port,
-    # but m1 and m3 must be connected by two registers
-    #
-    # That being said, r1 could be fused into m2
-    #
-    # Therefore, we fuse r1 into m2, but leave it there for the r2 connection.
-    # This corresponds to modifying the ties
-    #
-    # The set of ties becomes (fr denotes a tie with a fused register on it):
-    # m1 --> r1
-    # r1 --> m3 fr
-    # m1 --> m2 fr
-
+def _fuse_regs(mods, ties):
+    # fuse all Register to PE connections
     for m in mods.values():
-        if m.type_ == 'Const':
-            m.resource = Resource.Fused
-        elif m.resource == Resource.Reg:
-            if all([om.dst.resource != Resource.Reg for om in m.outputs.values()]):
-                m.resource = Resource.Fused
+        if m.resource == Resource.Fused and m.type_ == 'Reg':
+            assert len(m.outputs) == 1, 'Fused regs should have one output'
+            output_tie = next(iter(m.outputs.values()))
+            assert output_tie.dst.resource == Resource.PE, 'Fused register should have one PE output'
+            assert len(m.inputs) == 1, 'Fused register should have only one input'
+            input_tie = next(iter(m.inputs.values()))
+            assert input_tie.width == output_tie.width
 
-    _new_ties = set()
-    _ties2remove = set()
+            # delete dict pointers to old ties
+            del output_tie.dst.inputs[output_tie.dst_port]
+            # delete only one of the outputs!
+            input_tie.src.outputs.del_kvpair(input_tie.src_port, input_tie)
 
-    for mod in mods.values():
-        if mod.resource in {Resource.Fused, Resource.Reg} and mod.type_ == "Reg":
-            for tie in mod.outputs.values():
-                if not tie.fused_reg and tie.dst.resource not in {Resource.Reg, Resource.Fused}:
-                    new_tie = tie.dst.fuse_reg(tie.dst_port)
-                    _new_ties.add(new_tie)
-                    _ties2remove.add(tie)
-        # if it's a Const, it will be fused but the tie will
-        # still be an input -- nothing needs to be done
+            # create new tie
+            new_tie = Tie(input_tie.src, input_tie.src_port, output_tie.dst, output_tie.dst_port, output_tie.width)
+            # mark the port as registered
+            output_tie.dst.add_registered_input(output_tie.dst_port)
 
-    _p_ties = set([tie for tie in _new_ties.union(ties.values()) \
-                if tie.src.resource != Resource.Fused and \
-                tie.dst.resource != Resource.Fused]) - _ties2remove
+    _p_modules = set([mod for mod in mods.values() if mod.resource != Resource.Fused])
 
-    _p_modules = [mod for mod in mods.values() if mod.resource != Resource.Fused]
+    _p_ties = set()
+    for m in _p_modules:
+        for tie in m.inputs.values():
+            if tie.src.resource != Resource.Fused:
+                _p_ties.add(tie)
+        for tie in m.outputs.values():
+            assert tie.dst.resource != Resource.Fused, \
+              'There should not be leftover ties pointing to fused modules'
+            _p_ties.add(tie)
 
     return _p_modules, _p_ties
