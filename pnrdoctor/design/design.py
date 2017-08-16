@@ -2,7 +2,7 @@
     Classes for represtenting designs and various constructors
 '''
 from collections import defaultdict
-from pnrdoctor.util import NamedIDObject, SortedDict
+from pnrdoctor.util import NamedIDObject, SortedDict, MultiDict
 from .module import Module, Resource
 from .net import Net, Tie
 from functools import lru_cache
@@ -123,6 +123,67 @@ def _io_hack(mods, ties):
             # make a tie from the const 0 to original io (the now adder)
             ties.add((const_0_name, 'out', mod_name, 'b', 16))
     return mods, ties
+
+def _split_registers(mods, ties):
+    fusable = MultiDict()
+    fuse_names = MultiDict()
+    has_register_out = set()
+    m_delete = set()
+    t_delete = set()
+
+    for tie in ties:
+        src_name, _, dst_name, _, _ = tie
+        if mods[src_name]['type'] == 'Reg':
+            if mods[dst_name]['type'] == 'PE':
+                fusable[src_name] = tie
+            elif mods[dst_name]['type'] = 'Reg':
+                has_register_out.add(src_name)
+
+    for r_name in fusable:
+        for k,tie in enumerate(fusable[r_name]):
+            src_name, src_port, dst_name, dst_port, width = tie
+            assert src_name == r_name, "Something is broken with my logic"
+
+            f_name = '__FUSED__{}_{}'.format(k, r_name)
+            assert fuse_name not in mods, 'Fused name ({}) in use things are going to break'.format(fuse_name)
+            fuse_names[r_name] = f_name
+
+            # add new register
+            mods[f_name] = dict()
+            mods[f_name]['type'] = 'Reg'
+            mods[f_name]['conf'] = None
+            mods[f_name]['res']  = Resource.Reg
+
+            # add new tie
+            ties.add((f_name, src_port, dst_name, dst_port, width))
+
+            # mark old tie for deletion
+            t_delete.add(tie)
+
+        if r_name not in has_register_out:
+            #mark old register for deletion
+            m_delete.add(r_name)
+
+    for tie in ties:
+        src_name, src_port, dst_name, dst_port, width = tie
+        #find all ties with a fused register as dst and create new tie
+        if dst_name in fusable:
+            assert dst_name in fuse_names
+            for f_name in fuse_names[dst_name]:
+                ties.add((src_name, src_port, f_name, dst_port, width))
+
+        #if dst is marked for deletation delete tie
+        if dst_name in m_delete:
+            t_delete.add(tie)
+
+    for mod in m_delete:
+        del mods[mod]
+
+    for tie in t_delete:
+        ties.remove(tie)
+
+    return mods, ties
+
 
 
 def _build_modules(mods, ties):
