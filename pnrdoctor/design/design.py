@@ -48,13 +48,14 @@ class Design(NamedIDObject):
             assert module.resource != Resource.Fused
 
         for tie in self.ties:
-            assert (tie in self.ties) or \
-              (tie.src.resource in {Resource.Reg, Resource.Fused}) or \
-              (tie.dst.resource in {Resource.Reg, Resource.Fused}), tie
-
-        for tie in self.ties:
             assert tie in tie.dst.inputs.values(), tie
+            assert tie in tie.src.outputs.values(), tie
 
+        for module in self.modules:
+            for tie in module.inputs.values():
+                assert module is tie.dst
+            for tie in module.outputs.values():
+                assert module is tie.src
         # end assertions
 
     @property
