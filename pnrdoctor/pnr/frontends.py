@@ -52,9 +52,25 @@ def _scan_ports(root, params):
     # scanning ports
     sanitycheckset = set()
 
+    # keep track of feedthrough information in a generic object with settable attributes
+    ftdata = lambda: 0
+    # keep feedthrough paths separate until the whole path is built up
+    ftdata.muxindices = set()
+    # {port -> set of ports} temporary storage for building paths
+    ftdata.muxindex2paths = dict()
+    # {set of ports --> (port1, port2)} maps from set representing a path to terminal ports
+    # the terminal ports should be included in the fabric
+    # but intermediate ports in a feedthrough path are never added to the fabric
+    ftdata.terminals = dict()
+
+
+    params['ftdata'] = ftdata
+
     fabric = params['fabric']
     locations = defaultdict(set)
     params['locations'] = locations
+    muxindex_locations = defaultdict(set)
+    params['muxindex_locations'] = muxindex_locations
 
     num_tracks = dict()
     params['num_tracks'] = num_tracks
@@ -76,13 +92,23 @@ def _scan_ports(root, params):
             _ps = (x, y)
 
         for mux in sb.findall('mux'):
+
             mindex = _get_index(_ps, mux.get('snk'), _resource)
+
+            if mux.get('reg') == '1':
+                # add to register muxindex_locations
+                muxindex_locations[Resource.Reg].add(mindex)
 
             assert mindex not in sanitycheckset
             sanitycheckset.add(mindex)
             fabric[mindex] = port_wrapper(Port(mindex))
 
-        # TODO: Handle feedthroughs -- should be simple
+        # Scan feedthrough ports
+        for ft in sb.findall('ft'):
+            mindex = _get_index(_ps, ft.get('snk'), _resource)
+            assert mindex not in ftdata.muxindices
+            ftdata.muxindices.add(mindex)
+
 
     def _scan_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
@@ -92,8 +118,13 @@ def _scan_ports(root, params):
             # add to sinks
             port_names[(_resource, _bw)].sinks.add(_port)
             mindex = _get_index(_ps, _port, _resource, bw=_bw)
-            # debugging
-            assert mindex == muxindex(resource=_resource, ps=_ps, bw=_bw, port=_port)
+            # add to muxindex_locations
+            muxindex_locations[_resource].add(mindex)
+
+            # sanity check
+            assert mindex == muxindex(resource=_resource, ps=_ps,
+                                      bw=_bw, port=_port), \
+                                      'mismatch in get_index and expected index'
             fabric[mindex] = port_wrapper(Port(mindex))
 
     def _scan_resource(res):
@@ -180,12 +211,14 @@ def _connect_ports(root, params):
     # make sure indexing is correct and that
     # you never get the same index twice when
     # scanning ports
-    tracksanitycheckset = set()
+    pathsanitycheckset = set()
 
     fabric = params['fabric']
     locations = params['locations']
     port_names = params['port_names']
     config_engine = params['config_engine']
+    ftdata = params['ftdata']
+    muxindex_locations = params['muxindex_locations']
 
     def _connect_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -202,6 +235,7 @@ def _connect_ports(root, params):
 
         fa = int(sb.get('feature_address'))
         sel_w = int(sb.find('sel_width').text)
+
 
         for mux in sb.findall("mux"):
             snk_name = mux.get('snk')
@@ -224,6 +258,8 @@ def _connect_ports(root, params):
                 sel = int(src.get('sel'))
 
                 # handle ports off the edge
+                # but if it's a nonterminal feedthrough port, do nothing
+
                 if srcindex not in fabric:
                     fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
 
@@ -231,19 +267,92 @@ def _connect_ports(root, params):
                     if srcindex.port is not None:
                         assert srcindex.resource != SB
                         port_names[(srcindex.resource, snkindex.bw)].sources.add(srcindex.port)
+                        muxindex_locations[srcindex.resource].add(srcindex)
 
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
 
+                # if it connects to a feedthrough, don't make the connection yet. Want only one
+                # track connecting endpoints of feedthrough path
+
                 # see fabric.fabricutils for trackindex documentation
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in tracksanitycheckset
-                tracksanitycheckset.add(tindex)
+                assert tindex not in pathsanitycheckset
+                pathsanitycheckset.add(tindex)
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
                 fabric[tindex] = track
                 config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
                                                configl=cl, configr=cr, sel=sel,
                                                src_name=src_name, snk_name=snk_name)
+
+        # connect feed throughs
+        for ft in sb.findall('ft'):
+            snk_name = ft.get('snk')
+            snkindex = _get_index(_ps, snk_name, _resource)
+
+            assert len(ft.findall('src')) == 1, 'Feedthroughs should have exactly one source'
+            for src in ft.findall('src'):
+                src_name = src.text
+                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, y)
+
+                # handle ports off the edge
+                if srcindex not in fabric and srcindex not in ftdata.muxindices:
+                    fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                    muxindex_locations[srcindex.resource].add(srcindex)
+
+                assert srcindex.bw == snkindex.bw, \
+                  'Attempting to connect ports with different bust widths'
+
+                tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+                assert tindex not in pathsanitycheckset
+                pathsanitycheckset.add(tindex)
+
+                for mindex in {srcindex, snkindex}:
+                    if mindex not in ftdata.muxindex2paths:
+                        ftdata.muxindex2paths[mindex] = (tindex,)
+
+                # get paths
+                oldsrcpath = ftdata.muxindex2paths[srcindex]
+                oldsnkpath = ftdata.muxindex2paths[snkindex]
+
+                for path in {oldsrcpath, oldsnkpath}:
+                    if path not in ftdata.terminals:
+                        ftdata.terminals[path] = dict()
+
+                # take union to create new path
+                newpath = oldsrcpath + oldsnkpath
+                ftdata.muxindex2paths[srcindex] = newpath
+                ftdata.muxindex2paths[snkindex] = newpath
+
+                # if mindex is in fabric then it must be a terminal port of the feedthrough path
+                if srcindex in fabric:
+                    ftdata.terminals[oldsrcpath]['H'] = srcindex
+
+                if snkindex in fabric:
+                    ftdata.terminals[oldsnkpath]['T'] = snkindex
+
+                # update terminals
+                assert set(ftdata.terminals[oldsrcpath].keys()) != \
+                       set(ftdata.terminals[oldsnkpath].keys()) or \
+                       oldsrcpath == oldsnkpath, \
+                       'There should never be more than one Head or Tail for a path'
+
+                # update the path --> terminals dict
+                ftdata.terminals[newpath] = ftdata.terminals[oldsrcpath].copy()
+                ftdata.terminals[newpath].update(ftdata.terminals[oldsnkpath])
+
+                # delete old references
+                del ftdata.terminals[oldsrcpath]
+                if oldsrcpath != oldsnkpath:
+                    del ftdata.terminals[oldsnkpath]
+
+
+    for path, terminals in ftdata.terminals:
+        # make path from beginning of feedthrough to end
+        tindex = trackindex(src=terminals['H'], snk=terminals['T'], bw=next(iter(path)).bw)
+
+        fabric[tindex] = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
+
 
     def _connect_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
@@ -269,8 +378,8 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in tracksanitycheckset
-                tracksanitycheckset.add(tindex)
+                assert tindex not in pathsanitycheckset
+                pathsanitycheckset.add(tindex)
 
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
                 fabric[tindex] = track
@@ -344,7 +453,7 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
         xn, yn, _ = mapSide(x, y, _side)
 
         if direc == 'o':
-            return muxindex(resource=SB, ps=ps, po=(xn, yn), bw=_bus, track=_track)
+            return muxindex(resource=Resource.SB, ps=ps, po=(xn, yn), bw=_bus, track=_track)
         else:
             # pself and pother swapped for in wires
-            return muxindex(resource=SB, ps=(xn, yn), po=ps, bw=_bus, track=_track)
+            return muxindex(resource=Resource.SB, ps=(xn, yn), po=ps, bw=_bus, track=_track)

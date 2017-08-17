@@ -26,7 +26,7 @@ class PNR:
     def pin_module(self, module, placement):
         self._place_state[module] = placement
 
-    def pin_net(self, net, placement):
+    def pin_tie(self, tie, placement):
         pass
 
     def place_design(self, funcs, model_reader):

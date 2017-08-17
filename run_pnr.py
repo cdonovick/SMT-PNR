@@ -28,17 +28,14 @@ fabric_file = args.fabric
 
 PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
 PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
-ROUTE_CONSTRAINTS = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(1, include_reg=True)
-ROUTE_RELAXED = pnr.build_msgraph, pnr.reachability, pnr.excl_constraints, pnr.dist_limit(3, include_reg=True)
-# To use multigraph encoding:
-# Note: This encoding does not handle fanout for now
-# Once nets represent the whole tree of connections, this will be fixed
-# ROUTE_CONSTRAINTS = pnr.build_net_graphs, pnr.reachability, pnr.dist_limit(1)
+
+simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
+simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
 
 print("Loading design: {}".format(design_file))
 ce = ConfigEngine()
-modules, nets = core2graph.load_core(design_file, *args.libs)
-des = design.Design(modules, nets)
+modules, ties = design.core2graph.load_core(design_file, *args.libs)
+des = design.Design(modules, ties)
 
 print("Loading fabric: {}".format(fabric_file))
 
@@ -73,15 +70,15 @@ while not pnrdone and iterations < 10:
             sys.exit(1)
 
     if not args.noroute:
-        pnr.process_regs(des, p._place_state, fab)
+        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
         print("Routing design...", end=' ')
         sys.stdout.flush()
-        if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader):
+        if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader(simultaneous)):
             print("success!")
             pnrdone = True
         else:
             print("\nfailed with dist_factor=1, relaxing...", end=' ')
-            if p.route_design(ROUTE_RELAXED, pnr.route_model_reader):
+            if p.route_design(ROUTE_RELAXED, pnr.route_model_reader(simultaneous)):
                 print("success!")
                 pnrdone = True
             else:

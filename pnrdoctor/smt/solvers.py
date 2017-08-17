@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import z3
 import monosat as ms
+import itertools
 
 
 class Solver_base(metaclass=ABCMeta):
@@ -55,8 +56,9 @@ class Solver_z3(Solver_base):
 class Solver_monosat(Solver_base):
     def __init__(self):
         super().__init__()
-        ms.Monosat().init('-decide-theories')
+        ms.Monosat().init('-decide-theories -route')
         self.graphs = []
+        self.at_most_one_builtin_size = 10
 
     def solve(self):
         ms.Assert(self.And(self.constraints))
@@ -71,7 +73,7 @@ class Solver_monosat(Solver_base):
     def reset(self):
         super().reset()
         self.graphs = []
-        ms.Monosat().init('-decide-theories')
+        ms.Monosat().init('-decide-theories -route')
 
     def get_model(self):
         if self.sat:
@@ -96,11 +98,25 @@ class Solver_monosat(Solver_base):
         else:
             return ms.Or(*pargs, **kwargs)
 
+    def Eq(self, *pargs, **kwargs):
+        return ms.Eq(*pargs, **kwargs)
+
     def Not(self, *args):
         return ms.Not(*args)
 
     def false(self):
         return ms.false()
+
+    def AtMostOne(self, vars):
+        '''
+           Copied from https://github.com/sambayless/monosat/blob/master/examples/routing/router_multi.py
+           courtesy of Sam Bayless
+        '''
+        if len(vars) <= self.at_most_one_builtin_size:
+            for a, b in itertools.combinations(vars, 2):
+                ms.AssertOr(~a, ~b)  # in every distinct pair of edges, at least one must be false
+        else:
+            ms.AssertAtMostOne(vars) # use more expensive, but more scalable, built-in AMO theory
 
     def AssertAtMostOne(self, bools):
         return ms.AssertAtMostOne(bools)

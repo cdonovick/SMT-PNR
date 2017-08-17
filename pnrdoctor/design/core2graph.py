@@ -26,7 +26,7 @@ def load_core(file, *libs):
         elif inst_type[:5] == 'Const':
             modules[inst_name]['type'] = 'Const'
             modules[inst_name]['conf'] = inst.get_config_value('value')
-            modules[inst_name]['res']  = Resource.UNSET
+            modules[inst_name]['res']  = Resource.Fused # always fuse constants
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'
@@ -53,7 +53,7 @@ def load_core(file, *libs):
         else:
             raise ValueError("Unknown module_name '{}' expected <'PE', 'Const', 'IO', 'Reg', 'Mem'>".format(inst_type))
 
-    nets = set()
+    ties = set()
     for con in top_module.directed_module.connections:
         src = con.source
         dst = con.sink
@@ -69,11 +69,11 @@ def load_core(file, *libs):
 
         width = curr.type.size
 
-        net = (src_name, src_port, dst_name, dst_port, width)
-        nets.add(net)
+        tie = (src_name, src_port, dst_name, dst_port, width)
+        ties.add(tie)
 
 
-    return modules, nets
+    return modules, ties
 
 
 

@@ -6,8 +6,8 @@ import itertools
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.config import Annotations
+from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList
 from .pnrutils import configindex
-from pnrdoctor.util import smart_open, Mask, IdentDict, STAR
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
 
@@ -102,12 +102,17 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         snkindex = muxindex(resource=mod.resource, ps=(x, y), po=STAR, bw=layer,
                             track=STAR, port=port)
 
-        for tindex in fabric.matching_keys(trackindex(snk=snkindex, src=STAR, bw=STAR)):
-            if tindex in r_state.I:
-                c = config_engine[tindex]
-                feature_address = c.feature_address
-                data[0] = c.sel
-                comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
+        tindexlist = [tindex for tindex in t_indices if tindex.snk == snkindex]
+
+        assert len(tindexlist) <= 1, \
+          'There should only be one driver of a PE input but have \n{}'.format(tindexlist)
+
+        # will loop at most once
+        for tindex in tindexlist:
+            c = config_engine[tindex]
+            feature_address = c.feature_address
+            data[0] = c.sel
+            comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
                                                                     c.snk_name, row=y, col=x)
 
         return data, comment, feature_address
@@ -119,31 +124,31 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
         feature_address = None
 
-        all_mux_indices = muxindex(resource=Resource.SB, ps=(x, y), po=STAR,
-                                   bw=layer, track=STAR, port=None)
+        for tindex in t_indices:
+            if tindex.snk.port:
+                # this is a connection box, because it has a port
+                # ignore it
+                continue
 
-        for mindex in fabric.matching_keys(all_mux_indices):
-            for tindex in fabric.matching_keys(trackindex(snk=mindex, src=STAR, bw=layer)):
-                if tindex in r_state.I:
-                    c = config_engine[tindex]
-                    feature_address = c.feature_address
-                    vnet = r_state.I[tindex][0]
+            c = config_engine[tindex]
+            feature_address = c.feature_address
+            vtie = r_state.I[tindex][0]
 
-                    # check if the dst is a register
-                    # and if the current track is the last track in the path
-                    # i.e. the one that should be registered
-                    if vnet.dst.resource == Resource.Reg and tindex == r_state[vnet][-1]:
-                        assert hasattr(c, 'configr')
-                        assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
-                        reg = c.configr // 32
-                        offset = c.configr % 32
-                        data[reg] |= 1 << offset
-                        comment[reg][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=y, col=x)
+            # check if the dst is a register
+            # and if the current track is the last track in the path
+            # i.e. the one that should be registered
+            if vtie.dst.resource == Resource.Reg and tindex == r_state[vtie][-1]:
+                assert hasattr(c, 'configr')
+                assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
+                reg = c.configr // 32
+                offset = c.configr % 32
+                data[reg] |= 1 << offset
+                comment[reg][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=y, col=x)
 
-                    reg = c.configl // 32
-                    offset = c.configl % 32
-                    data[reg] |= c.sel << offset
-                    comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
+            reg = c.configl // 32
+            offset = c.configl % 32
+            data[reg] |= c.sel << offset
+            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
 
         return data, comment, feature_address
 
@@ -158,20 +163,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
 
             for port in mod.inputs:
-                if len(mod.inputs[port]) > 1:
-                    #HACK if there are multiple drivers then grab the register
-                    for net in mod.inputs[port]:
-                        if net.src.type_ == 'Reg' and net.src.resource == Resource.Fused:
-                            break
-                else:
-                    net = mod.inputs[port][0]
+                tie = mod.inputs[port]
 
-                src = net.src
+                src = tie.src
                 if src.type_ == 'Const':
                     data[_pe_reg[port]] |= src.config # load 'a' reg with const
                     comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
                     comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
-                elif src.type_ == 'Reg' and src.resource == Resource.Fused:
+                elif port in mod.registered_ports:
                     data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
                     comment[_pe_reg['op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
                     comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
@@ -247,14 +246,27 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
     # open bit stream then loop
     with open(bitstream, 'w') as bs:
 
-        # HACK: Hardcoded layer
+        # TODO: Filter, sort and iterate through r_state instead of going through whole fabric
+        # Process r_state
+        processed_r_state = defaultdict(SetList)
+        for k, tindex in r_state.items():
+            if isinstance(k, tuple):
+                # this is debug information
+                continue
+
+            processed_r_state[tindex.snk.ps].add(tindex)
+
+        # HACK hardcoded layer
         for layer in {16}:
-            for x, y in itertools.product(range(fabric.cols), range(fabric.rows)):
-                tile_addr = config_engine[(x, y)].tile_addr
+            for pos in sorted(processed_r_state):
+                tile_addr = config_engine[pos].tile_addr
+                x, y = pos
+                t_indices = processed_r_state[pos]
+
                 data, comment, feature_address = _proc_sb()
                 _write(data, tile_addr, feature_address, bs, comment)
-                if (x, y) in p_state.I:
-                    for mod in p_state.I[(x, y)]:
+                if pos in p_state.I:
+                    for mod in p_state.I[pos]:
                         if mod.resource != Resource.Reg:
                             for port in fabric.port_names[(mod.resource, layer)].sinks:
                                 data, comment, feature_address = _proc_cb(port)
@@ -292,7 +304,7 @@ def _write_route_debug(design, output, p_state, r_state):
        which is unfortunately verbose...
     '''
     with smart_open(output) as f:
-        for net in design.physical_nets:
-            f.write('{} -> {}:\n'.format(net.src.name, net.dst.name))
-            f.write(str(r_state[(net, 'debug')]))
+        for tie in design.ties:
+            f.write('{} -> {}:\n'.format(tie.src.name, tie.dst.name))
+            f.write(str(r_state[(tie, 'debug')]))
             f.write("\n")

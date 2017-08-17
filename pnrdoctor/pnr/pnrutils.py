@@ -7,14 +7,14 @@ from pnrdoctor.design.module import Resource
 
 configindex = namedtuple('configindex', 'ps resource')
 
-def get_muxindices(net, p_state):
+def get_muxindices(tie, p_state):
     '''
        Convenience function for getting the muxindices of the src and dst
-       of a net
+       of a tie
     '''
 
-    src_index = get_muxindex(net.src, p_state, net.width, net.src_port)
-    dst_index = get_muxindex(net.dst, p_state, net.width, net.dst_port)
+    src_index = get_muxindex(tie.src, p_state, tie.width, tie.src_port)
+    dst_index = get_muxindex(tie.dst, p_state, tie.width, tie.dst_port)
 
     return src_index, dst_index
 
@@ -40,15 +40,15 @@ def get_muxindex(mod, p_state, layer, port=None):
                         track=p_state[mod][0][-1], **d)
 
 
-def process_regs(design, p_state, fabric):
+def process_regs(design, p_state, fabric, split_regs=False):
     for mod in design.modules:
         if mod.resource == Resource.Reg:
             # could have multiple outputs, for now just taking random
             # this is heuristic anyway
-            for net in mod.outputs.values():
-                if net.dst in p_state:
-                    outmod = net.dst
-                    dst_port = net.dst_port
+            for tie in mod.outputs.values():
+                if tie.dst in p_state:
+                    outmod = tie.dst
+                    dst_port = tie.dst_port
 
             modpos = p_state[mod][0][:-1]
             # get just the position (registers have extra info)
@@ -64,18 +64,19 @@ def process_regs(design, p_state, fabric):
             # hacky assuming planar tracks
             p_state[mod] = pother + (p_state[mod][0][-1],)
 
-            regindex = get_muxindex(mod, p_state, net.width)
+            regindex = get_muxindex(mod, p_state, tie.width)
 
-            # now split that port
-            origport = fabric[regindex].source
-            # assert that the port hasn't already been split
-            assert origport == fabric[regindex].sink
+            if split_regs:
+                # now split that port
+                origport = fabric[regindex].source
+                # assert that the port hasn't already been split
+                assert origport == fabric[regindex].sink
 
-            snkport, srcport = origport.split()
-            # note: for now still indexing by assigned location
-            fabric[regindex].source = srcport
-            fabric[regindex].sink = snkport
-            del origport
+                snkport, srcport = origport.split()
+                # note: for now still indexing by assigned location
+                fabric[regindex].source = srcport
+                fabric[regindex].sink = snkport
+                del origport
 
 
 def _reg_heuristic(pos1, pos2, vertport):

@@ -3,7 +3,7 @@ PREFIX=$(dirname $0)
 TESTS=( "reg.json" "reg2.json" "conv.json" "simp_mem.json" )
 FABRICS=( "cgra8x8mr.xml" )
 LIBS="stdlib cgralib"
-ANNOTATED="${PREFIX}/annoted"
+ANNOTATED="${PREFIX}/annotated"
 COMMANDS="--annotate $ANNOTATED --print"
 LIMIT=300
 
