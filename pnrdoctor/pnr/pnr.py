@@ -7,7 +7,7 @@ from pnrdoctor.util import BiMultiDict, BiDict
 
 ''' Class for handling place & route '''
 class PNR:
-    def __init__(self, fabric, design, solver_str):
+    def __init__(self, fabric, design, solver_str, seed=1):
         self._fabric = fabric
         self._design = design
 
@@ -22,6 +22,9 @@ class PNR:
 
         # set options
         self._place_solver.SetOption('produce-models', 'true')
+        self._place_solver.SetOption('random-seed', seed)
+        self._place_solver.SetLogic('QF_BV')
+        self._route_solver.set_option('random-seed', seed)
 
     def pin_module(self, module, placement):
         self._place_state[module] = placement
@@ -36,9 +39,10 @@ class PNR:
             self._place_solver.Assert(c)
 
         if not self._place_solver.CheckSat():
-            self._place_solver.reset()
+            self._place_solver.Reset()
             # set options
             self._place_solver.SetOption('produce-models', 'true')
+            self._place_solver.SetLogic('QF_BV')
             self._place_vars = BiDict()
             return False
 
