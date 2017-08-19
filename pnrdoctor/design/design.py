@@ -80,7 +80,7 @@ def _io_hack(mods, ties):
     for src_name, src_port, dst_name, dst_port, width in ties:
         if mods[src_name]['type'] == 'IO':
             #an output should never be a src
-            assert mods[src_name]['conf'] == 'i'
+            assert mods[src_name]['conf'] == 'i', (mods[src_name], mods[src_name]['conf'])
             inputmods[src_name] += 1
 
     #filter the inputs for inputs with more than one input

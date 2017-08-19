@@ -14,23 +14,22 @@ def load_core(file, *libs):
     for inst in top_def.instances:
         inst_name = inst.selectpath[0]
         inst_type = inst.module_name
-
         modules[inst_name] = dict()
 
 #        print(inst_type)
         if inst_type[:2] == 'PE':
             modules[inst_name]['type'] = 'PE'
-            modules[inst_name]['conf'] = inst.get_config_value('op')
+            modules[inst_name]['conf'] = inst.config['op'].value
             modules[inst_name]['res']  = Resource.PE
 
         elif inst_type[:5] == 'Const':
             modules[inst_name]['type'] = 'Const'
-            modules[inst_name]['conf'] = inst.get_config_value('value')
+            modules[inst_name]['conf'] = inst.config['value'].value
             modules[inst_name]['res']  = Resource.Fused # always fuse constants
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'
-            modules[inst_name]['conf'] = inst.get_config_value('mode')
+            modules[inst_name]['conf'] = inst.config['mode'].value
             modules[inst_name]['res']  = Resource.IO
 
         elif inst_type[:3] == 'Reg':
@@ -40,6 +39,7 @@ def load_core(file, *libs):
 
         elif inst_type[:3] == 'Mem':
             modules[inst_name]['type'] = 'Mem'
+
             modules[inst_name]['conf'] = {
                     'mode'              : 'linebuffer', #HACK inst.get_config_value('mode'),
                     'fifo_depth'        : inst.generator_args['depth'].value,
