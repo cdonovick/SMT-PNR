@@ -257,7 +257,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             processed_r_state[tindex.snk.ps].add(tindex)
 
         # HACK hardcoded layer
-        for layer in {16}:
+        for layer in {16, 1}:
             for pos in sorted(processed_r_state):
                 tile_addr = config_engine[pos].tile_addr
                 x, y = pos

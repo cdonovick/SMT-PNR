@@ -53,9 +53,9 @@ class PNR:
 
     def route_design(self, funcs, model_reader):
         constraints = []
-        for f in funcs:
-            # hacky hardcoding layers
-            for layer in {16}:
+        # hacky hardcoding layers
+        for layer in {1, 16}:
+            for f in funcs:
                 c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver, layer)
                 self._route_solver.add(self._route_solver.And(c))
 

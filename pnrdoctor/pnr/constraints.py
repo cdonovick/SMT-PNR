@@ -168,7 +168,7 @@ def _get_nonreg_input(reg):
 
 ################################ Graph Building/Modifying Functions #############################
 def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
-    graph = solver.add_graph()
+    graph = solver.add_graph(layer)
 
     node_inedges = defaultdict(list)
 
@@ -220,7 +220,7 @@ def build_spnr(region=0):
         # make undirected edges to each location
 
         node_dict = dict()
-        graph = solver.graphs[0]
+        graph = solver.graphs[layer]
 
         # list for holding edge equality constraints
         edge_constraints = list()
@@ -294,7 +294,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         Works with build_msgraph, excl_constraints and dist_limit
     '''
     reaches = []
-    graph = solver.graphs[0]
+    graph = solver.graphs[layer]
 
     for tie in design.ties:
         # hacky don't handle wrong layer
@@ -354,7 +354,7 @@ def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         Works with build_msgraph, reachability and dist_limit
     '''
     c = []
-    graph = solver.graphs[0]
+    graph = solver.graphs[layer]
 
     # for connected modules, make sure it's not connected to wrong inputs
     for tie in design.ties:
@@ -411,7 +411,7 @@ def dist_limit(dist_factor, include_reg=False):
 
     def dist_constraints(fabric, design, p_state, r_state, vars, solver, layer=16):
         constraints = []
-        graph = solver.graphs[0]
+        graph = solver.graphs[layer]
 
         for tie in design.ties:
             # hacky don't handle wrong layer
