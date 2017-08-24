@@ -42,7 +42,7 @@ install:
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     - cd $TRAVIS_BUILD_DIR
     # Build coreir
-    - git clone -b master_old -- https://github.com/rdaly525/coreir.git
+    - git clone -b master -- https://github.com/rdaly525/coreir.git
     - cd coreir;
     - export COREIRCONFIG="g++-4.9";
     - export COREIRHOME=$PWD
