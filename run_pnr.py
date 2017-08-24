@@ -29,8 +29,8 @@ fabric_file = args.fabric
 PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
 PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
 
-simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
-simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
+simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.reach_and_notreach(1)
+simultaneous, split_regs, ROUTE_RELAXED = pnr.reach_and_notreach(3)
 
 print("Loading design: {}".format(design_file))
 ce = ConfigEngine()
