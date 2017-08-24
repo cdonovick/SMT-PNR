@@ -1,8 +1,8 @@
 #!/bin/bash
 PREFIX=$(dirname $0)
-TESTS=( "reg.json" "reg2.json" "conv.json" "simp_mem.json" )
-FABRICS=( "cgra8x8mr.xml" )
-LIBS="stdlib cgralib"
+TESTS=$PREFIX/designs/*
+FABRICS=$PREFIX/fabrics/cgra8x8mr.xml
+LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
 COMMANDS="--annotate $ANNOTATED --print"
 LIMIT=300
@@ -12,9 +12,9 @@ if [[ "$SOLVER" != "" ]]; then
 fi
 
 code=0
-for d in "${TESTS[@]}"; do
-    for f in "${FABRICS[@]}"; do
-        cmd="${PREFIX}/../run_pnr.py ${PREFIX}/designs/$d ${PREFIX}/fabrics/$f --coreir-libs $LIBS $COMMANDS"
+for d in $TESTS; do
+    for f in $FABRICS; do
+        cmd="${PREFIX}/../run_pnr.py $d $f --coreir-libs $LIBS $COMMANDS"
         echo $cmd
         timeout $LIMIT $cmd
         r=$?
