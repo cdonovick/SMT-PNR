@@ -1,0 +1,65 @@
+{"top":"global.add4",
+"namespaces":{
+  "global":{
+    "modules":{
+      "add4":{
+        "type":["Record",{
+          "out":["Array",16,"Bit"],
+          "in":["Array",4,["Array",16,"BitIn"]]
+        }],
+        "instances":{
+          "PE_U5":{
+            "genref":"cgralib.PE",
+            "genargs":{"numin":2, "width":16},
+            "configargs":{"op":"add"}
+          },
+          "PE_U7":{
+            "genref":"cgralib.PE",
+            "genargs":{"numin":2, "width":16},
+            "configargs":{"op":"add"}
+          },
+          "PE_U9":{
+            "genref":"cgralib.PE",
+            "genargs":{"numin":2, "width":16},
+            "configargs":{"op":"add"}
+          },
+          "io16_U4":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"o"}
+          },
+          "io16in_U0":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"i"}
+          },
+          "io16in_U1":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"i"}
+          },
+          "io16in_U2":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"i"}
+          },
+          "io16in_U3":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"i"}
+          }
+        },
+        "connections":[
+          ["PE_U9.data.in.1","io16in_U2.out"],
+          ["PE_U9.data.in.0","io16in_U3.out"],
+          ["PE_U7.data.in.1","PE_U5.data.out"],
+          ["PE_U7.data.in.0","PE_U9.data.out"],
+          ["PE_U5.data.in.1","io16in_U0.out"],
+          ["PE_U5.data.in.0","io16in_U1.out"],
+          ["PE_U7.data.out","io16_U4.in"]
+        ]
+      }
+    }
+  }
+}
+}
