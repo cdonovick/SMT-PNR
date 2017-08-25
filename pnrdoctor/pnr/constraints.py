@@ -152,6 +152,17 @@ def _resource_region(loc, dist):
     return s
 
 
+def _get_nonreg_input(reg):
+    assert reg.resource == Resource.Reg, 'Expecting a register'
+    assert len(reg.inputs) == 1, 'Register should have exactly one input'
+    input_mod = next(iter(reg.inputs.values())).src
+
+    while input_mod.resource == Resource.Reg:
+        assert len(input_mod.inputs) == 1, 'Register should have exactly one input'
+        input_mod = next(iter(input_mod.inputs.values())).src
+
+    return input_mod
+
 #################################### Routing Constraints ################################
 
 
@@ -307,6 +318,36 @@ def at_most_one_driver(fabric, design, p_state, r_state, vars, solver, layer=16)
     return solver.And([])
 
 
+def reg_unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
+    '''
+        Enforce unreachability constraints when register is a source.
+        Intended to be used with at_most_one_driver
+    '''
+
+    # TODO: change to layer indexing
+    graph = solver.graphs[0]
+    constraints = []
+
+    for m in design.modules:
+        if m.resource == Resource.Reg:
+
+            # get the first non register in the input path
+            input_m = _get_nonreg_input(m)
+            # get the outputs of the registers input
+            input_m_outputs = {t for t in input_m.outputs.values()}
+
+            for outport in fabric.port_names[(Resource.Reg, layer)].sources:
+                for tie in input_m_outputs:
+                    if tie.dst == m:
+                        # ignore tie to itself
+                        continue
+
+                    constraints.append(~graph.reaches(vars[(m, outport)],
+                                                      vars[tie.dst, tie.dst_port]))
+
+    return solver.And(constraints)
+
+
 def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
     '''
         Exclusivity constraints for single graph encoding
@@ -415,8 +456,8 @@ def dist_limit(dist_factor, include_reg=False):
 def regional_replace(region, dist_factor):
     simultaneous = True
     split_regs = False
-    route_functions = build_msgraph, build_spnr(region), \
-      reachability, at_most_one_driver, dist_limit(dist_factor, include_reg=True)
+    route_functions = build_msgraph, build_spnr(region), reachability, at_most_one_driver, \
+      reg_unreachability, dist_limit(dist_factor, include_reg=True)
     return simultaneous, split_regs, route_functions
 
 
