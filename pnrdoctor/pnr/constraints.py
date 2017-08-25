@@ -324,8 +324,7 @@ def reg_unreachability(fabric, design, p_state, r_state, vars, solver, layer=16)
         Intended to be used with at_most_one_driver
     '''
 
-    # TODO: change to layer indexing
-    graph = solver.graphs[0]
+    graph = solver.graphs[layer]
     constraints = []
 
     for m in design.modules:
