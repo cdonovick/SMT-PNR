@@ -12,6 +12,10 @@ class _STAR(Constant):
     def __eq__(self, other):
         return True
 
+    def __ne__(self, other):
+        return False
+
+
 STAR = _STAR()
 
 class SelectDict_matching_keys(Set):

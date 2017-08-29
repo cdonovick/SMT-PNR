@@ -28,12 +28,29 @@ class IDObject:
     def id(self):
         return self._id
 
-class NamedIDObject(IDObject):
+class NamedObject:
     def __init__(self, name, formatter=None):
-        super().__init__()
         self._name = '{}'.format(name)
         if formatter is not None:
             self._name = formatter(self)
+
+    def __repr__(self):
+        return "<{}.{} : '{}'>".format(
+                self.__class__.__module__,
+                self.__class__.__name__,
+                self.name,
+                )
+
+
+    @property
+    def name(self):
+        return self._name
+
+class NamedIDObject(IDObject, NamedObject):
+    def __init__(self, name, formatter=None):
+        IDObject.__init__(self)
+        NamedObject.__init__(self, name, formatter)
+
 
     def __repr__(self):
         return "<{}.{} : '{}' : {}>".format(
@@ -43,9 +60,6 @@ class NamedIDObject(IDObject):
                 self.id,
                 )
 
-    @property
-    def name(self):
-        return self._name
 
 class FlyWeightMeta(type):
     '''
