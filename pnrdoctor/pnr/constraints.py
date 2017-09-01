@@ -62,11 +62,34 @@ def distinct(region, fabric, design, state, vars, solver):
                 constraints.append(solver.Or(c))
     return solver.And(constraints)
 
-def neighborhood(delta):
-    return partial(_neighborhood, delta)
+def uf_distinct(fabric, design, state, vars, solver):
+    '''
+    Enforce distinctness using uninterpreted functions
+    '''
+
+    # First, assign an id to each module
+    mid = -1
+    for m in design.modules:
+        mid += 1
+        vars[(m, "id")] = mid
+
+    bw = mid.bit_length()
+
+    # Then create an UF mapping position to module id
+    rm = next(iter(design.modules))
+    UF = solver.DeclareFun("F", [vars[rm].x.sort, vars[rm].y.sort], solver.BitVec(bw))
+    c = []
+    for m in design.modules:
+        pos = vars[m]
+        c.append(UF(pos.x, pos.y) == vars[(m, "id")])
+
+    return solver.And(c)
 
 def nearest_neighbor(region, fabric, design, state, vars, solver):
     return _neighborhood(1, region, fabric, design, state, vars, solver)
+
+def neighborhood(delta):
+    return partial(_neighborhood, delta)
 
 def _neighborhood(delta, region, fabric, design, state, vars, solver):
         # HACK will break for non-square fabric

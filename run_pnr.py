@@ -38,7 +38,6 @@ else:
     PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
     PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
 
-
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
 simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
 
