@@ -4,6 +4,8 @@ from .pnrutils import get_muxindices
 
 def place_model_reader(fabric, design, state, vars, solver):
     for module, var in vars.items():
+        if isinstance(module, tuple):
+            continue
         if module.resource == Resource.Reg:
             state[module] = var.get_coordinates() + (var.get_color(),)
         else:

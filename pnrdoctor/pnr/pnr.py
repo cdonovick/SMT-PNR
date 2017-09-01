@@ -26,14 +26,14 @@ class PNR:
         # set options
         self._place_solver.SetOption('produce-models', 'true')
         self._place_solver.SetOption('random-seed', seed)
-        self._place_solver.SetLogic('QF_BV')
+        self._place_solver.SetLogic('QF_UFBV')
 
         # use best settings per solver
-        if solver_str == 'CVC4':
-            self._place_solver.SetOption('bitblast', 'eager')
-            self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+        # if solver_str == 'CVC4':
+        #     self._place_solver.SetOption('bitblast', 'eager')
+        #     self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
 
-        self._route_solver.set_option('random-seed', seed)
+#        self._route_solver.set_option('random-seed', seed)
 
     def pin_module(self, module, placement):
         self._place_state[module] = placement
