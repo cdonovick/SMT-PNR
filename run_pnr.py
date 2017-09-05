@@ -27,8 +27,8 @@ design_file = args.design
 fabric_file = args.fabric
 seed = args.seed
 
-PLACE_CONSTRAINTS = pnr.uf_distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
-PLACE_RELAXED     = pnr.uf_distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
+PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
+PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
 
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
 simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
