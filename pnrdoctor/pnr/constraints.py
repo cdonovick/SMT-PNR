@@ -64,24 +64,44 @@ def distinct(region, fabric, design, state, vars, solver):
 
 def uf_distinct(fabric, design, state, vars, solver):
     '''
-    Enforce distinctness using uninterpreted functions
+    An alternative to "distinct" using uninterpreted function
+
+    Creates one uninterpreted function per resource type which
+    maps module positions to a unique module id.
+
+    By the UF axioms, this requires each position to be distinct
+    within a given resource
     '''
 
-    # First, assign an id to each module
-    mid = -1
+    res2numids = defaultdict(int)
+    mod2id = dict()
+    res2sorts = dict()
+
+    # create an id for each module
     for m in design.modules:
-        mid += 1
-        vars[(m, "id")] = mid
+        mod2id[m] = res2numids[m.resource]
+        res2numids[m.resource] += 1
 
-    bw = mid.bit_length()
+        if m.resource in res2sorts:
+            assert res2sorts[m.resource] == [vars[m].x.sort, vars[m].y.sort], \
+              "Module variables for a given resource should all have same sort"
+        else:
+            res2sorts[m.resource] = [vars[m].x.sort, vars[m].y.sort]
 
-    # Then create an UF mapping position to module id
-    rm = next(iter(design.modules))
-    UF = solver.DeclareFun("F", [vars[rm].x.sort, vars[rm].y.sort], solver.BitVec(bw))
+    # convert num ids to a bitwidth
+    # and make a function for each resource
+    res2fun = dict()
+    for res, num_ids in res2numids.items():
+        if num_ids > 1: num_ids = num_ids - 1  # want only the necessary bit width
+        uf = solver.DeclareFun(res.name + "_F", res2sorts[res], solver.BitVec(num_ids.bit_length()))
+        res2fun[res] = uf
+
+    # map module's position to module id through the uninterpreted function
     c = []
     for m in design.modules:
+        UF = res2fun[m.resource]
         pos = vars[m]
-        c.append(UF(pos.x, pos.y) == vars[(m, "id")])
+        c.append(UF(pos.x, pos.y) == mod2id[m])
 
     return solver.And(c)
 
