@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 import z3
 import monosat as ms
 import itertools
+import random
 
 
 class Solver_base(metaclass=ABCMeta):
@@ -57,7 +58,9 @@ class Solver_monosat(Solver_base):
     def __init__(self):
         super().__init__()
         ms.Monosat().init('-decide-theories -route')
-        self.graphs = []
+        # dictionary to graphs with arbitrary index
+        # often layer --> graph
+        self.graphs = dict()
         self.at_most_one_builtin_size = 10
 
     def solve(self):
@@ -65,15 +68,21 @@ class Solver_monosat(Solver_base):
         self.sat = ms.Solve()
         return self.sat
 
-    def add_graph(self):
+    def add_graph(self, layer):
         g = ms.Graph()
-        self.graphs.append(g)
+        self.graphs[layer] = g
         return g
 
     def reset(self):
         super().reset()
-        self.graphs = []
+        self.graphs = dict()
         ms.Monosat().init('-decide-theories -route')
+
+    def set_option(self, opt, val):
+        if opt == 'random-seed':
+            random.seed(val)
+        else:
+            raise ValueError('{} is not yet a supported option'.format(opt))
 
     def get_model(self):
         if self.sat:

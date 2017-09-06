@@ -39,6 +39,12 @@ class Design(NamedIDObject):
         self._modules = frozenset(modules)
         self._ties = frozenset(ties)
 
+        layers = set()
+        for tie in ties:
+            layers.add(tie.width)
+
+        self._layers = frozenset(layers)
+
         # assertions
         for module in self.modules:
             assert module.resource != Resource.UNSET, module
@@ -61,6 +67,10 @@ class Design(NamedIDObject):
     @property
     def ties(self):
         return self._ties
+
+    @property
+    def layers(self):
+        return self._layers
 
     @lru_cache(maxsize=32)
     def modules_with_attr(self, attr):
