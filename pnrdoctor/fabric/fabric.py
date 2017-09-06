@@ -143,6 +143,7 @@ class Fabric:
         self._rows = parsed_params['rows']
         self._cols = parsed_params['cols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
+        self._layers = frozenset(parsed_params['layers'])
         self._locations = parsed_params['locations']
         # temporarily limiting register locations
         if Resource.Reg in self._locations:
@@ -154,6 +155,7 @@ class Fabric:
         self._port_names = parsed_params['port_names']
 
         # Hacky hardcoding register port names
+        # because they're not provided by cgra_info
         self._port_names[(Resource.Reg, 16)].sources.add('out')
         self._port_names[(Resource.Reg, 16)].sinks.add('a')
 
@@ -174,6 +176,13 @@ class Fabric:
     def width(self):
         ''' alias for cols'''
         return self._cols
+
+    @property
+    def layers(self):
+        '''
+        Available layers in the parsed fabric
+        '''
+        return self._layers
 
     @property
     def num_tracks(self):

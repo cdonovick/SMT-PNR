@@ -81,6 +81,9 @@ def _scan_ports(root, params):
     port_names = defaultdict(port_names_container)
     params['port_names'] = port_names
 
+    # keep track of available layers
+    params['layers'] = set()
+
     rows = 0
     cols = 0
 
@@ -112,6 +115,7 @@ def _scan_ports(root, params):
 
     def _scan_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
+        params['layers'].add(_bw)
         _ps = (x, y)
         for mux in cb.findall('mux'):
             _port = mux.get('snk')

@@ -18,7 +18,6 @@ def route_model_reader(simultaneous=False):
 
         processed_mods = set()
 
-        # TODO: set up design views so can iterate by layer
         for tie in design.ties:
             graph = solver.graphs[tie.width]
 
