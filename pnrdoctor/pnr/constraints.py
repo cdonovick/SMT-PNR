@@ -53,6 +53,10 @@ def distinct(region, fabric, design, state, vars, solver):
     for m1 in design.modules:
         for m2 in design.modules:
             if state[m1].parent == state[m2].parent and m1.resource == m2.resource and m1 != m2:
+                if {m1.type_, m2.type_} == {'BitPE', 'DataPE'}:
+                    # we can place a BitPE and a DataPE in the same location
+                    continue
+
                 v1,v2 = vars[m1],vars[m2]
                 s = v1.keys() & v2.keys()
                 c = []
@@ -73,6 +77,8 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     within a given resource
     '''
 
+    # Note: Doesn't support BitPE/DataPE distinction yet
+
     res2numids = defaultdict(int)
     mod2id = dict()
     res2sorts = dict()
@@ -91,6 +97,7 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     # convert num ids to a bitwidth
     # and make a function for each resource
     res2fun = dict()
+
     for res, num_ids in res2numids.items():
         if num_ids > 1: num_ids = num_ids - 1  # want only the necessary bit width
         uf = solver.DeclareFun(res.name + "_F", res2sorts[res], solver.BitVec(num_ids.bit_length()))

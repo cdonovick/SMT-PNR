@@ -22,13 +22,29 @@ def load_core(file, *libs):
             modules[inst_name]['conf'] = inst.config['op'].value
             modules[inst_name]['res']  = Resource.PE
 
-        elif inst_type[:5] == 'Const':
+        elif inst_type[:5] == 'BitPE':
+            modules[inst_name]['type'] = 'BitPE'
+            # temporary -- don't know exactly what we need
+            modules[inst_name]['conf'] = inst.config['LUT_init'].value
+            modules[inst_name]['res']  = Resource.PE
+
+        elif inst_type[:6] == 'DataPE':
+            modules[inst_name]['type'] = 'DataPE'
+            modules[inst_name]['conf'] = inst.config['op'].value
+            modules[inst_name]['res']  = Resource.PE
+
+        elif inst_type[:5].title() == 'Const':  # using title to support old and new versions of coreir for now
             modules[inst_name]['type'] = 'Const'
             modules[inst_name]['conf'] = inst.config['value'].value
             modules[inst_name]['res']  = Resource.Fused # always fuse constants
 
         elif inst_type[:2] == 'IO':
             modules[inst_name]['type'] = 'IO'
+            modules[inst_name]['conf'] = inst.config['mode'].value
+            modules[inst_name]['res']  = Resource.IO
+
+        elif inst_type[:5] == 'bitIO':
+            modules[inst_name]['type'] = 'bitIO'
             modules[inst_name]['conf'] = inst.config['mode'].value
             modules[inst_name]['res']  = Resource.IO
 
@@ -85,10 +101,24 @@ _PORT_TRANSLATION = {
         'bit.in.0'  : 'd',
         'bit.out'   : 'pe_out_p',
     },
+    'BitPE' : {
+        'bit.in.0'  : 'c',
+        'bit.in.1'  : 'd',
+        'bit.out'   : 'pe_out_p',
+    },
+    'DataPE' : {
+        'data.in.0' : 'a',
+        'data.in.1' : 'b',
+        'data.out'  : 'pe_out_res',
+    },
     'Const' : {
         'out' : 'out',
     },
     'IO' : {
+        'in'  : 'a',
+        'out' : 'pe_out_res',
+    },
+    'bitIO' : {
         'in'  : 'a',
         'out' : 'pe_out_res',
     },
@@ -106,4 +136,3 @@ _PORT_TRANSLATION = {
         'full'   : 'almost_full',
     },
 }
-
