@@ -26,7 +26,7 @@ class PNR:
         # set options
         self._place_solver.SetOption('produce-models', 'true')
         self._place_solver.SetOption('random-seed', seed)
-        self._place_solver.SetLogic('QF_BV')
+        self._place_solver.SetLogic('QF_UFBV')
 
         # use best settings per solver
         if solver_str == 'CVC4':
