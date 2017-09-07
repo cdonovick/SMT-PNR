@@ -1,4 +1,3 @@
-from abc import ABCMeta, abstractmethod
 
 from pnrdoctor.util import Constant, NamedObject, NamedIDObject, FlyWeightMeta
 
@@ -11,8 +10,26 @@ SYMBOLIC = _SYMBOLIC()
 _NO_VAL = frozenset((None, SYMBOLIC))
 def _is_set(*vals): return all(v not in _NO_VAL for v in vals)
 
+
 class Region(NamedIDObject):
-    def __init__(self, name, space, sizes={}, positions={}, categories={}, subregions=()):
+    @classmethod
+    def from_frabic(cls, name, fabric):
+        rows = Scalar('rows', fabric.rows)
+        cols = Scalar('cols', fabric.cols)
+        tracks = Category('tracks', fabric.num_tracks)
+
+        return cls(name, (rows, cols, tracks))
+
+
+    def __init__(self,
+            name,
+            space,
+            from_space=False,
+            sizes={},
+            positions={},
+            categories={},
+            subregions=(),
+            ):
         '''
         space : [Category | Scalar]
         sizes : {Scalar : int | None | SYMBOLIC}
@@ -20,6 +37,27 @@ class Region(NamedIDObject):
         categories : {Category : int | None | SYMBOLIC}
         subregions : [Region]
         '''
+
+        space = frozenset(space)
+        scalar_space = frozenset(filter(lambda x : isinstance(x, Scalar), space))
+        category_space = frozenset(filter(lambda x : isinstance(x, Category), space))
+
+        # basic sanity checks
+        if from_space:
+            assert not sizes
+            assert not positions
+            assert not categories
+
+
+        assert all(isinstance(d, Dimension) for d in space)
+        assert space == scalar_space | category_space
+        assert sizes.keys() <= scalar_space
+        assert positions.keys() <= scalar_space
+        assert categories.keys() <= category_space
+
+        for r in subregions:
+            assert r.space <= space
+
         # set up empty object
         super().__init__(name)
 
@@ -32,19 +70,11 @@ class Region(NamedIDObject):
         self._sizes = dict()
         self._categories = dict()
 
-        # basic sanity checks
-        space = frozenset(space)
-        assert all(isinstance(d, Dimension) for d in space)
-        scalar_space = frozenset(filter(lambda x : isinstance(x, Scalar), space))
-        category_space = frozenset(filter(lambda x : isinstance(x, Category), space))
-
-        assert space == scalar_space | category_space
-        assert sizes.keys() <= scalar_space
-        assert positions.keys() <= scalar_space
-        assert categories.keys() <= category_space
-
-        for r in subregions:
-            assert r.space <= space
+        if from_space:
+            for d in scalar_space:
+                size[d] = d.size
+            for d in category_space:
+                self
 
         # init
         self._extend_space(space)
@@ -92,7 +122,6 @@ class Region(NamedIDObject):
             assert isinstance(d, Dimension), d
 
         space = space | self.space
-
         scalar_space = frozenset(filter(lambda x : isinstance(x, Scalar), space))
         category_space = frozenset(filter(lambda x : isinstance(x, Category), space))
 
@@ -105,7 +134,6 @@ class Region(NamedIDObject):
 
         for d in category_space - self._category_space:
             self._categories[d] = None
-
 
         self._space = space
         self._scalar_space = scalar_space
@@ -122,14 +150,13 @@ class Region(NamedIDObject):
                 if _is_set(r.positions[d]):
                     assert r.position[d] < self.sizes[d]
                 if _is_set(r.sizes[d]):
-                    assert r.sizes[d] < self.sizes[d]
+                    assert r.sizes[d] <= self.sizes[d]
                 if _is_set(r.positions[d], r.sizes[d]):
-                    assert r.positions[d] + r.sizes[d] < self.sizes[d]
+                    assert r.positions[d] + r.sizes[d] <= self.sizes[d]
 
             for d in r._category_space:
                 if _is_set(self.categories[d], r.categories[d]):
                     assert ~self.categories[d] & r.categories[d] == 0
-
             r._extend_space(self.space)
             r._parent = self
 
@@ -153,12 +180,12 @@ class Region(NamedIDObject):
                 if self.parent is None:
                     assert p < d.size
                     if _is_set(s):
-                        assert s + p < d.size
+                        assert s + p <= d.size
 
                 elif _is_set(self.parent.sizes[d]):
                     assert p < self.parent.sizes[d]
                     if _is_set(s):
-                        assert s + p < self.parent.sizes[d]
+                        assert s + p <= self.parent.sizes[d]
 
             # set position
             self.positions[d] = p
@@ -171,14 +198,14 @@ class Region(NamedIDObject):
             if _is_set(s):
                 p = self.positions[d]
                 if self.parent is None:
-                    assert s < d.size
+                    assert s <= d.size
                     if _is_set(p):
-                        assert s + p < d.size
+                        assert s + p <= d.size
 
                 elif _is_set(self.parent.sizes[d]):
-                    assert s < self.parent.sizes[d]
+                    assert s <= self.parent.sizes[d]
                     if _is_set(p):
-                        assert s + p < self.parent.sizes[d]
+                        assert s + p <= self.parent.sizes[d]
 
             # set size
             self.sizes[d] = s
