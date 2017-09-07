@@ -83,10 +83,23 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     mod2id = dict()
     res2sorts = dict()
 
+    # hack
+    # find out if there's BitPE/DataPE in this design
+    new_PE = False
+    for m in design.modules:
+        if m.type_ in {"DataPE", "BitPE"}:
+            new_PE = True
+
+    def _get_idx(mod):
+        if new_PE and mod.resource == Resource.PE:
+            return (mod.resource, mod.type_)
+        else:
+            return mod.resource
+
     # create an id for each module
     for m in design.modules:
-        mod2id[m] = res2numids[m.resource]
-        res2numids[m.resource] += 1
+        mod2id[m] = res2numids[_get_idx(m)]
+        res2numids[_get_idx(m)] += 1
 
         if m.resource in res2sorts:
             assert res2sorts[m.resource] == [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort], \
@@ -98,15 +111,18 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     # and make a function for each resource
     res2fun = dict()
 
-    for res, num_ids in res2numids.items():
+    for idx, num_ids in res2numids.items():
+        res = idx
+        if isinstance(idx, tuple) and len(idx) == 2:
+            res = idx[0]
         if num_ids > 1: num_ids = num_ids - 1  # want only the necessary bit width
         uf = solver.DeclareFun(res.name + "_F", res2sorts[res], solver.BitVec(num_ids.bit_length()))
-        res2fun[res] = uf
+        res2fun[idx] = uf
 
     # map module's position to module id through the uninterpreted function
     c = []
     for m in design.modules:
-        UF = res2fun[m.resource]
+        UF = res2fun[_get_idx(m)]
         pos = vars[m]
         rowv, colv = pos[fabric.rows_dim].var, pos[fabric.cols_dim].var
         c.append(UF(rowv, colv) == mod2id[m])
