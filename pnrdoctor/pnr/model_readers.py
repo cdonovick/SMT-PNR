@@ -2,13 +2,13 @@ from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import trackindex
 from .pnrutils import get_muxindices
 
-def place_model_reader(fabric, design, state, vars, solver):
-    for module, var in vars.items():
-        if module.resource == Resource.Reg:
-            state[module] = var.get_coordinates() + (var.get_color(),)
-        else:
-            state[module] = var.get_coordinates()
-
+def place_model_reader(region, fabric, design, state, vars, solver):
+    for module, var_d in vars.items():
+        r = state[module]
+        pos = {d : v.value for d,v in var_d.items() if d in r.position}
+        r.set_position(pos)
+        cat = {d : v.value for d,v in var_d.items() if d in r.category}
+        r.set_category(cat)
 
 def route_model_reader(simultaneous=False):
     def _route_model_reader(fabric, design, p_state, r_state, vars, solver):

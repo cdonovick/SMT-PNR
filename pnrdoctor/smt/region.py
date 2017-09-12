@@ -14,27 +14,23 @@ def _is_set(*vals): return all(v not in _NO_VAL for v in vals)
 class Region(NamedIDObject):
     @classmethod
     def from_frabic(cls, name, fabric):
-        rows = Scalar('rows', fabric.rows)
-        cols = Scalar('cols', fabric.cols)
-        tracks = Category('tracks', fabric.num_tracks)
-
-        return cls(name, (rows, cols, tracks))
+        return cls(name, (fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim), from_space=True)
 
 
     def __init__(self,
             name,
             space,
             from_space=False,
-            sizes={},
-            positions={},
-            categories={},
+            size={},
+            position={},
+            category={},
             subregions=(),
             ):
         '''
         space : [Category | Scalar]
-        sizes : {Scalar : int | None | SYMBOLIC}
-        positions : {Scalar : int | None | SYMBOLIC}
-        categories : {Category : int | None | SYMBOLIC}
+        size : {Scalar : int | None | SYMBOLIC}
+        position : {Scalar : int | None | SYMBOLIC}
+        category : {Category : int | None | SYMBOLIC}
         subregions : [Region]
         '''
 
@@ -44,16 +40,16 @@ class Region(NamedIDObject):
 
         # basic sanity checks
         if from_space:
-            assert not sizes
-            assert not positions
-            assert not categories
+            assert not size
+            assert not position
+            assert not category
 
 
         assert all(isinstance(d, Dimension) for d in space)
         assert space == scalar_space | category_space
-        assert sizes.keys() <= scalar_space
-        assert positions.keys() <= scalar_space
-        assert categories.keys() <= category_space
+        assert size.keys() <= scalar_space
+        assert position.keys() <= scalar_space
+        assert category.keys() <= category_space
 
         for r in subregions:
             assert r.space <= space
@@ -66,37 +62,37 @@ class Region(NamedIDObject):
         self._scalar_space = frozenset()
         self._category_space = frozenset()
 
-        self._positions = dict()
-        self._sizes = dict()
-        self._categories = dict()
+        self._position = dict()
+        self._size = dict()
+        self._category = dict()
 
         if from_space:
             for d in scalar_space:
-                size[d] = d.size
-            for d in category_space:
-                self
+                self.size[d] = d.size
+
 
         # init
         self._extend_space(space)
-        self.set_position(positions)
-        self.set_size(sizes)
+        self.set_category(category)
+        self.set_position(position)
+        self.set_size(size)
         self.add_subregions(*subregions)
 
     @property
-    def categories(self):
-        return self._categories
+    def category(self):
+        return self._category
 
     @property
     def parent(self):
         return self._parent
 
     @property
-    def positions(self):
-        return self._positions
+    def position(self):
+        return self._position
 
     @property
-    def sizes(self):
-        return self._sizes
+    def size(self):
+        return self._size
 
     @property
     def space(self):
@@ -106,15 +102,112 @@ class Region(NamedIDObject):
     def subregions(self):
         return self._subregions
 
+    def set_category(self, category):
+        for d,c in category.items():
+            # assert stuff
+            assert d in self._category_space
+            if _is_set(c):
+                if self.parent is None:
+                    assert c & ~d.mask == 0
+                elif _is_set(self.parent.category[d]):
+                    assert c & ~self.parent.category[d] == e
+
+            self.category[d] = c
+
+    def set_position(self, position):
+        for d,p in position.items():
+            # assert stuff
+            assert d in self._scalar_space
+            if _is_set(p):
+                s = self.size[d]
+                if self.parent is None:
+                    assert p < d.size
+                    if _is_set(s):
+                        assert s + p <= d.size
+
+                elif _is_set(self.parent.size[d]):
+                    assert p < self.parent.size[d]
+                    if _is_set(s):
+                        assert s + p <= self.parent.size[d]
+
+            # set position
+            self.position[d] = p
+
+
+    def set_size(self, size):
+        for d,s in size.items():
+            # assert stuff
+            assert d in self._scalar_space
+            if _is_set(s):
+                p = self.position[d]
+                if self.parent is None:
+                    assert s <= d.size
+                    if _is_set(p):
+                        assert s + p <= d.size
+
+                elif _is_set(self.parent.size[d]):
+                    assert s <= self.parent.size[d]
+                    if _is_set(p):
+                        assert s + p <= self.parent.size[d]
+
+            # set size
+            self.size[d] = s
+
+    def add_subregions(self, *subregions):
+        for r in subregions:
+            assert r.space <= self.space
+            assert r.parent is None
+            for d in r._scalar_space:
+                if not _is_set(self.size[d]):
+                    continue
+
+                if _is_set(r.position[d]):
+                    assert r.position[d] < self.size[d]
+                if _is_set(r.size[d]):
+                    assert r.size[d] <= self.size[d]
+                if _is_set(r.position[d], r.size[d]):
+                    assert r.position[d] + r.size[d] <= self.size[d]
+
+            for d in r._category_space:
+                if _is_set(self.category[d], r.category[d]):
+                    assert ~self.category[d] & r.category[d] == 0
+            r._extend_space(self.space)
+            r._parent = self
+
+    def make_subregion(self, name):
+        r = type(self)(name=name, space=(), from_space=True)
+
+        self.add_subregions(r)
+        return r
+
+    @property
+    def is_static(self):
+        for x in (self.size, self.position, self.category):
+            for v in x.values():
+                if v is SYMBOLIC:
+                    return False
+        return True
+
     def _clone(self):
         return type(self)(
             self.name,
             self.space,
-            sizes=self.sizes,
-            positions=self.positions,
-            categories=self.categories,
-            subregions=(r._clone() for r in self.subregions)
+            size=self.size,
+            position=self.position,
+            category=self.category,
+            subregions=self.subregions,
         )
+
+    def _deep_clone(self):
+        return type(self)(
+            self.name,
+            self.space,
+            size=self.size,
+            position=self.position,
+            category=self.category,
+            subregions=(r._deep_clone() for r in self.subregions),
+        )
+
 
     def _extend_space(self, space):
         space = frozenset(space)
@@ -129,87 +222,15 @@ class Region(NamedIDObject):
 
         # default everything to None
         for d in scalar_space - self._scalar_space:
-            self._positions[d] = None
-            self._sizes[d] = None
+            self._position[d] = None
+            self._size[d] = None
 
         for d in category_space - self._category_space:
-            self._categories[d] = None
+            self._category[d] = None
 
         self._space = space
         self._scalar_space = scalar_space
         self._category_space = category_space
-
-    def add_subregions(self, *subregions):
-        for r in subregions:
-            assert r.space <= self.space
-            assert r.parent is None
-            for d in r._scalar_space:
-                if not _is_set(self.sizes[d]):
-                    continue
-
-                if _is_set(r.positions[d]):
-                    assert r.position[d] < self.sizes[d]
-                if _is_set(r.sizes[d]):
-                    assert r.sizes[d] <= self.sizes[d]
-                if _is_set(r.positions[d], r.sizes[d]):
-                    assert r.positions[d] + r.sizes[d] <= self.sizes[d]
-
-            for d in r._category_space:
-                if _is_set(self.categories[d], r.categories[d]):
-                    assert ~self.categories[d] & r.categories[d] == 0
-            r._extend_space(self.space)
-            r._parent = self
-
-    def set_category(self, **categories):
-        for d,c in categories.items():
-            assert d in self._category_space
-            if _is_set(c):
-                if self.parent is None:
-                    assert c & ~d.mask == 0
-                elif _is_set(self.parent.categories[d]):
-                    assert c & ~self.parent.categories[d] == e
-
-            self.categories[d] = c
-
-    def set_position(self, positions):
-        for d,p in positions.items():
-            # assert stuff
-            assert d in self._scalar_space
-            if _is_set(p):
-                s = self.sizes[d]
-                if self.parent is None:
-                    assert p < d.size
-                    if _is_set(s):
-                        assert s + p <= d.size
-
-                elif _is_set(self.parent.sizes[d]):
-                    assert p < self.parent.sizes[d]
-                    if _is_set(s):
-                        assert s + p <= self.parent.sizes[d]
-
-            # set position
-            self.positions[d] = p
-
-
-    def set_size(self, sizes):
-        for d,s in sizes.items():
-            # assert stuff
-            assert d in self._scalar_space
-            if _is_set(s):
-                p = self.positions[d]
-                if self.parent is None:
-                    assert s <= d.size
-                    if _is_set(p):
-                        assert s + p <= d.size
-
-                elif _is_set(self.parent.sizes[d]):
-                    assert s <= self.parent.sizes[d]
-                    if _is_set(p):
-                        assert s + p <= self.parent.sizes[d]
-
-            # set size
-            self.sizes[d] = s
-
 
 class Dimension(NamedIDObject, metaclass=FlyWeightMeta):
     def __init__(self, name):
@@ -227,9 +248,13 @@ class Scalar(Dimension):
 class Category(Dimension):
     def __init__(self, name, n_categories):
         super().__init__(name)
+        self._size = n_categories
         self._mask = 2**n_categories - 1
 
     @property
     def mask(self):
         return self._mask
 
+    @property
+    def size(self):
+        return self._size

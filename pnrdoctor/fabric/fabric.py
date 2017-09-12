@@ -1,6 +1,6 @@
 from pnrdoctor.design.module import Resource
 from pnrdoctor.util import IDObject
-
+from pnrdoctor.smt.region import Scalar, Category
 from .fabricutils import Side, pos_to_side
 
 
@@ -157,13 +157,26 @@ class Fabric:
         self._port_names[(Resource.Reg, 16)].sources.add('out')
         self._port_names[(Resource.Reg, 16)].sinks.add('a')
 
+        # Dimensions for region building
+        self._rows_dim = Scalar('rows', self.rows)
+        self._cols_dim = Scalar('cols', self.cols)
+        self._tracks_dim = Category('tracks', self.num_tracks)
+
     @property
     def rows(self):
         return self._rows
 
     @property
+    def rows_dim(self):
+        return self._rows_dim
+
+    @property
     def cols(self):
         return self._cols
+
+    @property
+    def cols_dim(self):
+        return self._cols_dim
 
     @property
     def height(self):
@@ -178,6 +191,10 @@ class Fabric:
     @property
     def num_tracks(self):
         return self._num_tracks
+
+    @property
+    def tracks_dim(self):
+        return self._tracks_dim
 
     @property
     def port_names(self):

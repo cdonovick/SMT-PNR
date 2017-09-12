@@ -284,7 +284,10 @@ def _write_debug(design, output, p_state, r_state):
     with smart_open(output) as f:
         for module in design.modules:
             try:
-                f.write("module: {} @ {})\n".format(module.name, p_state[module][0]))
+                pos = {d.name : v for d,v in p_state[module].position.items() if v is not None}
+                pos.update({d.name : v for d,v in p_state[module].category.items() if v is not None} )
+
+                f.write("module: {} @ {})\n".format(module.name, pos))
             except (KeyError, IndexError):
                 f.write("module: {} is not placed\n".format(module.name))
 

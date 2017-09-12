@@ -7,7 +7,7 @@ from .region import SYMBOLIC
 
 class BaseHandler(NamedIDObject, metaclass=ABCMeta):
     def __init__(self, name, solver):
-        super().__init__(name, lambda obj : '{}_{}'.format(obj.id, obj.name))
+        super().__init__(name, lambda obj : '{}_{}'.format(obj.name, obj.id))
         self._solver = solver
 
     @property
@@ -21,6 +21,9 @@ class BaseHandler(NamedIDObject, metaclass=ABCMeta):
     @abstractmethod
     def equal(self, other):
         pass
+
+    def __eq__(self, other):
+        return self.equal(other)
 
     @abstractmethod
     def encode(self, value):
@@ -38,10 +41,13 @@ class BaseHandler(NamedIDObject, metaclass=ABCMeta):
 
 
 class BVHandler(BaseHandler):
-    def __init__(self, name, solver, bits):
+    def __init__(self, name, solver, bits, const_value):
         super().__init__(name, solver)
         self._bits = bits
-        self._var = solver.DeclareConst(self.name, solver.BitVec(bits))
+        if const_value is None:
+            self._var = solver.DeclareConst(self.name, solver.BitVec(bits))
+        else:
+            self._var = self.encode(const_value)
 
     def encode(self, value):
         return self.solver.TheoryConst(self.solver.BitVec(self._bits), int(value))
@@ -54,11 +60,15 @@ class BVHandler(BaseHandler):
     def invariants(self):
         return super().invariants
 
+    @property
+    def var(self):
+        return self._var
+
 class ScalarHandler(BVHandler):
-    def __init__(self, name, solver, upper_bound):
-        super().__init__(name, solver, upper_bound.bit_length())
+    def __init__(self, name, solver, upper_bound, const_value=None):
+        super().__init__(name, solver, upper_bound.bit_length(), const_value)
         self._upper_bound = upper_bound
-        self._is_pow2 = upper_bound & (upper_bound - 1)
+        self._is_pow2 = upper_bound & (upper_bound - 1) == 0
 
     def delta(self, other):
         try:
@@ -66,8 +76,11 @@ class ScalarHandler(BVHandler):
         except AttributeError:
             return self._var - self.encode(other)
 
-    def abs_delt(self, other):
-        return su.absolute_value(self.delta(other))
+    def abs_delta(self, other):
+        delta = self.delta(other)
+
+        #return self.solver.Ite(delta >= 0, delta, -delta)
+        return su.absolute_value(delta)
 
     def distinct(self, other):
         try:
@@ -82,6 +95,7 @@ class ScalarHandler(BVHandler):
             return self._var == self.encode(other)
 
     def encode(self, value):
+        assert 0 <= int(value) < self._upper_bound, 'Cannot encode given value'
         return self.solver.TheoryConst(self.solver.BitVec(self._bits), int(value))
 
     @property
@@ -97,13 +111,13 @@ class ScalarHandler(BVHandler):
 
             c = self._var[ix] == 0
         else:
-            c = bvult(self._var, self._upper_bound)
+            c = self.solver.BVUlt(self._var, self._upper_bound)
 
         return self.solver.And([c, super().invariants])
 
 class CategoryHandler(BVHandler):
-    def __init__(self, name, solver, bits):
-        super().__init__(name, solver, bits)
+    def __init__(self, name, solver, bits, const_value=None):
+        super().__init__(name, solver, bits, const_value)
 
     def distinct(self, other):
         try:
@@ -118,6 +132,7 @@ class CategoryHandler(BVHandler):
             return self._var == self.encode(other)
 
     def encode(self, value):
+        assert 0 <= int(value) < 2**self._bits, 'Cannot enode given value'
         return self.solver.TheoryConst(self.solver.BitVec(self._bits), int(value))
 
     @property
@@ -129,6 +144,10 @@ class CategoryHandler(BVHandler):
         return super().invariants
 
 class OneHotHandler(CategoryHandler):
+    def encode(self, value):
+        assert any(value == (1 << i) for i in range(self._bits)), 'Cannot enode given value'
+        return super().encode(value)
+
     @property
     def invariants(self):
         constraints = []
