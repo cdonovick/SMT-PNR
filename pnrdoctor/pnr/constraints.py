@@ -12,7 +12,7 @@ from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 from pnrdoctor.util import STAR
 
-from .pnrutils import get_muxindex, get_muxindices
+from .pnrutils import get_muxindex
 
 
 def init_regions(category_type, scalar_type):
@@ -201,10 +201,11 @@ def pin_resource_structured(fabric, design, state, vars, solver):
 ################################### Routing Helper Functions ###########################
 def _resource_region(loc, dist):
     ''' returns a set of locations in a radius of magnitude, dist, around loc'''
+
     s = set()
-    dxdy_set = set((x, y) for x,y in itertools.product(range(-dist, dist+1), repeat=2) if abs(x) + abs(y) <= dist)
-    for dxdy in dxdy_set:
-        s.add((loc[0] + dxdy[0], loc[1] + dxdy[1]))
+    drdc_set = set((dr, dc) for dr,dc in itertools.product(range(-dist, dist+1), repeat=2) if abs(dr) + abs(dc) <= dist)
+    for drdc in drdc_set:
+        s.add((loc[0] + drdc[0], loc[1] + drdc[1]))
 
     return s
 
@@ -231,9 +232,11 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver, layer=16):
 
     # add nodes for modules
     for mod in design.modules:
+        if mod.resource == Resource.Reg:
+            continue
         for _type in {'sources', 'sinks'}:
             for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                index = get_muxindex(mod, p_state, layer, port_name)
+                index = get_muxindex(fabric, mod, p_state, layer, port_name)
                 p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                 vars[p] = graph.addNode(p.name)
                 vars[(mod, port_name)] = vars[p]
@@ -302,7 +305,9 @@ def build_spnr(region=0):
 
             # take intersection with possible locations
             # register locations include the track, so remove track using map
-            for loc in _resource_region(p_state[mod][0], 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
+            pos = p_state[mod].position
+            orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
+            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
                 if mod.resource != Resource.Reg:
                     eqedges = list()
                     for _type in {'sources', 'sinks'}:
@@ -424,16 +429,13 @@ def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
         src = tie.src
         dst = tie.dst
 
-        src_index = get_muxindex(src, p_state, layer, tie.src_port)
-
         # get all the destination ports that connect these two modules
         s = set([n.dst_port for n in dst.inputs.values()
                  if n.src == src and n.src_port == tie.src_port])
 
         for port in fabric.port_names[(dst.resource, layer)].sinks - s:
-            dst_index = get_muxindex(dst, p_state, layer, port)
-            c.append(~graph.reaches(vars[fabric[src_index].source],
-                                    vars[fabric[dst_index].sink]))
+            c.append(~graph.reaches(vars[(src, tie.src_port)],
+                                    vars[(dst, port)]))
 
     # make sure modules that aren't connected are not connected
     for mdst in design.modules:
@@ -446,12 +448,9 @@ def unreachability(fabric, design, p_state, r_state, vars, solver, layer=16):
                     in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
                                          fabric.port_names[(mdst.resource, layer)].sinks):
 
-                    dst_index = get_muxindex(mdst, p_state, layer, dst_port)
-                    src_index = get_muxindex(msrc, p_state, layer, src_port)
-
                     # assert that these modules' ports do not connect
-                    c.append(~graph.reaches(vars[fabric[src_index].source],
-                                            vars[fabric[dst_index].sink]))
+                    c.append(~graph.reaches(vars[(msrc, src_port)],
+                                            vars[(mdst, dst_port)]))
 
     return solver.And(c)
 
@@ -478,13 +477,10 @@ def dist_limit(dist_factor, include_reg=False):
             src = tie.src
             dst = tie.dst
 
-            src_index = get_muxindex(src, p_state, layer, tie.src_port)
-            dst_index = get_muxindex(dst, p_state, layer, tie.dst_port)
+            src_pos = p_state[src].position
+            dst_pos = p_state[dst].position
 
-            src_pos = p_state[src][0]
-            dst_pos = p_state[dst][0]
-
-            manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
+            manhattan_dist = int(abs(src_pos[fabric.rows_dim] - dst_pos[fabric.rows_dim]) + abs(src_pos[fabric.cols_dim] - dst_pos[fabric.cols_dim]))
 
             # sometimes don't include registers -- based on include_reg flag
             # this is because heuristic placement of registers may require weird routes

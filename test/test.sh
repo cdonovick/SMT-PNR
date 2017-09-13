@@ -4,7 +4,7 @@ TESTS=$PREFIX/designs/*
 FABRICS=$PREFIX/fabrics/cgra8x8mr.xml
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
-COMMANDS="--print --noroute"
+COMMANDS="--print"
 LIMIT=300
 
 if [[ "$SOLVER" != "" ]]; then

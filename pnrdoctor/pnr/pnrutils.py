@@ -7,37 +7,30 @@ from pnrdoctor.design.module import Resource
 
 configindex = namedtuple('configindex', 'ps resource')
 
-def get_muxindices(tie, p_state):
-    '''
-       Convenience function for getting the muxindices of the src and dst
-       of a tie
-    '''
 
-    src_index = get_muxindex(tie.src, p_state, tie.width, tie.src_port)
-    dst_index = get_muxindex(tie.dst, p_state, tie.width, tie.dst_port)
-
-    return src_index, dst_index
-
-
-def get_muxindex(mod, p_state, layer, port=None):
+def get_muxindex(fabric, mod, p_state, layer, port=None):
     '''
        Given a module, p_state and the layer, returns the muxindex for indexing
        into the fabric
     '''
 
-    # if there's a register, don't grab the track, if it's anything else, it doesn't matter
-    d = {'ps': p_state[mod][0][:2], 'bw': layer}
+    pos = p_state[mod].position
+    _ps = pos[fabric.rows_dim], pos[fabric.cols_dim]
+    d = {'ps': _ps, 'bw': layer}
 
     if mod.resource != Resource.Reg:
         assert port is not None
         return muxindex(resource=mod.resource, port=port, **d)
     else:
+        # removing support for heuristic register placement
+        raise RuntimeError("Register position not yet determined.")
         # this is a register
         # for now, fabric uses Resource.SB everywhere -- not Resource.Reg
-        assert mod.resource == Resource.Reg
-        assert len(p_state[mod]) == 2, 'Expected Pself and Pother for register position'
-        return muxindex(resource=Resource.SB, po=p_state[mod][1][:-1],
-                        track=p_state[mod][0][-1], **d)
+        # assert mod.resource == Resource.Reg
+        # assert len(p_state[mod]) == 2, 'Expected Pself and Pother for register position'
+        # _track = region[fabric.track_dim]
+        # return muxindex(resource=Resource.SB, po=p_state[mod][1][:-1],
+        #                 track=track, **d)
 
 
 def process_regs(design, p_state, fabric, split_regs=False):

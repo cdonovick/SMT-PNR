@@ -140,8 +140,8 @@ class Track(IDObject):
 
 class Fabric:
     def __init__(self, parsed_params):
-        self._rows = parsed_params['rows']
-        self._cols = parsed_params['cols']
+        self._rows = parsed_params['numrows']
+        self._cols = parsed_params['numcols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
         self._locations = parsed_params['locations']
         # temporarily limiting register locations
