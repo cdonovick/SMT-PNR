@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import sys
-from pnrdoctor import design,  pnr, smt
+from pnrdoctor import design,  pnr, smt, ilp
 from functools import partial
 from pnrdoctor.config import ConfigEngine
 from pnrdoctor.design import core2graph
 from pnrdoctor.smt.handlers import OneHotHandler, ScalarHandler
-
+from pnrdoctor.ilp.ilp_solver import ilp_solvers
+from pnrdoctor.ilp.ilp_handlers import ILPScalarHandler
 import copy
 
 
@@ -28,8 +29,14 @@ design_file = args.design
 fabric_file = args.fabric
 
 
-PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource,
-PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource,
+if args.solver in ilp_solvers.keys():
+    # ILP solvers use scalar handlers for scalar and category type
+    PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(2), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource
+    PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(4), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource
+else:
+    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource
+    PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource
+
 
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
 simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
@@ -48,7 +55,7 @@ iterations = 0
 while not pnrdone and iterations < 10:
     fab = pnr.parse_xml(fabric_file, ce)
     p = pnr.PNR(fab, des, args.solver)
-    POSITION_T = partial(smt.BVXY, solver=p._place_solver)
+
     print("Placing design...", end=' ')
     sys.stdout.flush()
 

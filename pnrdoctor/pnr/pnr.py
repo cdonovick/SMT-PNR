@@ -7,6 +7,7 @@ from pnrdoctor.smt.region import Region
 from pnrdoctor.smt.region import SYMBOLIC
 from pnrdoctor.smt.solvers import Solver_monosat
 from pnrdoctor.util import BiMultiDict, BiDict
+from pnrdoctor.ilp.ilp_solver import ilp_solvers
 
 ''' Class for handling place & route '''
 class PNR:
@@ -20,11 +21,25 @@ class PNR:
         self._place_vars = dict()
         self._route_vars = BiDict()
 
-        self._place_solver = smt(solver_str)
-        self._route_solver = Solver_monosat()
+        self._smt_solver = True
 
-        # set options
-        self._place_solver.SetOption('produce-models', 'true')
+        if solver_str in ilp_solvers:
+            self._place_solver = ilp_solvers[solver_str]()
+            self._smt_solver = False
+
+        else:
+            self._place_solver = smt(solver_str)
+            # set options
+            self._place_solver.SetOption('produce-models', 'true')
+            self._place_solver.SetLogic('QF_UFBV')
+
+            # use best settings per solver
+            if solver_str == 'CVC4':
+                self._place_solver.SetOption('bitblast', 'eager')
+                self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+
+
+        self._route_solver = Solver_monosat()
 
         # set up region
         self._region = Region.from_frabic('CGRA', self.fabric)
@@ -53,11 +68,12 @@ class PNR:
             self._place_solver.Assert(c)
 
         if not self._place_solver.CheckSat():
-            #print(self._place_solver.Assertions)
-            #self._place_solver.reset()
-            # set options
-            self._place_solver.SetOption('produce-models', 'true')
-            self._place_vars = dict()
+            self._place_solver.Reset()
+            # set options for smt solver
+            if self._smt_solver:
+                self._place_solver.SetOption('produce-models', 'true')
+                self._place_solver.SetLogic('QF_BV')
+                self._place_vars = BiDict()
             return False
 
         model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
@@ -92,4 +108,3 @@ class PNR:
     @property
     def design(self):
         return self._design
-

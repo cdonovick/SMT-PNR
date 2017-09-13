@@ -214,6 +214,10 @@ class Fabric:
         '''
         return self._muxindex_locations
 
+    def resdimvals(self, res, dim):
+        rdv = set(l[dim] for l in self._locations[res])
+        return rdv
+
     # hacky returns all x==0 or y==0 locations for ios
     @property
     def io_locations(self):
