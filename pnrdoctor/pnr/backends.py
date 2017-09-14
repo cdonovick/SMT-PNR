@@ -6,7 +6,7 @@ import itertools
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.config import Annotations
-from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList
+from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList, BiMultiDict
 from .pnrutils import configindex
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
@@ -99,7 +99,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         feature_address = None
 
         # see fabric.fabricutils for indexing scheme documentation
-        snkindex = muxindex(resource=mod.resource, ps=(x, y), po=STAR, bw=layer,
+        snkindex = muxindex(resource=mod.resource, ps=(row, col), po=STAR, bw=layer,
                             track=STAR, port=port)
 
         tindexlist = [tindex for tindex in t_indices if tindex.snk == snkindex]
@@ -113,7 +113,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             feature_address = c.feature_address
             data[0] = c.sel
             comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
-                                                                    c.snk_name, row=y, col=x)
+                                                                    c.snk_name, row=row, col=col)
 
         return data, comment, feature_address
 
@@ -143,12 +143,12 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                 reg = c.configr // 32
                 offset = c.configr % 32
                 data[reg] |= 1 << offset
-                comment[reg][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=y, col=x)
+                comment[reg][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
 
             reg = c.configl // 32
             offset = c.configl % 32
             data[reg] |= c.sel << offset
-            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=y, col=x)
+            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col)
 
         return data, comment, feature_address
 
@@ -191,7 +191,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                 data[_pe_reg['b']]  = 0xffffffff
 
 
-        return data, comment, config_engine[configindex(resource=Resource.PE, ps=(x, y))].feature_address
+        return data, comment, config_engine[configindex(resource=Resource.PE, ps=(row, col))].feature_address
 
     def _proc_mem(mod):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
@@ -202,7 +202,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
             val = int(_mem_translate[opt][value])
 
-            ci = configindex(resource=Resource.Mem, ps=(x, y))
+            ci = configindex(resource=Resource.Mem, ps=(row, col))
             c = config_engine[ci]
 
             bitl = c[opt].bitl
@@ -246,33 +246,38 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
     # open bit stream then loop
     with open(bitstream, 'w') as bs:
 
-        # TODO: Filter, sort and iterate through r_state instead of going through whole fabric
         # Process r_state
+        # organize track indices by location
         processed_r_state = defaultdict(SetList)
         for k, tindex in r_state.items():
             if isinstance(k, tuple) and k[1] == 'debug':
                 # this is debug information
                 continue
 
+            # index by position (.ps) and bus width (.bw)
             processed_r_state[(tindex.snk.ps, tindex.bw)].add(tindex)
 
-        # HACK hardcoded layer
+        pos_map = BiMultiDict(default=True)
+
+        for module,reg in p_state.items():
+            if module.resource != Resource.Reg:
+                pos_map[module] = reg.position[fabric.rows_dim], reg.position[fabric.cols_dim]
+
+        # for each position and layer, process all the tracks and modules
         for pos, layer in sorted(processed_r_state):
             tile_addr = config_engine[pos].tile_addr
-            x, y = pos
+            row, col = pos
             t_indices = processed_r_state[(pos, layer)]
 
             data, comment, feature_address = _proc_sb()
             _write(data, tile_addr, feature_address, bs, comment)
-            if pos in p_state.I:
-                for mod in p_state.I[pos]:
-                    if mod.resource != Resource.Reg:
-                        for port in fabric.port_names[(mod.resource, layer)].sinks:
-                            data, comment, feature_address = _proc_cb(port)
-                            _write(data, tile_addr, feature_address, bs, comment)
+            for mod in pos_map.I[pos]:
+                for port in fabric.port_names[(mod.resource, layer)].sinks:
+                    data, comment, feature_address = _proc_cb(port)
+                    _write(data, tile_addr, feature_address, bs, comment)
 
-                        data, comment, feature_address = res2fun[mod.resource](mod)
-                        _write(data, tile_addr, feature_address, bs, comment)
+                data, comment, feature_address = res2fun[mod.resource](mod)
+                _write(data, tile_addr, feature_address, bs, comment)
 
 
 def write_debug(design, output=sys.stdout):
@@ -283,7 +288,10 @@ def _write_debug(design, output, p_state, r_state):
     with smart_open(output) as f:
         for module in design.modules:
             try:
-                f.write("module: {} @ {})\n".format(module.name, p_state[module][0]))
+                pos = {d.name : v for d,v in p_state[module].position.items() if v is not None}
+                pos.update({d.name : v for d,v in p_state[module].category.items() if v is not None} )
+
+                f.write("module: {} @ {})\n".format(module.name, pos))
             except (KeyError, IndexError):
                 f.write("module: {} is not placed\n".format(module.name))
 

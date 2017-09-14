@@ -2,8 +2,12 @@ import itertools as it
 
 from smt_switch import smt
 
+from pnrdoctor.design.module import Resource
+from pnrdoctor.smt.region import Region
+from pnrdoctor.smt.region import SYMBOLIC
 from pnrdoctor.smt.solvers import Solver_monosat
 from pnrdoctor.util import BiMultiDict, BiDict
+from pnrdoctor.ilp.ilp_solver import ilp_solvers
 
 ''' Class for handling place & route '''
 class PNR:
@@ -14,48 +18,69 @@ class PNR:
         assert design.layers <= fabric.layers, \
           "The layers in the design should be a subset of the layers available in the fabric."
 
-        self._place_state = BiMultiDict()
+        self._place_state = BiDict()
         self._route_state = BiMultiDict()
 
-        self._place_vars = BiDict()
+        self._place_vars = dict()
         self._route_vars = BiDict()
 
-        self._place_solver = smt(solver_str)
+        self._smt_solver = True
+
+        if solver_str in ilp_solvers:
+            self._place_solver = ilp_solvers[solver_str]()
+            self._smt_solver = False
+
+        else:
+            self._place_solver = smt(solver_str)
+            # set options
+            self._place_solver.SetOption('produce-models', 'true')
+            self._place_solver.SetLogic('QF_UFBV')
+            self._place_solver.SetOption('random-seed', seed)
+
+            # use best settings per solver
+            if solver_str == 'CVC4':
+                self._place_solver.SetOption('bitblast', 'eager')
+                self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+
         self._route_solver = Solver_monosat()
-
-        # set options
-        self._place_solver.SetOption('produce-models', 'true')
-        self._place_solver.SetOption('random-seed', seed)
-        self._place_solver.SetLogic('QF_BV')
-
-        # use best settings per solver
-        if solver_str == 'CVC4':
-            self._place_solver.SetOption('bitblast', 'eager')
-            self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
-
         self._route_solver.set_option('random-seed', seed)
 
+        # set up region
+        self._region = Region.from_frabic('CGRA', self.fabric)
+        for module in design.modules:
+            r = self._region.make_subregion(module.name)
+            # kinda hackish need to make rules dictionary
+            # so r.sizes can be safely mutated directly
+            r.set_size({d : 0 for d in r.size})
+            r.set_position({d : SYMBOLIC for d in r.position})
+            for d in r.category:
+                if module.resource == Resource.Reg or d != fabric.tracks_dim:
+                    r.set_category({d : SYMBOLIC})
+
+            self._place_state[module] = r
+
     def pin_module(self, module, placement):
-        self._place_state[module] = placement
+        raise NotImplementedError()
 
     def pin_tie(self, tie, placement):
-        pass
+        raise NotImplementedError()
 
     def place_design(self, funcs, model_reader):
         constraints = []
         for f in funcs:
-            c = f(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
+            c = f(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.Assert(c)
 
         if not self._place_solver.CheckSat():
             self._place_solver.Reset()
-            # set options
-            self._place_solver.SetOption('produce-models', 'true')
-            self._place_solver.SetLogic('QF_BV')
-            self._place_vars = BiDict()
+            # set options for smt solver
+            if self._smt_solver:
+                self._place_solver.SetOption('produce-models', 'true')
+                self._place_solver.SetLogic('QF_BV')
+                self._place_vars = BiDict()
             return False
 
-        model_reader(self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
+        model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
 
         return True
 
@@ -85,5 +110,3 @@ class PNR:
     @property
     def design(self):
         return self._design
-
-

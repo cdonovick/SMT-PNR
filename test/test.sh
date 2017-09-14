@@ -4,7 +4,7 @@ TESTS=$PREFIX/designs/*
 FABRICS=$PREFIX/fabrics/cgra8x8mr.xml
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
-COMMANDS="--annotate $ANNOTATED --print"
+COMMANDS="--print --annotate $ANNOTATED"
 LIMIT=300
 
 if [[ "$SOLVER" != "" ]]; then
@@ -20,7 +20,7 @@ for d in $TESTS; do
         r=$?
         if [ $r -eq 0 ]; then
             echo Success!
-            rm $ANNOTATED
+            #rm $ANNOTATED
         elif [ $r -eq 124 ]; then
             echo ???Timeout???
         else

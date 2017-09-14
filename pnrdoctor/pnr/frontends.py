@@ -81,18 +81,16 @@ def _scan_ports(root, params):
     port_names = defaultdict(port_names_container)
     params['port_names'] = port_names
 
-    # keep track of available layers
+    numrows = 0
+    numcols = 0
     params['layers'] = set()
-
-    rows = 0
-    cols = 0
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
         if sb.get('row'):
-            _ps = (x, y + int(sb.get("row")))
+            _ps = (row + int(sb.get("row")), col)
         else:
-            _ps = (x, y)
+            _ps = (row, col)
 
         for mux in sb.findall('mux'):
 
@@ -115,8 +113,10 @@ def _scan_ports(root, params):
 
     def _scan_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
+        _ps = (row, col)
+
         params['layers'].add(_bw)
-        _ps = (x, y)
+
         for mux in cb.findall('mux'):
             _port = mux.get('snk')
             # add to sinks
@@ -166,7 +166,7 @@ def _scan_ports(root, params):
             else:
                 d[tag.tag] = dv
 
-        ci = configindex(ps=(x, y), resource=resourcedict[res.tag])
+        ci = configindex(ps=(row, col), resource=resourcedict[res.tag])
         config_engine[ci] = config(d)
 
     fabelements = {'sb': _scan_sb,
@@ -180,25 +180,25 @@ def _scan_ports(root, params):
         else:
             _resource = Resource.PE
 
-        x = int(tile.get('col'))
-        y = int(tile.get('row'))
+        col = int(tile.get('col'))
+        row = int(tile.get('row'))
         # note, memory tiles will add the sb row to y
 
-        if x > cols:
-            cols = x
+        if col > numcols:
+            numcols = col
 
-        if y > rows:
-            rows = y
+        if row > numrows:
+            numrows = row
 
         # add to the set of locations for that resource
-        locations[_resource].add((x, y))
+        locations[_resource].add((row, col))
 
         # get the number of tracks
         trackparams = tile.get('tracks').split()
         for t in trackparams:
             tr = t.split(':')
             bw = int(tr[0].replace('BUS', ''))
-            num_tracks[(x, y, bw)] = int(tr[1])
+            num_tracks[(row, col, bw)] = int(tr[1])
 
         for element, processor in fabelements.items():
             for tag in tile.findall(element):
@@ -206,8 +206,8 @@ def _scan_ports(root, params):
 
     # want the number of rows not the value
     # i.e. 0-7 means 8
-    params['rows'] = rows + 1
-    params['cols'] = cols + 1
+    params['numrows'] = numrows + 1
+    params['numcols'] = numcols + 1
 
 
 def _connect_ports(root, params):
@@ -227,9 +227,9 @@ def _connect_ports(root, params):
     def _connect_sb(sb):
         # memory tiles have multiple rows of switch boxes
         if sb.get('row'):
-            _ps = (x, y + int(sb.get("row")))
+            _ps = (row + int(sb.get("row")), col)
         else:
-            _ps = (x, y)
+            _ps = (row, col)
 
         tile_addr = int(tile.get('tile_addr'))
         tile_type = tile.get('type')
@@ -257,7 +257,7 @@ def _connect_ports(root, params):
 
             for src in mux.findall('src'):
                 src_name = src.text
-                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, y)
+                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, row)
 
                 sel = int(src.get('sel'))
 
@@ -297,7 +297,7 @@ def _connect_ports(root, params):
             assert len(ft.findall('src')) == 1, 'Feedthroughs should have exactly one source'
             for src in ft.findall('src'):
                 src_name = src.text
-                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, y)
+                srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, row)
 
                 # handle ports off the edge
                 if srcindex not in fabric and srcindex not in ftdata.muxindices:
@@ -360,7 +360,7 @@ def _connect_ports(root, params):
 
     def _connect_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
-        _ps = (x, y)
+        _ps = (row, col)
 
         fa = int(cb.get('feature_address'))
         sel_w = int(cb.find('sel_width').text)
@@ -395,8 +395,8 @@ def _connect_ports(root, params):
                       'cb': _connect_cb}
 
     for tile in root:
-        x = int(tile.get('col'))
-        y = int(tile.get('row'))
+        col = int(tile.get('col'))
+        row = int(tile.get('row'))
         # note, memory tiles will add the sb row to y
 
         if tile.get("type"):
@@ -410,13 +410,13 @@ def _connect_ports(root, params):
 
 
 # Helper Functions
-def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
+def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
     # note: sometimes need to pass bus width because can't be inferred from name
     # e.g. pe_out_res
     # also use for some sanity checks -- there will be redundancy occasionally
 
-    x = ps[0]
-    y = ps[1]
+    row = ps[0]
+    col = ps[1]
 
     p = re.compile(r'(?P<mem_int>sb_wire_)'
                    '?(?:in|out)(?:_\d*)?_'
@@ -433,8 +433,8 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
             # special case for memory tile output
             # want to make sure referring to same port even from switch
             # boxes of different rows
-            assert tile_y is not None
-            return muxindex(resource=resource, ps=(ps[0], tile_y), bw=bw, port=name)
+            assert tile_row is not None
+            return muxindex(resource=resource, ps=(tile_row, col), bw=bw, port=name)
         else:
             return muxindex(resource=resource, ps=ps, bw=bw, port=name)
     else:
@@ -454,10 +454,10 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_y=None):
             assert b == 'BUS' + str(_bus)
             assert int(t) == _track
 
-        xn, yn, _ = mapSide(x, y, _side)
+        rown, coln, _ = mapSide(row, col, _side)
 
         if direc == 'o':
-            return muxindex(resource=Resource.SB, ps=ps, po=(xn, yn), bw=_bus, track=_track)
+            return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
         else:
             # pself and pother swapped for in wires
-            return muxindex(resource=Resource.SB, ps=(xn, yn), po=ps, bw=_bus, track=_track)
+            return muxindex(resource=Resource.SB, ps=(rown, coln), po=ps, bw=_bus, track=_track)

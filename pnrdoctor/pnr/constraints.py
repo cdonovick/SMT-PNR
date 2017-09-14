@@ -9,145 +9,203 @@ from collections import defaultdict
 
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
+from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 from pnrdoctor.util import STAR
 
-from .pnrutils import get_muxindex, get_muxindices
+from .pnrutils import get_muxindex
 
 
-def init_positions(position_type):
-    '''
-    init_positons:
-        place initializer
-    '''
-    def initializer(fabric, design, state, vars, solver):
+def init_regions(category_type, scalar_type):
+    def initializer(region, fabric, design, state, vars, solver):
         constraints = []
         for module in design.modules:
             if module not in vars:
-                p = position_type(module.name, fabric)
-                vars[module] = p
-                constraints.append(p.invariants)
+                vars[module] = dict()
+
+            r = state[module]
+            for d,p in r.position.items():
+                if p is SYMBOLIC:
+                    var = scalar_type(module.name + '_' + d.name, solver, d.size)
+                    constraints.append(var.invariants)
+                elif p is None:
+                    continue
+                else:
+                    var = scalar_type(module.name + '_' + d.name, solver, d.size, p)
+                vars[module][d] = var
+
+            for d,c in r.category.items():
+                if d == fabric.tracks_dim and module.resource != Resource.Reg:
+                    continue
+                if c is SYMBOLIC:
+                    var = category_type(module.name + '_' + d.name, solver, d.size)
+                    constraints.append(var.invariants)
+                elif c is None:
+                    continue
+                else:
+                    var = scalar_type(module.name + '_' + d.name, solver, d.size, c)
+                vars[module][d] = var
         return solver.And(constraints)
     return initializer
 
 
-def init_random(position_type):
-    def initializer(fabric, design, state, vars, solver):
-        constraints = []
-        # random.shuffle shuffles in place and needs indexable data type
-        modules = list(design.modules)
-        random.shuffle(modules)
-        for module in modules:
-            if module not in vars:
-                randstring = ''
-                for s in random.sample(string.ascii_letters + string.digits, 5):
-                    randstring += s
-                p = position_type(module.name + randstring, fabric)
-                vars[module] = p
-                constraints.append(p.invariants)
-        return solver.And(constraints)
-    return initializer
-
-
-def assert_pinned(fabric, design, state, vars, solver):
-    constraints = []
-    for module in design.modules:
-        if module in state:
-            pos = vars[module]
-            constraints.append(pos == pos.encode(state[module][0]))
-    return solver.And(constraints)
-
-def pin_reg(reg, p):
-    def _pin_reg(fabric, design, state, vars, solver):
-        pos = vars[reg]
-        return solver.And(pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1]))
-
-    return _pin_reg
-
-def distinct(fabric, design, state, vars, solver):
+def distinct(region, fabric, design, state, vars, solver):
     constraints = []
     for m1 in design.modules:
         for m2 in design.modules:
-            if m1 != m2 and m1.resource == m2.resource:
+            if state[m1].parent == state[m2].parent and m1.resource == m2.resource and m1 != m2:
                 v1,v2 = vars[m1],vars[m2]
-                c = v1.flat != v2.flat
+                s = v1.keys() & v2.keys()
+                c = []
+                for d in s:
+                    c.append(v1[d].distinct(v2[d]))
 
-                if m1.resource == Resource.Reg:
-                    constraints.append(solver.Or(c,  v1.c != v2.c))
-                else:
-                    constraints.append(c)
-
+                constraints.append(solver.Or(c))
     return solver.And(constraints)
 
-def register_colors(fabric, design, state, vars, solver):
-    constraints = []
-    for tie in design.ties:
-        src = tie.src
-        dst = tie.dst
-        if src.resource == dst.resource == Resource.Reg:
-            constraints.append(vars[src].c == vars[dst].c)
-    return solver.And(constraints)
+def neighborhood(delta):
+    return partial(_neighborhood, delta)
 
-def nearest_neighbor(fabric, design, state, vars, solver):
-    dxdy = ((0,1), (1,0))
-    return _neighborhood(dxdy, fabric, design, state, vars, solver)
+def nearest_neighbor(region, fabric, design, state, vars, solver):
+    return _neighborhood(1, region, fabric, design, state, vars, solver)
 
-
-def neighborhood(dist):
-    dxdy = set((x,y) for x,y in itertools.product(range(dist+1), repeat=2) if x+y <= dist and x+y > 0)
-    return partial(_neighborhood, dxdy)
-
-def _neighborhood(dxdy, fabric, design, state, vars, solver):
+def _neighborhood(delta, region, fabric, design, state, vars, solver):
+        # HACK will break for non-square fabric
         constraints = []
         for tie in design.ties:
             src = tie.src
             dst = tie.dst
             c = []
-            dx = vars[src].delta_x_fun(vars[dst])
-            dy = vars[src].delta_y_fun(vars[dst])
-            #c.append(solver.And(dx(0), dy(0)))
-            for x, y in dxdy:
-                c.append(solver.And(dx(x), dy(y)))
-            constraints.append(solver.Or(c))
+            src_v = vars[src]
+            dst_v = vars[dst]
+            s = src_v.keys() & dst_v.keys()
 
+            total = None
+            for d in s:
+                if isinstance(d, Scalar):
+                    dist = src_v[d].abs_delta(dst_v[d])
 
+                    if total is None:
+                        total = dist
+                    else:
+                        constraints.append(total <= total+dist)
+                        total = total + dist
+
+            if total is not None:
+                constraints.append(total <= delta)
         return solver.And(constraints)
 
 
-def pin_IO(fabric, design, state, vars, solver):
+def register_colors(region, fabric, design, state, vars, solver):
+    constraints = []
+    for tie in design.ties:
+        src = tie.src
+        dst = tie.dst
+        if src.resource == dst.resource == Resource.Reg:
+            constraints.append(vars[src][fabric.tracks_dim] == vars[dst][fabric.tracks_dim])
+    return solver.And(constraints)
+
+def pin_IO(region, fabric, design, state, vars, solver):
     constraints = []
     for module in design.modules_with_attr_val('type_', 'IO'):
-        pos = vars[module]
-        c = [pos.x == pos.encode_x(0),
-             pos.y == pos.encode_y(0)]
-        constraints.append(solver.Or(c))
+        v = vars[module]
+        r,c = v[fabric.rows_dim], v[fabric.cols_dim]
+        constraints.append(solver.Or([r == 0, c == 0]))
     return solver.And(constraints)
 
 
-def pin_resource(fabric, design, state, vars, solver):
+def pin_resource(region, fabric, design, state, vars, solver):
     constraints = []
     for module in design.modules:
-        pos = vars[module]
-        c = []
+        v = vars[module]
+        r,c = v[fabric.rows_dim], v[fabric.cols_dim],
+
+        cx = []
         for p in fabric.locations[module.resource]:
             if len(p) > 3 or len(p) < 2:
                 raise NotImplementedError("Can't haldle dimension other than 2 / 3")
 
-            cc = [pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1])]
+            cc = [r == p[0], c == p[1]]
             if len(p) == 3:
-                cc.append(pos.c == pos.encode_c(p[2]))
-            c.append(solver.And(cc))
-
-        constraints.append(solver.Or(c))
+                cc.append(v[fabric.tracks_dim] == p[2])
+            cx.append(solver.And(cc))
+        constraints.append(solver.Or(cx))
     return solver.And(constraints)
 
+def pin_resource_structured(region, fabric, design, state, vars, solver):
+    constraints = []
+    for module in design.modules:
+        pos = vars[module]
+        r, c = pos[fabric.rows_dim], pos[fabric.cols_dim]
+        if module.resource == Resource.Mem:
+            cc = []
+            for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
+                cc.append(c.var == col)
+            constraints.append(solver.Or(cc))
+
+            cr = []
+            for row in fabric.resdimvals(Resource.Mem, fabric.rows_dim):
+                cr.append(r.var == row)
+            constraints.append(solver.Or(cr))
+
+        elif module.resource == Resource.Reg:
+            cc = []
+            for col in fabric.resdimvals(Resource.Reg, fabric.cols_dim):
+                cc.append(c.var == col)
+            constraints.append(solver.Or(cc))
+
+        else:
+            cc = []
+            # Not placed in a memory column
+            for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
+                cc.append(c.var != col)
+            constraints.append(solver.And(cc))
+
+    return solver.And(constraints)
+
+#def init_random(position_type):
+#    def initializer(fabric, design, state, vars, solver):
+#        constraints = []
+#        # random.shuffle shuffles in place and needs indexable data type
+#        modules = list(design.modules)
+#        random.shuffle(modules)
+#        for module in modules:
+#            if module not in vars:
+#                randstring = ''
+#                for s in random.sample(string.ascii_letters + string.digits, 5):
+#                    randstring += s
+#                p = position_type(module.name + randstring, fabric)
+#                vars[module] = p
+#                constraints.append(p.invariants)
+#        return solver.And(constraints)
+#    return initializer
+#
+#
+#def assert_pinned(fabric, design, state, vars, solver):
+#    constraints = []
+#    for module in design.modules:
+#        if module in state:
+#            pos = vars[module]
+#            constraints.append(pos == pos.encode(state[module][0]))
+#    return solver.And(constraints)
+#
+#def pin_reg(reg, p):
+#    def _pin_reg(fabric, design, state, vars, solver):
+#        pos = vars[reg]
+#        return solver.And(pos.x == pos.encode_x(p[0]), pos.y == pos.encode_y(p[1]))
+#
+#    return _pin_reg
+#
+#
+#
 
 ################################### Routing Helper Functions ###########################
 def _resource_region(loc, dist):
     ''' returns a set of locations in a radius of magnitude, dist, around loc'''
+
     s = set()
-    dxdy_set = set((x, y) for x,y in itertools.product(range(-dist, dist+1), repeat=2) if abs(x) + abs(y) <= dist)
-    for dxdy in dxdy_set:
-        s.add((loc[0] + dxdy[0], loc[1] + dxdy[1]))
+    drdc_set = set((dr, dc) for dr,dc in itertools.product(range(-dist, dist+1), repeat=2) if abs(dr) + abs(dc) <= dist)
+    for drdc in drdc_set:
+        s.add((loc[0] + drdc[0], loc[1] + drdc[1]))
 
     return s
 
@@ -175,9 +233,11 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
         # add nodes for modules
         for mod in design.modules:
+            if mod.resource == Resource.Reg:
+                continue
             for _type in {'sources', 'sinks'}:
                 for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                    index = get_muxindex(mod, p_state, layer, port_name)
+                    index = get_muxindex(fabric, mod, p_state, layer, port_name)
                     p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                     vars[p] = graph.addNode(p.name)
                     vars[(mod, port_name)] = vars[p]
@@ -247,7 +307,9 @@ def build_spnr(region=0):
 
                 # take intersection with possible locations
                 # register locations include the track, so remove track using map
-                for loc in _resource_region(p_state[mod][0], 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
+                pos = p_state[mod].position
+                orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
+                for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
                     if mod.resource != Resource.Reg:
                         eqedges = list()
                         for _type in {'sources', 'sinks'}:
@@ -366,16 +428,13 @@ def unreachability(fabric, design, p_state, r_state, vars, solver):
         src = tie.src
         dst = tie.dst
 
-        src_index = get_muxindex(src, p_state, layer, tie.src_port)
-
         # get all the destination ports that connect these two modules
         s = set([n.dst_port for n in dst.inputs.values()
                  if n.src == src and n.src_port == tie.src_port])
 
         for port in fabric.port_names[(dst.resource, layer)].sinks - s:
-            dst_index = get_muxindex(dst, p_state, layer, port)
-            c.append(~graph.reaches(vars[fabric[src_index].source],
-                                    vars[fabric[dst_index].sink]))
+            c.append(~graph.reaches(vars[(src, tie.src_port)],
+                                    vars[(dst, port)]))
 
     # make sure modules that aren't connected are not connected
     for mdst in design.modules:
@@ -388,12 +447,9 @@ def unreachability(fabric, design, p_state, r_state, vars, solver):
                     in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
                                          fabric.port_names[(mdst.resource, layer)].sinks):
 
-                    dst_index = get_muxindex(mdst, p_state, layer, dst_port)
-                    src_index = get_muxindex(msrc, p_state, layer, src_port)
-
                     # assert that these modules' ports do not connect
-                    c.append(~graph.reaches(vars[fabric[src_index].source],
-                                            vars[fabric[dst_index].sink]))
+                    c.append(~graph.reaches(vars[(msrc, src_port)],
+                                            vars[(mdst, dst_port)]))
 
     return solver.And(c)
 
@@ -417,13 +473,10 @@ def dist_limit(dist_factor, include_reg=False):
             src = tie.src
             dst = tie.dst
 
-            src_index = get_muxindex(src, p_state, layer, tie.src_port)
-            dst_index = get_muxindex(dst, p_state, layer, tie.dst_port)
+            src_pos = p_state[src].position
+            dst_pos = p_state[dst].position
 
-            src_pos = p_state[src][0]
-            dst_pos = p_state[dst][0]
-
-            manhattan_dist = int(abs(src_pos[0] - dst_pos[0]) + abs(src_pos[1] - dst_pos[1]))
+            manhattan_dist = int(abs(src_pos[fabric.rows_dim] - dst_pos[fabric.rows_dim]) + abs(src_pos[fabric.cols_dim] - dst_pos[fabric.cols_dim]))
 
             # sometimes don't include registers -- based on include_reg flag
             # this is because heuristic placement of registers may require weird routes

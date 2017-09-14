@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import sys
-from pnrdoctor import design,  pnr, smt
+from pnrdoctor import design,  pnr, smt, ilp
 from functools import partial
 from pnrdoctor.config import ConfigEngine
 from pnrdoctor.design import core2graph
+from pnrdoctor.smt.handlers import OneHotHandler, ScalarHandler
+from pnrdoctor.ilp.ilp_solver import ilp_solvers
+from pnrdoctor.ilp.ilp_handlers import ILPScalarHandler
 import copy
 
 
@@ -18,7 +21,7 @@ parser.add_argument('--print-route', action='store_true', dest='print_route', he
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', help='output CGRA configuration in bitstream')
 parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitstream with annotations')
 parser.add_argument('--noroute', action='store_true')
-parser.add_argument('--solver', help='choose the smt solver to use for placement', default='CVC4')
+parser.add_argument('--solver', help='choose the smt solver to use for placement', default='Z3')
 parser.add_argument('--seed', help='Seed the randomness in solvers', default=1)
 
 args = parser.parse_args()
@@ -27,8 +30,14 @@ design_file = args.design
 fabric_file = args.fabric
 seed = args.seed
 
-PLACE_CONSTRAINTS = pnr.distinct, pnr.neighborhood(2), pnr.pin_IO, pnr.pin_resource, pnr.register_colors
-PLACE_RELAXED     = pnr.distinct, pnr.pin_IO, pnr.neighborhood(4), pnr.pin_resource, pnr.register_colors
+if args.solver in ilp_solvers.keys():
+    # ILP solvers use scalar handlers for scalar and category type
+    PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(2), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured
+    PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(4), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured
+else:
+    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
+    PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
+
 
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
 simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
@@ -47,23 +56,17 @@ iterations = 0
 while not pnrdone and iterations < 10:
     fab = pnr.parse_xml(fabric_file, ce)
     p = pnr.PNR(fab, des, args.solver, seed)
-    POSITION_T = partial(smt.BVXY, solver=p._place_solver)
+
     print("Placing design...", end=' ')
     sys.stdout.flush()
-    if iterations == 0:
-        PC = (pnr.init_positions(POSITION_T),) + PLACE_CONSTRAINTS
-        PR = (pnr.init_positions(POSITION_T),) + PLACE_RELAXED
-    else:
-        PC = (pnr.init_random(POSITION_T),) + PLACE_CONSTRAINTS
-        PR = (pnr.init_random(POSITION_T),) + PLACE_RELAXED
 
-    if p.place_design(PC, pnr.place_model_reader):
+    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
         print("success!")
         sys.stdout.flush()
     else:
         print("\nfailed with nearest_neighbor, relaxing...", end=' ')
         sys.stdout.flush()
-        if p.place_design(PR, pnr.place_model_reader):
+        if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
             print("success!")
             sys.stdout.flush()
         else:
@@ -71,7 +74,7 @@ while not pnrdone and iterations < 10:
             sys.exit(1)
 
     if not args.noroute:
-        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
+#        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
         print("Routing design...", end=' ')
         sys.stdout.flush()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader(simultaneous)):
@@ -114,6 +117,6 @@ if args.print or args.print_place:
     print("\nplacement info:")
     p.write_design(pnr.write_debug(des))
 
-if args.print or args.print_route:
+if (args.print or args.print_route) and not args.noroute:
     print("\nRouting info:")
     p.write_design(pnr.write_route_debug(des))

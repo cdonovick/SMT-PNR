@@ -1,6 +1,6 @@
 from pnrdoctor.design.module import Resource
 from pnrdoctor.util import IDObject
-
+from pnrdoctor.smt.region import Scalar, Category
 from .fabricutils import Side, pos_to_side
 
 
@@ -140,8 +140,8 @@ class Track(IDObject):
 
 class Fabric:
     def __init__(self, parsed_params):
-        self._rows = parsed_params['rows']
-        self._cols = parsed_params['cols']
+        self._rows = parsed_params['numrows']
+        self._cols = parsed_params['numcols']
         self._num_tracks = min(parsed_params['num_tracks'].values())
         self._layers = frozenset(parsed_params['layers'])
         self._locations = parsed_params['locations']
@@ -159,13 +159,26 @@ class Fabric:
         self._port_names[(Resource.Reg, 16)].sources.add('out')
         self._port_names[(Resource.Reg, 16)].sinks.add('a')
 
+        # Dimensions for region building
+        self._rows_dim = Scalar('rows', self.rows)
+        self._cols_dim = Scalar('cols', self.cols)
+        self._tracks_dim = Category('tracks', self.num_tracks)
+
     @property
     def rows(self):
         return self._rows
 
     @property
+    def rows_dim(self):
+        return self._rows_dim
+
+    @property
     def cols(self):
         return self._cols
+
+    @property
+    def cols_dim(self):
+        return self._cols_dim
 
     @property
     def height(self):
@@ -189,6 +202,10 @@ class Fabric:
         return self._num_tracks
 
     @property
+    def tracks_dim(self):
+        return self._tracks_dim
+
+    @property
     def port_names(self):
         return self._port_names
 
@@ -205,6 +222,15 @@ class Fabric:
            Returns a dictionary of resource type --> set of muxindex locations
         '''
         return self._muxindex_locations
+
+    def resdimvals(self, res, dim):
+        td = {self._rows_dim: 0,
+              self._cols_dim: 1,
+              self._tracks_dim: 2}
+        if dim in td:
+            dim = td[dim]
+        rdv = set(l[dim] for l in self._locations[res])
+        return rdv
 
     # hacky returns all x==0 or y==0 locations for ios
     @property

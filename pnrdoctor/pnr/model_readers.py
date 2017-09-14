@@ -1,14 +1,13 @@
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import trackindex
-from .pnrutils import get_muxindices
 
-def place_model_reader(fabric, design, state, vars, solver):
-    for module, var in vars.items():
-        if module.resource == Resource.Reg:
-            state[module] = var.get_coordinates() + (var.get_color(),)
-        else:
-            state[module] = var.get_coordinates()
-
+def place_model_reader(region, fabric, design, state, vars, solver):
+    for module, var_d in vars.items():
+        r = state[module]
+        pos = {d : v.value for d,v in var_d.items() if d in r.position}
+        r.set_position(pos)
+        cat = {d : v.value for d,v in var_d.items() if d in r.category}
+        r.set_category(cat)
 
 def route_model_reader(simultaneous=False):
     def _route_model_reader(fabric, design, p_state, r_state, vars, solver):
@@ -33,26 +32,28 @@ def route_model_reader(simultaneous=False):
             # when simultaneous, the edges on the end are virtual
             if simultaneous:
                 l = l[1:-1]
-                ftrack = vars[graph.getEdge(l[0], l[1])]
-                ltrack = vars[graph.getEdge(l[-2], l[-1])]
 
-                newsrcpos = ftrack.src.loc + ((ftrack.src.track,) if ftrack.src.track is not None else tuple())
-                newdstpos = ltrack.dst.loc + ((ltrack.dst.track,) if ltrack.dst.track is not None else tuple())
+                # TODO: Re-enable this -- update place state with monosat's adjustments
+                # ftrack = vars[graph.getEdge(l[0], l[1])]
+                # ltrack = vars[graph.getEdge(l[-2], l[-1])]
 
-                # make sure modules were not placed in more than one location
-                if tie.src in processed_mods:
-                    assert p_state[tie.src][0] == newsrcpos, "Module {} appears to be placed in multiple locations".format(tie.src)
-                else:
-                    del p_state[tie.src]
-                    p_state[tie.src] = newsrcpos
-                    processed_mods.add(tie.src)
+                # newsrcpos = ftrack.src.loc + ((ftrack.src.track,) if ftrack.src.track is not None else tuple())
+                # newdstpos = ltrack.dst.loc + ((ltrack.dst.track,) if ltrack.dst.track is not None else tuple())
 
-                if tie.dst in processed_mods:
-                    assert p_state[tie.dst][0] == newdstpos, "Module {} appears to be placed in multiple locations".format(tie.dst)
-                else:
-                    del p_state[tie.dst]
-                    p_state[tie.dst] = newdstpos
-                    processed_mods.add(tie.dst)
+                # # make sure modules were not placed in more than one location
+                # if tie.src in processed_mods:
+                #     assert p_state[tie.src][0] == newsrcpos, "Module {} appears to be placed in multiple locations".format(tie.src)
+                # else:
+                #     del p_state[tie.src]
+                #     p_state[tie.src] = newsrcpos
+                #     processed_mods.add(tie.src)
+
+                # if tie.dst in processed_mods:
+                #     assert p_state[tie.dst][0] == newdstpos, "Module {} appears to be placed in multiple locations".format(tie.dst)
+                # else:
+                #     del p_state[tie.dst]
+                #     p_state[tie.dst] = newdstpos
+                #     processed_mods.add(tie.dst)
 
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)

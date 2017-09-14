@@ -15,8 +15,8 @@ ftindex = namedtuple_with_defaults('ftindex', 'snk src bw')
 #
 # muxindex
 #    resource: Resource Enum :: resource type from {PE, Mem, SB}
-#    ps:       tuple, len=2  :: position self in (x, y)
-#    po:       tuple, len=2  :: position other in (x, y) -- This is used in switch boxes and
+#    ps:       tuple, len=2  :: position self in (row, col)
+#    po:       tuple, len=2  :: position other in (row, col) -- This is used in switch boxes and
 #                                                           expresses the "Side" from the xml
 #    bw:       int           :: bus width e.g. 16 bit, 1 bit, etc...
 #    track:    int           :: the track e.g. 0, 1, etc...
@@ -138,18 +138,18 @@ def pos_to_side(ps, po, direc='o'):
         return y2side[dely]
 
 
-def mapSide(x, y, side):
+def mapSide(row, col, side):
     '''
        Given a location and a side, returns the receiving tile location and receiving side
     '''
     if side is Side.N:
-        return x, y-1, Side.S
+        return row-1, col, Side.S
     elif side is Side.S:
-        return x, y+1, Side.N
+        return row+1, col, Side.N
     elif side is Side.E:
-        return x+1, y, Side.W
+        return row, col+1, Side.W
     elif side is Side.W:
-        return x-1, y, Side.E
+        return row, col-1, Side.E
     else:
         raise ValueError('Expected a Side but got {}'.format(type(side)))
 
@@ -165,8 +165,8 @@ def get_sb_params(ps, text, direc='o'):
        direc = 'o': (x, y) sb_wire_out_1_BUS16_3_0 ---> (x, y-1)
        direc = 'i': (x, y) sb_wire_out_1_BUS16_3_0 ---> (x, y+1)
     '''
-    x = ps[0]
-    y = ps[1]
+    row = ps[0]
+    col = ps[1]
 
     p = re.compile(r'(?P<mem_int>sb_wire_)?'
                    '(?:in|out)(?:_\d*)?_'
@@ -187,9 +187,9 @@ def get_sb_params(ps, text, direc='o'):
         assert b == 'BUS' + str(_bus)
         assert int(t) == _track
 
-    xn, yn, _ = mapSide(x, y, _side)
+    rown, coln, _ = mapSide(row, col, _side)
 
-    return (xn, yn), _bus, _track, _side
+    return (rown, coln), _bus, _track, _side
 
 
 def parse_name(text):
