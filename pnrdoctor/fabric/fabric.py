@@ -215,6 +215,11 @@ class Fabric:
         return self._muxindex_locations
 
     def resdimvals(self, res, dim):
+        td = {self._rows_dim: 0,
+              self._cols_dim: 1,
+              self._tracks_dim: 2}
+        if dim in td:
+            dim = td[dim]
         rdv = set(l[dim] for l in self._locations[res])
         return rdv
 

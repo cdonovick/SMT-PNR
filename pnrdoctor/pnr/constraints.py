@@ -131,34 +131,34 @@ def pin_resource(region, fabric, design, state, vars, solver):
         constraints.append(solver.Or(cx))
     return solver.And(constraints)
 
-def pin_resource_structured(fabric, design, state, vars, solver):
+def pin_resource_structured(region, fabric, design, state, vars, solver):
     constraints = []
     for module in design.modules:
         pos = vars[module]
         r, c = pos[fabric.rows_dim], pos[fabric.cols_dim]
         if module.resource == Resource.Mem:
             cc = []
-            for col in fabric.resdimvals(Resource.Mem, 0):
-                cc.append(c == col)
+            for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
+                cc.append(c.var == col)
             constraints.append(solver.Or(cc))
 
             cr = []
-            for row in fabric.resdimvals(Resource.Mem, 1):
-                cr.append(r == row)
+            for row in fabric.resdimvals(Resource.Mem, fabric.rows_dim):
+                cr.append(r.var == row)
             constraints.append(solver.Or(cr))
 
         elif module.resource == Resource.Reg:
-            c = []
-            for col in fabric.resdimvals(Resource.Reg, 0):
-                c.append(c == col)
-            constraints.append(solver.Or(c))
+            cc = []
+            for col in fabric.resdimvals(Resource.Reg, fabric.cols_dim):
+                cc.append(c.var == col)
+            constraints.append(solver.Or(cc))
 
         else:
-            c = []
+            cc = []
             # Not placed in a memory column
-            for col in fabric.resdimvals(Resource.Mem, 0):
-                c.append(c != col)
-            constraints.append(solver.And(c))
+            for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
+                cc.append(c.var != col)
+            constraints.append(solver.And(cc))
 
     return solver.And(constraints)
 

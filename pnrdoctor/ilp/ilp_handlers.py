@@ -38,28 +38,3 @@ class ILPScalarHandler(BaseHandler):
     @property
     def var(self):
         return self._var
-
-    # overloaded operators
-    # def __add__(self, other):
-    #     try:
-    #         return self._var + other._var
-    #     except AttributeError:
-    #         return self._var + self.encode(other)
-
-    # def __sub__(self, other):
-    #     try:
-    #         return self._var - other._var
-    #     except AttributeError:
-    #         return self._var - self.encode(other)
-
-    # def __le__(self, other):
-    #     try:
-    #         return self._var <= other._var
-    #     except AttributeError:
-    #         return self._var <= self.encode(other)
-        
-    # def __ge__(self, other):
-    #     try:
-    #         return self._var >= other._var
-    #     except AttributeError:
-    #         return self._var >= self.encode(other)

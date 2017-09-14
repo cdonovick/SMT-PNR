@@ -31,11 +31,11 @@ fabric_file = args.fabric
 
 if args.solver in ilp_solvers.keys():
     # ILP solvers use scalar handlers for scalar and category type
-    PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(2), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource
-    PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(4), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource
+    PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(2), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured
+    PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(4), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured
 else:
-    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource
-    PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource
+    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
+    PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
 
 
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
@@ -73,7 +73,7 @@ while not pnrdone and iterations < 10:
             sys.exit(1)
 
     if not args.noroute:
-        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
+#        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
         print("Routing design...", end=' ')
         sys.stdout.flush()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader(simultaneous)):

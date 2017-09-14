@@ -126,7 +126,7 @@ def ilp_pin_resource_structured(region, fabric, design, state, vars, solver):
         r, c = pos[fabric.rows_dim], pos[fabric.cols_dim]
         if module.resource == Resource.Mem:
             bool_vars_col = []
-            for col in fabric.resdimvals(Resource.Mem, 0):
+            for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
                 b = solver.addBinVar()
                 bool_vars_col.append(b)
                 constraints.append(c.var <= col + (1-b)*M)
@@ -136,7 +136,7 @@ def ilp_pin_resource_structured(region, fabric, design, state, vars, solver):
             constraints.append(solver.quicksum(bool_vars_col) == 1)
 
             bool_vars_row = []
-            for row in fabric.resdimvals(Resource.Mem, 1):
+            for row in fabric.resdimvals(Resource.Mem, fabric.rows_dim):
                 b = solver.addBinVar()
                 bool_vars_row.append(b)
                 constraints.append(r.var <= row + (1-b)*M)
@@ -148,7 +148,7 @@ def ilp_pin_resource_structured(region, fabric, design, state, vars, solver):
         elif module.resource == Resource.Reg:
             bool_vars = []
 
-            for col in fabric.resdimvals(Resource.Reg, 0):
+            for col in fabric.resdimvals(Resource.Reg, fabric.cols_dim):
                 b = solver.addBinVar()
                 bool_vars.append(b)
                 constraints.append(c.var <= col + (1-b)*M)
@@ -161,7 +161,7 @@ def ilp_pin_resource_structured(region, fabric, design, state, vars, solver):
             # Not placed in a memory column
             # TODO: Figure out if there's a better encoding
             # there may be a way that avoids redundancy
-            for col in fabric.resdimvals(Resource.Mem, 0):
+            for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
                 b = solver.addBinVar()
                 constraints.append(c.var <= col - 1 + b*M)
                 constraints.append(c.var >= col + 1 - (1-b)*M)
