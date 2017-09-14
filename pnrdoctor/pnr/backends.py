@@ -6,7 +6,7 @@ import itertools
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.config import Annotations
-from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList
+from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList, BiMultiDict
 from .pnrutils import configindex
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
@@ -257,6 +257,12 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             # index by position (.ps) and bus width (.bw)
             processed_r_state[(tindex.snk.ps, tindex.bw)].add(tindex)
 
+        pos_map = BiMultiDict(default=True)
+
+        for module,reg in p_state.items():
+            if module.resource != Resource.Reg:
+                pos_map[module] = reg.position[fabric.rows_dim], reg.position[fabric.cols_dim]
+
         # for each position and layer, process all the tracks and modules
         for pos, layer in sorted(processed_r_state):
             tile_addr = config_engine[pos].tile_addr
@@ -265,15 +271,13 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
             data, comment, feature_address = _proc_sb()
             _write(data, tile_addr, feature_address, bs, comment)
-            if pos in p_state.I:
-                for mod in p_state.I[pos]:
-                    if mod.resource != Resource.Reg:
-                        for port in fabric.port_names[(mod.resource, layer)].sinks:
-                            data, comment, feature_address = _proc_cb(port)
-                            _write(data, tile_addr, feature_address, bs, comment)
+            for mod in pos_map.I[pos]:
+                for port in fabric.port_names[(mod.resource, layer)].sinks:
+                    data, comment, feature_address = _proc_cb(port)
+                    _write(data, tile_addr, feature_address, bs, comment)
 
-                        data, comment, feature_address = res2fun[mod.resource](mod)
-                        _write(data, tile_addr, feature_address, bs, comment)
+                data, comment, feature_address = res2fun[mod.resource](mod)
+                _write(data, tile_addr, feature_address, bs, comment)
 
 
 def write_debug(design, output=sys.stdout):
