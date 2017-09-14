@@ -62,7 +62,7 @@ def distinct(region, fabric, design, state, vars, solver):
                 constraints.append(solver.Or(c))
     return solver.And(constraints)
 
-def uf_distinct(fabric, design, state, vars, solver):
+def uf_distinct(region, fabric, design, state, vars, solver):
     '''
     An alternative to "distinct" using uninterpreted function
 
@@ -83,10 +83,10 @@ def uf_distinct(fabric, design, state, vars, solver):
         res2numids[m.resource] += 1
 
         if m.resource in res2sorts:
-            assert res2sorts[m.resource] == [vars[m].x.sort, vars[m].y.sort], \
+            assert res2sorts[m.resource] == [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort], \
               "Module variables for a given resource should all have same sort"
         else:
-            res2sorts[m.resource] = [vars[m].x.sort, vars[m].y.sort]
+            res2sorts[m.resource] = [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort]
 
     # convert num ids to a bitwidth
     # and make a function for each resource
@@ -101,7 +101,8 @@ def uf_distinct(fabric, design, state, vars, solver):
     for m in design.modules:
         UF = res2fun[m.resource]
         pos = vars[m]
-        c.append(UF(pos.x, pos.y) == mod2id[m])
+        rowv, colv = pos[fabric.rows_dim].var, pos[fabric.cols_dim].var
+        c.append(UF(rowv, colv) == mod2id[m])
 
     return solver.And(c)
 
