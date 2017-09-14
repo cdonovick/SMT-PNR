@@ -83,6 +83,7 @@ def _scan_ports(root, params):
 
     numrows = 0
     numcols = 0
+    params['layers'] = set()
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -113,6 +114,9 @@ def _scan_ports(root, params):
     def _scan_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''))
         _ps = (row, col)
+
+        params['layers'].add(_bw)
+
         for mux in cb.findall('mux'):
             _port = mux.get('snk')
             # add to sinks

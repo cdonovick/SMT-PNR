@@ -21,13 +21,14 @@ parser.add_argument('--print-route', action='store_true', dest='print_route', he
 parser.add_argument('--bitstream', metavar='<BITSTREAM_FILE>', help='output CGRA configuration in bitstream')
 parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitstream with annotations')
 parser.add_argument('--noroute', action='store_true')
-parser.add_argument('--solver', help='choose the smt solver to use for placement', default='Z3')
+parser.add_argument('--solver', help='choose the smt solver to use for placement', default='CVC4')
+parser.add_argument('--seed', help='Seed the randomness in solvers', default=1)
 
 args = parser.parse_args()
 
 design_file = args.design
 fabric_file = args.fabric
-
+seed = args.seed
 
 if args.solver in ilp_solvers.keys():
     # ILP solvers use scalar handlers for scalar and category type
@@ -54,7 +55,7 @@ iterations = 0
 
 while not pnrdone and iterations < 10:
     fab = pnr.parse_xml(fabric_file, ce)
-    p = pnr.PNR(fab, des, args.solver)
+    p = pnr.PNR(fab, des, args.solver, seed)
 
     print("Placing design...", end=' ')
     sys.stdout.flush()

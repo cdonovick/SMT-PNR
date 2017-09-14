@@ -11,9 +11,12 @@ from pnrdoctor.ilp.ilp_solver import ilp_solvers
 
 ''' Class for handling place & route '''
 class PNR:
-    def __init__(self, fabric, design, solver_str):
+    def __init__(self, fabric, design, solver_str, seed=1):
         self._fabric = fabric
         self._design = design
+
+        assert design.layers <= fabric.layers, \
+          "The layers in the design should be a subset of the layers available in the fabric."
 
         self._place_state = BiDict()
         self._route_state = BiMultiDict()
@@ -32,14 +35,15 @@ class PNR:
             # set options
             self._place_solver.SetOption('produce-models', 'true')
             self._place_solver.SetLogic('QF_UFBV')
+            self._place_solver.SetOption('random-seed', seed)
 
             # use best settings per solver
             if solver_str == 'CVC4':
                 self._place_solver.SetOption('bitblast', 'eager')
                 self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
 
-
         self._route_solver = Solver_monosat()
+        self._route_solver.set_option('random-seed', seed)
 
         # set up region
         self._region = Region.from_frabic('CGRA', self.fabric)
@@ -84,10 +88,8 @@ class PNR:
     def route_design(self, funcs, model_reader):
         constraints = []
         for f in funcs:
-            # hacky hardcoding layers
-            for layer in {16}:
-                c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver, layer)
-                self._route_solver.add(self._route_solver.And(c))
+            c = f(self.fabric, self.design, self._place_state, self._route_state, self._route_vars, self._route_solver)
+            self._route_solver.add(self._route_solver.And(c))
 
         if not self._route_solver.solve():
             self._route_solver.reset()

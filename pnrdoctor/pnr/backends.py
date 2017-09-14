@@ -250,30 +250,29 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         # Process r_state
         processed_r_state = defaultdict(SetList)
         for k, tindex in r_state.items():
-            if isinstance(k, tuple):
+            if isinstance(k, tuple) and k[1] == 'debug':
                 # this is debug information
                 continue
 
-            processed_r_state[tindex.snk.ps].add(tindex)
+            processed_r_state[(tindex.snk.ps, tindex.bw)].add(tindex)
 
         # HACK hardcoded layer
-        for layer in {16}:
-            for pos in sorted(processed_r_state):
-                tile_addr = config_engine[pos].tile_addr
-                x, y = pos
-                t_indices = processed_r_state[pos]
+        for pos, layer in sorted(processed_r_state):
+            tile_addr = config_engine[pos].tile_addr
+            x, y = pos
+            t_indices = processed_r_state[(pos, layer)]
 
-                data, comment, feature_address = _proc_sb()
-                _write(data, tile_addr, feature_address, bs, comment)
-                if pos in p_state.I:
-                    for mod in p_state.I[pos]:
-                        if mod.resource != Resource.Reg:
-                            for port in fabric.port_names[(mod.resource, layer)].sinks:
-                                data, comment, feature_address = _proc_cb(port)
-                                _write(data, tile_addr, feature_address, bs, comment)
-
-                            data, comment, feature_address = res2fun[mod.resource](mod)
+            data, comment, feature_address = _proc_sb()
+            _write(data, tile_addr, feature_address, bs, comment)
+            if pos in p_state.I:
+                for mod in p_state.I[pos]:
+                    if mod.resource != Resource.Reg:
+                        for port in fabric.port_names[(mod.resource, layer)].sinks:
+                            data, comment, feature_address = _proc_cb(port)
                             _write(data, tile_addr, feature_address, bs, comment)
+
+                        data, comment, feature_address = res2fun[mod.resource](mod)
+                        _write(data, tile_addr, feature_address, bs, comment)
 
 
 def write_debug(design, output=sys.stdout):
