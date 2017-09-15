@@ -25,6 +25,7 @@ parser.add_argument('--noroute', action='store_true')
 parser.add_argument('--solver', help='choose the smt solver to use for placement', default='Z3')
 parser.add_argument('--seed', help='Seed the randomness in solvers', default=1)
 parser.add_argument('--time', action='store_true', help='Print timing information.')
+parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
 
 args = parser.parse_args()
 
@@ -34,11 +35,11 @@ seed = args.seed
 
 if args.solver in ilp_solvers.keys():
     # ILP solvers use scalar handlers for scalar and category type
-    PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(2), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured
-    PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_neighborhood(4), ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured
+    PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
+    PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(8)
 else:
-    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
-    PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
+    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.uf_distinct, pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured, pnr.neighborhood(4)
+    PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.uf_distinct, pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured, pnr.neighborhood(8)
 
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
 simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
@@ -49,14 +50,15 @@ modules, ties = design.core2graph.load_core(design_file, *args.libs)
 des = design.Design(modules, ties)
 
 print("Loading fabric: {}".format(fabric_file))
-
 pnrdone = False
-
 iterations = 0
 
 while not pnrdone and iterations < 10:
     fab = pnr.parse_xml(fabric_file, ce)
     p = pnr.PNR(fab, des, args.solver, seed)
+
+    if iterations == 0 and args.info:
+        print(p.info)
 
     print("Placing design...", end=' ')
     sys.stdout.flush()

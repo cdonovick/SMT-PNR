@@ -8,6 +8,8 @@ from pnrdoctor.smt.region import SYMBOLIC
 from pnrdoctor.smt.solvers import Solver_monosat
 from pnrdoctor.util import BiMultiDict, BiDict
 from pnrdoctor.ilp.ilp_solver import ilp_solvers
+from collections import defaultdict, namedtuple
+
 
 ''' Class for handling place & route '''
 class PNR:
@@ -58,6 +60,23 @@ class PNR:
                     r.set_category({d : SYMBOLIC})
 
             self._place_state[module] = r
+
+        # Gather some info about the pnr problem
+        # info is a named tuple with design info and fabric info
+        # each of those are dicts with resource --> number
+        self._info = namedtuple("info", "design fabric")(defaultdict(int), defaultdict(int))
+        for m in design.modules:
+            self._info.design[m.resource] += 1
+            self._info.design["total modules"] += 1
+
+        self._info.design["total ties"] = len(design.ties)
+
+        for res, locs in fabric.locations.items():
+            self._info.fabric[res] = len(locs)
+            # check that there are enough resources in fabric to place design
+            if self._info.fabric[res] < self._info.design[res]:
+                raise RuntimeError("There are not enough {}s in fabric to support the design".format(res.name))
+
 
     def pin_module(self, module, placement):
         raise NotImplementedError()
@@ -110,3 +129,15 @@ class PNR:
     @property
     def design(self):
         return self._design
+
+    @property
+    def info(self):
+        s = '\nDesign info: \n'
+        for k, v in self._info.design.items():
+            name = getattr(k, "name", k)
+            s += "{}: {}\n".format(name, v)
+        s += '\nFabric info: \n'
+        for k, v in self._info.fabric.items():
+            s += "{}: {}\n".format(k.name, v)
+
+        return s
