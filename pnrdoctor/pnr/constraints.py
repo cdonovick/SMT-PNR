@@ -62,11 +62,55 @@ def distinct(region, fabric, design, state, vars, solver):
                 constraints.append(solver.Or(c))
     return solver.And(constraints)
 
-def neighborhood(delta):
-    return partial(_neighborhood, delta)
+def uf_distinct(region, fabric, design, state, vars, solver):
+    '''
+    An alternative to "distinct" using uninterpreted function
+
+    Creates one uninterpreted function per resource type which
+    maps module positions to a unique module id.
+
+    By the UF axioms, this requires each position to be distinct
+    within a given resource
+    '''
+
+    res2numids = defaultdict(int)
+    mod2id = dict()
+    res2sorts = dict()
+
+    # create an id for each module
+    for m in design.modules:
+        mod2id[m] = res2numids[m.resource]
+        res2numids[m.resource] += 1
+
+        if m.resource in res2sorts:
+            assert res2sorts[m.resource] == [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort], \
+              "Module variables for a given resource should all have same sort"
+        else:
+            res2sorts[m.resource] = [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort]
+
+    # convert num ids to a bitwidth
+    # and make a function for each resource
+    res2fun = dict()
+    for res, num_ids in res2numids.items():
+        if num_ids > 1: num_ids = num_ids - 1  # want only the necessary bit width
+        uf = solver.DeclareFun(res.name + "_F", res2sorts[res], solver.BitVec(num_ids.bit_length()))
+        res2fun[res] = uf
+
+    # map module's position to module id through the uninterpreted function
+    c = []
+    for m in design.modules:
+        UF = res2fun[m.resource]
+        pos = vars[m]
+        rowv, colv = pos[fabric.rows_dim].var, pos[fabric.cols_dim].var
+        c.append(UF(rowv, colv) == mod2id[m])
+
+    return solver.And(c)
 
 def nearest_neighbor(region, fabric, design, state, vars, solver):
     return _neighborhood(1, region, fabric, design, state, vars, solver)
+
+def neighborhood(delta):
+    return partial(_neighborhood, delta)
 
 def _neighborhood(delta, region, fabric, design, state, vars, solver):
         # HACK will break for non-square fabric

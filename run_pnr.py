@@ -7,6 +7,7 @@ from pnrdoctor.design import core2graph
 from pnrdoctor.smt.handlers import OneHotHandler, ScalarHandler
 from pnrdoctor.ilp.ilp_solver import ilp_solvers
 from pnrdoctor.ilp.ilp_handlers import ILPScalarHandler
+from timeit import default_timer as timer
 import copy
 
 
@@ -23,6 +24,7 @@ parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitst
 parser.add_argument('--noroute', action='store_true')
 parser.add_argument('--solver', help='choose the smt solver to use for placement', default='Z3')
 parser.add_argument('--seed', help='Seed the randomness in solvers', default=1)
+parser.add_argument('--time', action='store_true', help='Print timing information.')
 
 args = parser.parse_args()
 
@@ -37,7 +39,6 @@ if args.solver in ilp_solvers.keys():
 else:
     PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(2), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
     PLACE_RELAXED     = pnr.init_regions(OneHotHandler, ScalarHandler), pnr.distinct, pnr.neighborhood(4), pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured
-
 
 simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
 simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
@@ -60,14 +61,22 @@ while not pnrdone and iterations < 10:
     print("Placing design...", end=' ')
     sys.stdout.flush()
 
-    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+    start = timer()
+    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):    
+        end = timer()
         print("success!")
+        if args.time:
+            print("placement took {}s".format(end - start))
         sys.stdout.flush()
     else:
         print("\nfailed with nearest_neighbor, relaxing...", end=' ')
         sys.stdout.flush()
+
         if p.place_design(PLACE_RELAXED, pnr.place_model_reader):
+            end = timer()
             print("success!")
+            if args.time:
+                print("placement took {}s".format(end - start))
             sys.stdout.flush()
         else:
             print("!!!failure!!!")
@@ -77,13 +86,20 @@ while not pnrdone and iterations < 10:
 #        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
         print("Routing design...", end=' ')
         sys.stdout.flush()
+        start = timer()
         if p.route_design(ROUTE_CONSTRAINTS, pnr.route_model_reader(simultaneous)):
+            end = timer()
             print("success!")
+            if args.time:
+                print("routing took {}s".format(end-start))
             pnrdone = True
         else:
             print("\nfailed with dist_factor=1, relaxing...", end=' ')
             if p.route_design(ROUTE_RELAXED, pnr.route_model_reader(simultaneous)):
+                end = timer()
                 print("success!")
+                if args.time:
+                    print("routing took {}s".format(end-start))
                 pnrdone = True
             else:
                 print("!!!failure!!!")

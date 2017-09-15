@@ -1,6 +1,7 @@
 from pnrdoctor.design.module import Resource
 from pnrdoctor.fabric.fabricutils import trackindex
 
+
 def place_model_reader(region, fabric, design, state, vars, solver):
     for module, var_d in vars.items():
         r = state[module]
