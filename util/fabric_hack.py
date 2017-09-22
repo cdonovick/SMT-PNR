@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import re
 import copy
 
-def hack(ifile, ofile, hack_port='c', hack_feature_adress='9'):
+def hack(ifile, ofile, hack_port='e', hack_feature_adress='9'):
     tree = ET.parse(ifile)
     root = tree.getroot()
 

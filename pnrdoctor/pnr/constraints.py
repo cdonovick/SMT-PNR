@@ -15,7 +15,7 @@ from pnrdoctor.util import STAR
 from .pnrutils import get_muxindex
 
 
-def init_regions(category_type, scalar_type):
+def init_regions(one_hot_type, category_type, scalar_type):
     def initializer(region, fabric, design, state, vars, solver):
         constraints = []
         for module in design.modules:
@@ -36,13 +36,20 @@ def init_regions(category_type, scalar_type):
             for d,c in r.category.items():
                 if d == fabric.tracks_dim and module.resource != Resource.Reg:
                     continue
+
+                if d.is_one_hot:
+                    T = one_hot_type
+                else:
+                    T = category_type
+
                 if c is SYMBOLIC:
-                    var = category_type(module.name + '_' + d.name, solver, d.size)
+                    var = T(module.name + '_' + d.name, solver, d.size)
                     constraints.append(var.invariants)
                 elif c is None:
                     continue
                 else:
-                    var = scalar_type(module.name + '_' + d.name, solver, d.size, c)
+                    var = T(module.name + '_' + d.name, solver, d.size, c)
+
                 vars[module][d] = var
         return solver.And(constraints)
     return initializer
@@ -53,10 +60,6 @@ def distinct(region, fabric, design, state, vars, solver):
     for m1 in design.modules:
         for m2 in design.modules:
             if state[m1].parent == state[m2].parent and m1.resource == m2.resource and m1 != m2:
-                if {m1.type_, m2.type_} == {'BitPE', 'DataPE'}:
-                    # we can place a BitPE and a DataPE in the same location
-                    continue
-
                 v1,v2 = vars[m1],vars[m2]
                 s = v1.keys() & v2.keys()
                 c = []

@@ -160,9 +160,10 @@ class Fabric:
         self._port_names[(Resource.Reg, 16)].sinks.add('a')
 
         # Dimensions for region building
-        self._rows_dim = Scalar('rows', self.rows)
-        self._cols_dim = Scalar('cols', self.cols)
-        self._tracks_dim = Category('tracks', self.num_tracks)
+        self._rows_dim = Scalar('row', self.rows)
+        self._cols_dim = Scalar('col', self.cols)
+        self._tracks_dim = Category('track', self.num_tracks, one_hot=True)
+        self._layers_dim = Category('layer', len(self.layers))
 
     @property
     def rows(self):
@@ -196,6 +197,10 @@ class Fabric:
         Available layers in the parsed fabric
         '''
         return self._layers
+
+    @property
+    def layers_dim(self):
+        return self._layers_dim
 
     @property
     def num_tracks(self):
@@ -252,3 +257,10 @@ class Fabric:
 
     def matching_keys(self, named_tuple_key):
         return self._fab.matching_keys(named_tuple_key)
+
+#class rand_fabric(fabric):
+#    def __init__(self, ncols, nrows, ntracks, resource_dist=None):
+#        if resource_dist is None:
+#            resource_dist = {
+#                    'IO' : {(Resource.IO, r, c) for r in range(nrows) for c in range(ncols) if r == 0 or c == 0}
+#                    'PE' : {(Resource.PE,
