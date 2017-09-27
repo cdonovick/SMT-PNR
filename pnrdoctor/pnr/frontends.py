@@ -50,7 +50,7 @@ def _scan_ports(root, params):
     # make sure indexing is correct and that
     # you never get the same index twice when
     # scanning ports
-    sanitycheckset = set()
+    processed_muxes = set()
 
     # keep track of feedthrough information in a generic object with settable attributes
     ftdata = lambda: 0
@@ -96,13 +96,13 @@ def _scan_ports(root, params):
 
             mindex = _get_index(_ps, mux.get('snk'), _resource)
 
-            if mux.get('reg') == '1':
-                # add to register muxindex_locations
-                muxindex_locations[Resource.Reg].add(mindex)
+            if mindex not in processed_muxes:
+                if mux.get('reg') == '1':
+                    # add to register muxindex_locations
+                    muxindex_locations[Resource.Reg].add(mindex)
 
-            assert mindex not in sanitycheckset
-            sanitycheckset.add(mindex)
-            fabric[mindex] = port_wrapper(Port(mindex))
+                processed_muxes.add(mindex)
+                fabric[mindex] = port_wrapper(Port(mindex))
 
         # Scan feedthrough ports
         for ft in sb.findall('ft'):
@@ -215,7 +215,7 @@ def _connect_ports(root, params):
     # make sure indexing is correct and that
     # you never get the same index twice when
     # scanning ports
-    pathsanitycheckset = set()
+    processed_tracks = set()
 
     fabric = params['fabric']
     locations = params['locations']
@@ -274,20 +274,20 @@ def _connect_ports(root, params):
                         muxindex_locations[srcindex.resource].add(srcindex)
 
                 assert srcindex.bw == snkindex.bw, \
-                    'Attempting to connect ports with different bus widths'
+                    'Attempting to connect ports with different bus widths. {}, {}'.format(srcindex, snkindex)
 
                 # if it connects to a feedthrough, don't make the connection yet. Want only one
                 # track connecting endpoints of feedthrough path
 
                 # see fabric.fabricutils for trackindex documentation
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in pathsanitycheckset
-                pathsanitycheckset.add(tindex)
-                track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
-                fabric[tindex] = track
-                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
-                                               configl=cl, configr=cr, sel=sel,
-                                               src_name=src_name, snk_name=snk_name)
+                if tindex not in processed_tracks:
+                    processed_tracks.add(tindex)
+                    track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
+                    fabric[tindex] = track
+                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
+                                                   configl=cl, configr=cr, sel=sel,
+                                                   src_name=src_name, snk_name=snk_name)
 
         # connect feed throughs
         for ft in sb.findall('ft'):
@@ -308,8 +308,8 @@ def _connect_ports(root, params):
                   'Attempting to connect ports with different bust widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in pathsanitycheckset
-                pathsanitycheckset.add(tindex)
+                assert tindex not in processed_tracks
+                processed_tracks.add(tindex)
 
                 for mindex in {srcindex, snkindex}:
                     if mindex not in ftdata.muxindex2paths:
@@ -382,8 +382,8 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in pathsanitycheckset
-                pathsanitycheckset.add(tindex)
+                assert tindex not in processed_tracks
+                processed_tracks.add(tindex)
 
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
                 fabric[tindex] = track
@@ -419,7 +419,7 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
     col = ps[1]
 
     p = re.compile(r'(?P<mem_int>sb_wire_)'
-                   '?(?:in|out)(?:_\d*)?_'
+                   '?(?P<direc>in|out)(?:_\d*)?_'
                    'BUS(?P<bus>\d+)_'
                    'S?(?P<side>\d+)_'
                    'T?(?P<track>\d+)')
@@ -438,6 +438,7 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
         else:
             return muxindex(resource=resource, ps=ps, bw=bw, port=name)
     else:
+        signal_direc = m.group('direc')
         _side = Side(int(m.group('side')))
         _track = int(m.group('track'))
         _bus = int(m.group('bus'))
@@ -456,8 +457,10 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
 
         rown, coln, _ = mapSide(row, col, _side)
 
-        if direc == 'o':
+        if signal_direc == 'out':
             return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
-        else:
+        elif signal_direc == 'in':
             # pself and pother swapped for in wires
             return muxindex(resource=Resource.SB, ps=(rown, coln), po=ps, bw=_bus, track=_track)
+        else:
+            raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
