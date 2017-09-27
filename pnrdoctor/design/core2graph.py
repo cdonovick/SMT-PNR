@@ -1,6 +1,6 @@
 import coreir
 from .module import Resource, Layer
-from pnrdoctor.util import SortedDict
+from pnrdoctor.util import SortedDict, IdentDict
 
 def load_core(file, *libs):
     context = coreir.Context()
@@ -113,13 +113,13 @@ def load_core(file, *libs):
 
 _PORT_TRANSLATION = {
     'PE' : {
-        'data.in.0' : 'a',
-        'data.in.1' : 'b',
+        'data.in.0' : 'op_a_in',
+        'data.in.1' : 'op_b_in',
         'data.out'  : 'pe_out_res',
-        'bit.in.0'  : 'd',
-        'bit.in.1'  : 'e',
-        'bit.in.2'  : 'f',
-        'bit.out'   : 'pe_out_p',
+        'bit.in.0'  : 'op_d_p_in',
+        'bit.in.1'  : 'op_e_p_in',
+        'bit.in.2'  : 'op_f_p_in',
+        'bit.out'   : 'pe_out_res_p',
     },
 
     'Const' : {
@@ -133,7 +133,7 @@ _PORT_TRANSLATION = {
 
     'BitIO' : {
         'in'  : 'd',
-        'out' : 'pe_out_p',
+        'out' : 'pe_out_res_p',
     },
 
     'Reg' : {
@@ -146,14 +146,6 @@ _PORT_TRANSLATION = {
         'out' : 'out',
     },
 
-    'Mem' : {
-        'rdata'  : 'mem_out',
-        'addr'   : 'ain',
-        'ren'    : 'ren',
-        'empty'  : 'valid',
-        'wdata'  : 'din',
-        'wen'    : 'wen',
-        'full'   : 'almost_full',
-    },
+    'Mem' : IdentDict(),
 }
 
