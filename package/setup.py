@@ -8,6 +8,6 @@ setup(
         license='MIT',
         packages=['pnrdoctor'],
         install_requires=['coreir', 'monosat>=1.4',], #should inculde smt-switch
-        python_requires='>=3.4'
+        python_requires='>=3.6'
 )
 

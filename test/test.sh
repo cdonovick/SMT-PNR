@@ -1,6 +1,6 @@
 #!/bin/bash
 PREFIX=$(dirname $0)
-TESTS=$PREFIX/harris.json
+TESTS=$PREFIX/designs/*
 FABRICS=$PREFIX/fabrics/cgra_info_16x16_hack.xml
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"

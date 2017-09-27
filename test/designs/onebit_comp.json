@@ -1,0 +1,46 @@
+{"top":"global.DesignTop",
+"namespaces":{
+  "global":{
+    "modules":{
+      "DesignTop":{
+        "type":["Record",{
+          "out":"Bit",
+          "in":["Array",1,["Array",16,"BitIn"]]
+        }],
+        "instances":{
+          "const15_":{
+            "genref":"coreir.const",
+            "genargs":{"width":16},
+            "configargs":{"value":15}
+          },
+          "io16in_in_0":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"i"}
+          },
+          "io1_out":{
+            "modref":"cgralib.BitIO",
+            "configargs":{"mode":"o"}
+          },
+          "ult_147_148_not_lut_bitPE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":-171, "op_kind":"bit"}
+          },
+          "ult_147_148_uge_PE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"uge", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"combined"}
+          }
+        },
+        "connections":[
+          ["ult_147_148_uge_PE.data.in.1","io16in_in_0.out"],
+          ["ult_147_148_uge_PE.data.in.0","const15_.out"],
+          ["ult_147_148_not_lut_bitPE.bit.in.0","ult_147_148_uge_PE.bit.out"],
+          ["ult_147_148_not_lut_bitPE.bit.out","io1_out.in"]
+        ]
+      }
+    }
+  }
+}
+}

@@ -1,0 +1,39 @@
+{"top":"global.DesignTop",
+"namespaces":{
+  "global":{
+    "modules":{
+      "DesignTop":{
+        "type":["Record",{
+          "out":"Bit",
+          "in":"BitIn"
+        }],
+        "instances":{
+          "io1_out":{
+            "modref":"cgralib.BitIO",
+            "configargs":{"mode":"o"}
+          },
+          "io1in_in":{
+            "modref":"cgralib.BitIO",
+            "configargs":{"mode":"i"}
+          },
+          "reg1":{
+            "genref":"coreir.bitreg",
+            "genargs":{"clr":false, "en":false, "rst":false},
+            "configargs":{"init":0}
+          },
+          "xor1_lut_bitPE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":102, "op_kind":"bit"}
+          }
+        },
+        "connections":[
+          ["xor1_lut_bitPE.bit.in.1","io1in_in.out"],
+          ["xor1_lut_bitPE.bit.out","reg1.in"],
+          ["reg1.out","io1_out.in"]
+        ]
+      }
+    }
+  }
+}
+}

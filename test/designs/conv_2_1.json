@@ -8,80 +8,98 @@
           "in":["Array",1,["Array",16,"BitIn"]]
         }],
         "instances":{
-          "Const_U11":{
-            "genref":"cgralib.Const",
-            "genargs":{"width":16},
-            "configargs":{"value":7}
+          "add_335_339_PE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"add", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"alu"}
           },
-          "Const_U13":{
-            "genref":"cgralib.Const",
+          "add_341_345_PE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"add", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"alu"}
+          },
+          "const0_":{
+            "genref":"coreir.const",
             "genargs":{"width":16},
             "configargs":{"value":0}
           },
-          "Const_U9":{
-            "genref":"cgralib.Const",
+          "const7_":{
+            "genref":"coreir.const",
             "genargs":{"width":16},
             "configargs":{"value":7}
           },
-          "PE_U1":{
-            "genref":"cgralib.PE",
-            "genargs":{"numin":2, "width":16},
-            "configargs":{"op":"add"}
+          "const7_$1":{
+            "genref":"coreir.const",
+            "genargs":{"width":16},
+            "configargs":{"value":7}
           },
-          "PE_U3":{
-            "genref":"cgralib.PE",
-            "genargs":{"numin":2, "width":16},
-            "configargs":{"op":"add"}
+          "io16_out":{
+            "genref":"cgralib.IO",
+            "genargs":{"width":16},
+            "configargs":{"mode":"o"}
           },
-          "PE_U5":{
-            "genref":"cgralib.PE",
-            "genargs":{"numin":2, "width":16},
-            "configargs":{"op":"mul"}
-          },
-          "PE_U7":{
-            "genref":"cgralib.PE",
-            "genargs":{"numin":2, "width":16},
-            "configargs":{"op":"mul"}
-          },
-          "io16in_U0":{
+          "io16in_in_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":16},
             "configargs":{"mode":"i"}
           },
-          "lb_p4_clamped_stencil_update_stream$mem_1":{
+          "lb_p4_clamped_stencil_update_stream$mem_1$cgramem":{
             "genref":"cgralib.Mem",
-            "genargs":{"depth":10, "width":16},
-            "configargs":{"mode":"linebuffer"}
+            "genargs":{"depth":1024, "width":16},
+            "configargs":{"almost_full_cnt":0, "fifo_depth":10, "mode":"linebuffer"}
+          },
+          "lb_p4_clamped_stencil_update_stream$mem_1_wen_lut_bitPE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":1, "op_kind":"bit"}
+          },
+          "mul_337_338_PE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"mul", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"alu"}
+          },
+          "mul_343_344_PE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"mul", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"alu"}
           }
         },
         "connections":[
-          ["PE_U7.data.in.1","Const_U11.out"],
-          ["PE_U7.data.in.0","lb_p4_clamped_stencil_update_stream$mem_1.rdata"],
-          ["PE_U5.data.in.1","Const_U9.out"],
-          ["PE_U5.data.in.0","io16in_U0.out"],
-          ["PE_U3.data.in.1","PE_U7.data.out"],
-          ["PE_U3.data.in.0","Const_U13.out"],
-          ["PE_U1.data.in.1","PE_U5.data.out"],
-          ["PE_U1.data.in.0","PE_U3.data.out"],
-          ["lb_p4_clamped_stencil_update_stream$mem_1.wdata","io16in_U0.out"]
+          ["mul_343_344_PE.data.in.1","const7_$1.out"],
+          ["mul_343_344_PE.data.in.0","io16in_in_0.out"],
+          ["mul_337_338_PE.data.in.1","const7_.out"],
+          ["mul_337_338_PE.data.in.0","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata"],
+          ["add_341_345_PE.data.in.1","mul_343_344_PE.data.out"],
+          ["add_341_345_PE.data.in.0","add_335_339_PE.data.out"],
+          ["add_335_339_PE.data.in.1","mul_337_338_PE.data.out"],
+          ["add_335_339_PE.data.in.0","const0_.out"],
+          ["lb_p4_clamped_stencil_update_stream$mem_1_wen_lut_bitPE.bit.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wen"],
+          ["add_341_345_PE.data.out","io16_out.in"],
+          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata","io16in_in_0.out"]
         ]
       },
       "Linebuffer_U0":{
         "type":["Record",{
-          "out":["Array",2,["Array",1,["Array",16,"Bit"]]],
-          "in":["Array",16,"BitIn"]
+          "in":["Array",16,"BitIn"],
+          "out":["Array",2,["Array",1,["Array",16,"Bit"]]]
         }],
         "instances":{
-          "mem_1":{
+          "mem_1$cgramem":{
             "genref":"cgralib.Mem",
-            "genargs":{"depth":10, "width":16},
-            "configargs":{"mode":"linebuffer"}
+            "genargs":{"depth":1024, "width":16},
+            "configargs":{"almost_full_cnt":0, "fifo_depth":10, "mode":"linebuffer"}
+          },
+          "mem_1_wen_lut_bitPE":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":3, "numdataports":2, "width":16},
+            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":1, "op_kind":"bit"}
           }
         },
         "connections":[
           ["self.out.1.0","self.in"],
-          ["self.out.0.0","mem_1.rdata"],
-          ["self.in","mem_1.wdata"]
+          ["self.out.0.0","mem_1$cgramem.rdata"],
+          ["mem_1_wen_lut_bitPE.bit.out","mem_1$cgramem.wen"],
+          ["self.in","mem_1$cgramem.wdata"]
         ]
       }
     }
