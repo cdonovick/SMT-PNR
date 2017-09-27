@@ -41,7 +41,7 @@ def load_core(file, *libs):
         elif inst_type == 'Mem':
             modules[inst_name]['type']  = 'Mem'
             modules[inst_name]['res']   = Resource.Mem
-            modules[inst_name]['layer'] = Layer.Combined
+            modules[inst_name]['layer'] = Layer.NONE
             modules[inst_name]['conf']  = {
                     'mode'              : inst.config['mode'].value,
                     'fifo_depth'        : inst.config['fifo_depth'].value,

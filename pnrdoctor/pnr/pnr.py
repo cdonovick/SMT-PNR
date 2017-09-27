@@ -56,7 +56,7 @@ class PNR:
             r.set_size({d : 0 for d in r.size})
             r.set_position({d : SYMBOLIC for d in r.position})
             for d in r.category:
-                if module.resource in (Resource.PE, Resource.Reg, Resource.IO) and d == fabric.layers_dim:
+                if d == fabric.layers_dim:
                     r.set_category({d : module.layer.value})
                 elif module.resource == Resource.Reg or d != fabric.tracks_dim:
                     r.set_category({d : SYMBOLIC})
