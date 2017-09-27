@@ -29,8 +29,8 @@ class Port(IDObject):
                                                direction,
                                                muxindex.track if muxindex.track is not None
                                                else muxindex.port)
-        self._x = muxindex.ps[0]
-        self._y = muxindex.ps[1]
+        self._row = muxindex.ps[0]
+        self._col = muxindex.ps[1]
         self._resource = res
         self._track = muxindex.track  # could be none
         self._inputs = set()
@@ -38,12 +38,12 @@ class Port(IDObject):
         self._index = muxindex
 
     @property
-    def x(self):
-        return self._x
+    def row(self):
+        return self._row
 
     @property
-    def y(self):
-        return self._y
+    def col(self):
+        return self._col
 
     @property
     def side(self):
@@ -75,7 +75,7 @@ class Port(IDObject):
 
     @property
     def loc(self):
-        return (self._x, self._y)
+        return (self._row, self._col)
 
     def split(self):
         snkport = Port(self._index)
@@ -85,13 +85,13 @@ class Port(IDObject):
 
         srcport = Port(self._index, 'i')
         # overwrite x, y and name
-        srcport._x = self._index.po[0]
-        srcport._y = self._index.po[1]
+        srcport._row = self._index.po[0]
+        srcport._col = self._index.po[1]
         # reverse positions
         s = pos_to_side(self._index.po, self._index.ps)
         # make the name look right/nice for printout
-        srcport.name = '({}, {}){}_{}[{}]'.format(srcport._x,
-                                                  srcport._y,
+        srcport.name = '({}, {}){}_{}[{}]'.format(srcport._row,
+                                                  srcport._col,
                                                   s.name,
                                                   'i',
                                                   self._index.track if self._index.track is not None

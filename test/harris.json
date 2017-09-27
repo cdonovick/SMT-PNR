@@ -576,7 +576,7 @@
           "mux_793_794_795_PE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"mux", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"bit"}
+            "configargs":{"alu_op":"mux", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"combined"}
           },
           "smax_776_777$cgramax":{
             "genref":"cgralib.PE",
@@ -656,7 +656,7 @@
           "ule100_775_PE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"ule", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"bit"}
+            "configargs":{"alu_op":"ule", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"combined"}
           },
           "ult_790_775_not_lut_bitPE":{
             "genref":"cgralib.PE",
@@ -666,7 +666,7 @@
           "ult_790_775_uge_PE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"uge", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"bit"}
+            "configargs":{"alu_op":"uge", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"combined"}
           }
         },
         "connections":[
