@@ -56,15 +56,8 @@ class PNR:
             r.set_size({d : 0 for d in r.size})
             r.set_position({d : SYMBOLIC for d in r.position})
             for d in r.category:
-                if module.resource == Resource.PE and d == fabric.layers_dim:
-                    if module.type_ == 'DataPE' or module.type_ == 'IO':
-                        r.set_category({d : 1})
-                    elif module.type_ == 'BitPE' or module.type_ == 'bitIO':
-                        r.set_category({d : 2})
-                    elif module.type_ == 'PE':
-                        r.set_category({d : 3})
-                    else:
-                        raise ValueError("Bad PE type_: {}".format(module.type_))
+                if module.resource in (Resource.PE, Resource.Reg, Resource.IO) and d == fabric.layers_dim:
+                    r.set_category({d : module.layer.value})
                 elif module.resource == Resource.Reg or d != fabric.tracks_dim:
                     r.set_category({d : SYMBOLIC})
 

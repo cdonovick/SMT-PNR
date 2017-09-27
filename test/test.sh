@@ -1,10 +1,10 @@
 #!/bin/bash
 PREFIX=$(dirname $0)
-TESTS=$PREFIX/designs/conv_3_1.json
+TESTS=$PREFIX/harris.json
 FABRICS=$PREFIX/fabrics/cgra_info_16x16_hack.xml
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
-COMMANDS="--print --annotate $ANNOTATED"
+COMMANDS="--print --noroute --annotate $ANNOTATED"
 LIMIT=300
 
 if [[ "$SOLVER" != "" ]]; then

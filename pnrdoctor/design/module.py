@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, Flag, auto
 from pnrdoctor.util import NamedIDObject, BiDict, BiMultiDict
 from .net import Tie
 
@@ -10,6 +10,7 @@ class Module(NamedIDObject):
         self._outputs = BiMultiDict()
         self._resource = Resource.UNSET
         self._registered_ports = set()
+        self._layer = Layer.NONE
 
     @property
     def inputs(self):
@@ -52,6 +53,17 @@ class Module(NamedIDObject):
             self._resource = res
         else:
             raise TypeError('Expected Resource not {}'.format(type(res)))
+
+    @property
+    def layer(self):
+        return self._layer
+
+    @layer.setter
+    def layer(self, layer):
+        if isinstance(layer, Layer):
+            self._layer = layer
+        else:
+            raise TypeError('Expected Layer not {}'.format(type(layer)))
 
     def __str__(self):
         return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
@@ -104,3 +116,9 @@ class Resource(Enum):
     # Eventually we should move this
     SB    = 6
     CB    = 7
+
+class Layer(Flag):
+    NONE     = 0
+    Data     = auto()
+    Bit      = auto()
+    Combined = Data | Bit

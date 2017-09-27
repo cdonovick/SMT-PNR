@@ -3,7 +3,7 @@
 '''
 from collections import defaultdict
 from pnrdoctor.util import NamedIDObject, SortedDict, MultiDict
-from .module import Module, Resource
+from .module import Module, Resource, Layer
 from .net import Net, Tie
 from functools import lru_cache
 
@@ -102,9 +102,10 @@ def _io_hack(mods, ties):
         const_0_name = '__HACK__io_const_0'
         assert const_0_name  not in mods, 'Hack name ({}) in use things are going to break'.format(const_0_name)
         mods[const_0_name] = {
-                'type' : 'Const',
-                'conf' : 0,
-                'res'  : Resource.Fused,  # always fuse constants
+                'type'  : 'Const',
+                'res'   : Resource.Fused,  # always fuse constants
+                'layer' : Layer.Data,
+                'conf'  : 0,
             }
 
         #change all the mods to be adders
@@ -154,8 +155,9 @@ def _split_registers(mods, ties):
             # add new register
             mods[f_name] = dict()
             mods[f_name]['type'] = 'Reg'
-            mods[f_name]['conf'] = None
             mods[f_name]['res']  = Resource.Fused  # mark the new register as fused
+            mods[f_name]['layer'] = mods[r_name]['layer']
+            mods[f_name]['conf'] = None
 
             # add new tie
             ties.add((f_name, src_port, dst_name, dst_port, width))
@@ -202,6 +204,7 @@ def _build_modules(mods, ties):
             mod.config = args['conf']
 
         mod.resource = args['res']
+        mod.layer = args['layer']
         _mods[mod_name] = mod
 
     return _mods, ties
