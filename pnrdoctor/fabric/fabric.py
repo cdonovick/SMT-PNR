@@ -1,4 +1,4 @@
-from pnrdoctor.design.module import Resource
+from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.util import IDObject
 from pnrdoctor.smt.region import Scalar, Category
 from .fabricutils import Side, pos_to_side
@@ -156,9 +156,11 @@ class Fabric:
 
         # Hacky hardcoding register port names
         # because they're not provided by cgra_info
-        self._port_names[(Resource.Reg, 16)].sources.add('out')
-        self._port_names[(Resource.Reg, 16)].sinks.add('a')
+        self._port_names[(Resource.Reg, Layer.Data.width)].sources.add('out')
+        self._port_names[(Resource.Reg, Layer.Data.width)].sinks.add('in')
 
+        self._port_names[(Resource.Reg, Layer.Bit.width)].sources.add('out')
+        self._port_names[(Resource.Reg, Layer.Bit.width)].sinks.add('in')
         # Dimensions for region building
         self._rows_dim = Scalar('row', self.rows)
         self._cols_dim = Scalar('col', self.cols)

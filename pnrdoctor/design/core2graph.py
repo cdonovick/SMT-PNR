@@ -127,22 +127,22 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'a',
+        'in'  : 'op_a_in',
         'out' : 'pe_out_res',
     },
 
     'BitIO' : {
-        'in'  : 'd',
+        'in'  : 'op_d_p_in',
         'out' : 'pe_out_res_p',
     },
 
     'Reg' : {
-        'in'  : 'a',
+        'in'  : 'in',
         'out' : 'out',
     },
 
     'BitReg' : {
-        'in'  : 'd',
+        'in'  : 'in',
         'out' : 'out',
     },
 

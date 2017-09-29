@@ -122,3 +122,21 @@ class Layer(Flag):
     Data     = auto()
     Bit      = auto()
     Combined = Data | Bit
+
+    @classmethod
+    def width_to_layer(cls, w):
+        if w == 1:
+            return cls.Bit
+        if w == 16:
+            return cls.Data
+
+        raise ValueError('No layer for width: {}'.format(w))
+
+    @property
+    def width(self):
+        if self is type(self).Data:
+            return 1
+        if self is type(self).Bit:
+            return 16
+
+        raise ValueError('No width for layer: {}'.format(self))

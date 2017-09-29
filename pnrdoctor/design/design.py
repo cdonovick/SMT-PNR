@@ -123,9 +123,9 @@ def _io_hack(mods, ties):
 
             # make a tie from the hack mod to original io (the now adder)
             # assuming 16 width but we are fucked if its not anyway as the adder trick wont work
-            ties.add((hack_io_name, 'pe_out_res', mod_name, 'a', 16))
+            ties.add((hack_io_name, 'pe_out_res', mod_name, 'op_a_in', Layer.Data.width))
             # make a tie from the const 0 to original io (the now adder)
-            ties.add((const_0_name, 'out', mod_name, 'b', 16))
+            ties.add((const_0_name, 'out', mod_name, 'op_b_in', Layer.Data.width))
     return mods, ties
 
 def _split_registers(mods, ties):
@@ -227,7 +227,7 @@ def _build_ties(mods, ties):
 def _fuse_regs(mods, ties):
     # fuse all Register to PE connections
     for m in mods.values():
-        if m.resource == Resource.Fused and m.type_ == 'Reg':
+        if m.resource == Resource.Fused and 'Reg' in m.type_:
             assert len(m.outputs) == 1, 'Fused regs should have one output'
             output_tie = next(iter(m.outputs.values()))
             assert output_tie.dst.resource == Resource.PE, 'Fused register should have one PE output'

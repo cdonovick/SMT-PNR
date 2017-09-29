@@ -52,21 +52,21 @@ _op_codes = {
 }
 
 _pe_reg = {
-    'op'  : 0xff,
-    'a'   : 0xf0,
-    'b'   : 0xf1,
+    'alu_op'    : 0xff,
+    'op_a_in'   : 0xf0,
+    'op_b_in'   : 0xf1,
 }
 
 _load_reg = {
-    'a'   : 14,
-    'b'   : 12,
+    'op_a_in'   : 14,
+    'op_b_in'   : 12,
     'c'   : 10,
     'd'   : 8,
 }
 
 _read_wire = {
-    'a'   : 15,
-    'b'   : 13,
+    'op_a_in'   : 15,
+    'op_b_in'   : 13,
     'c'   : 11,
     'd'   : 9,
 }
@@ -159,36 +159,40 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
         assert mod.resource == Resource.PE
         if mod.type_ == 'PE':
-            data[_pe_reg['op']] |= _op_codes[mod.config]
-            comment[_pe_reg['op']][(4,0)] = 'op = {}'.format(mod.config)
+            if 'alu_op' in mod.config:
+                data[_pe_reg['alu_op']] |= _op_codes[mod.config['alu_op']]
+                comment[_pe_reg['alu_op']][(4,0)] = 'op = {}'.format(mod.config)
+            if 'lut_value' in mod.config:
+                raise NotImplementedError("Don't know how to write lut_value to bitstream")
+
 
             for port in mod.inputs:
                 tie = mod.inputs[port]
 
                 src = tie.src
                 if src.type_ == 'Const':
-                    data[_pe_reg[port]] |= src.config # load 'a' reg with const
+                    data[_pe_reg[port]] |= src.config # load 'op_a_in' reg with const
                     comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
-                    comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
+                    comment[_pe_reg['alu_op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
                 elif port in mod.registered_ports:
-                    data[_pe_reg['op']][_load_reg[port]] |= 1 # load reg with wire
-                    comment[_pe_reg['op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
-                    comment[_pe_reg['op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
+                    data[_pe_reg['alu_op']][_load_reg[port]] |= 1 # load reg with wire
+                    comment[_pe_reg['alu_op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
+                    comment[_pe_reg['alu_op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
                 else:
-                    data[_pe_reg['op']][_read_wire[port]] |=  1 # read from wire
-                    comment[_pe_reg['op']][2*(_read_wire[port],)]  = Annotations.read_from('wire', port)
+                    data[_pe_reg['alu_op']][_read_wire[port]] |=  1 # read from wire
+                    comment[_pe_reg['alu_op']][2*(_read_wire[port],)]  = Annotations.read_from('wire', port)
 
 
         elif mod.type_ == 'IO':
-            data[_pe_reg['op']] = _op_codes[mod.config]
+            data[_pe_reg['alu_op']] = _op_codes[mod.config]
 
             if mod.config == 'i':
-                comment[_pe_reg['op']][(4, 0)] = Annotations.op_config('op', 'input')
-                data[_pe_reg['a']]  = 0xffffffff
-                data[_pe_reg['b']]  = 0xffffffff
+                comment[_pe_reg['alu_op']][(4, 0)] = Annotations.op_config('alu_op', 'input')
+                data[_pe_reg['op_a_in']]  = 0xffffffff
+                data[_pe_reg['op_b_in']]  = 0xffffffff
             else:
-                comment[_pe_reg['op']][(4, 0)] = Annotations.op_config('op', 'output')
-                data[_pe_reg['b']]  = 0xffffffff
+                comment[_pe_reg['alu_op']][(4, 0)] = Annotations.op_config('alu_op', 'output')
+                data[_pe_reg['op_b_in']]  = 0xffffffff
 
 
         return data, comment, config_engine[configindex(resource=Resource.PE, ps=(row, col))].feature_address
