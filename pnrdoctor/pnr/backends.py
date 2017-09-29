@@ -3,7 +3,7 @@ from functools import partial
 import sys
 import itertools
 
-from pnrdoctor.design.module import Resource
+from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.config import Annotations
 from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList, BiMultiDict
@@ -161,7 +161,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         if mod.type_ == 'PE':
             if 'alu_op' in mod.config:
                 data[_pe_reg['alu_op']] |= _op_codes[mod.config['alu_op']]
-                comment[_pe_reg['alu_op']][(4,0)] = 'op = {}'.format(mod.config)
+                comment[_pe_reg['alu_op']][(4,0)] = 'alu_op = {}'.format(mod.config['alu_op'])
             if 'lut_value' in mod.config:
                 raise NotImplementedError("Don't know how to write lut_value to bitstream")
 
@@ -294,6 +294,8 @@ def _write_debug(design, output, p_state, r_state):
             try:
                 pos = {d.name : v for d,v in p_state[module].position.items() if v is not None}
                 pos.update({d.name : v for d,v in p_state[module].category.items() if v is not None} )
+                if 'layer' in pos:
+                    pos['layer'] = Layer.width_to_layer(pos['layer']).name
 
                 f.write("module: {} @ {})\n".format(module.name, pos))
             except (KeyError, IndexError):
