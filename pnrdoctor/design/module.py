@@ -134,9 +134,9 @@ class Layer(Flag):
 
     @property
     def width(self):
-        if self is type(self).Data:
-            return 1
         if self is type(self).Bit:
+            return 1
+        if self is type(self).Data:
             return 16
 
         raise ValueError('No width for layer: {}'.format(self))
