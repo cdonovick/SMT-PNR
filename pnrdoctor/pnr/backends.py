@@ -295,7 +295,7 @@ def _write_debug(design, output, p_state, r_state):
                 pos = {d.name : v for d,v in p_state[module].position.items() if v is not None}
                 pos.update({d.name : v for d,v in p_state[module].category.items() if v is not None} )
                 if 'layer' in pos:
-                    pos['layer'] = Layer.width_to_layer(pos['layer']).name
+                    pos['layer'] = Layer(pos['layer']).name
 
                 f.write("module: {} @ {})\n".format(module.name, pos))
             except (KeyError, IndexError):
