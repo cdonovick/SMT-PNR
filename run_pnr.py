@@ -53,7 +53,7 @@ print("Loading fabric: {}".format(fabric_file))
 pnrdone = False
 iterations = 0
 
-while not pnrdone and iterations < 2:
+while not pnrdone and iterations < 10:
     fab = pnr.parse_xml(fabric_file, ce)
     p = pnr.PNR(fab, des, args.solver, seed)
 
@@ -64,7 +64,7 @@ while not pnrdone and iterations < 2:
     sys.stdout.flush()
 
     start = timer()
-    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):    
+    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
         end = timer()
         print("success!")
         if args.time:
@@ -120,6 +120,14 @@ print('Loading configuration engine with placement and route info\n')
 
 ce.load_state(p._place_state, p._route_state)
 
+if args.print or args.print_place:
+    print("\nplacement info:")
+    p.write_design(pnr.write_debug(des))
+
+if (args.print or args.print_route) and not args.noroute:
+    print("\nRouting info:")
+    p.write_design(pnr.write_route_debug(des))
+
 if args.bitstream:
     bit_file = args.bitstream
     print("Writing bitsream to: {}".format(bit_file))
@@ -131,10 +139,3 @@ if args.annotate:
     pnr.write_bitstream(fab, bit_file, ce, True)
 
 
-if args.print or args.print_place:
-    print("\nplacement info:")
-    p.write_design(pnr.write_debug(des))
-
-if (args.print or args.print_route) and not args.noroute:
-    print("\nRouting info:")
-    p.write_design(pnr.write_route_debug(des))

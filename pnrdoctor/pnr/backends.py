@@ -20,56 +20,65 @@ _bit_widths = {
     'tile'      : 16,
     'feature'   : 8,
     'reg'       : 8,
+    'alu_op'    : 5,
+    'lut_value' : 8,
 }
 
-_op_codes = {
-    'add'       : 0x00,
-    'sub'       : 0x01,
-    #2-3
-    'lt'        : 0x04,
-    'ge'        : 0x05,
-    'xnorr'     : 0x06,
-    'xorr'      : 0x07,
-    'select'    : 0x08,
-    #9-A
-    'mull'      : 0x0b,
-    'mulm'      : 0x0c,
-    'mulh'      : 0x0d,
-    #E
-    'lrsh'      : 0x0f,
-    'arsh'      : 0x10,
-    'alsh'      : 0x11,
-    'or'        : 0x12,
-    'and'       : 0x13,
-    'xor'       : 0x14,
-    'not'       : 0x15,
-    #mult->mull
-    'mult'      : 0x0b,
-    #mul->mull
-    'mul'       : 0x0b,
-    'i'         : 0xf0,
-    'o'         : 0xff,
+_op_translate = {
+    'alu_op' : {
+        'add'       : 0x00,
+        'sub'       : 0x01,
+        #2-3
+        'lt'        : 0x04,
+        'ge'        : 0x05,
+        'xnorr'     : 0x06,
+        'xorr'      : 0x07,
+        'select'    : 0x08,
+        #9-A
+        'mull'      : 0x0b,
+        'mulm'      : 0x0c,
+        'mulh'      : 0x0d,
+        #E
+        'lrsh'      : 0x0f,
+        'arsh'      : 0x10,
+        'alsh'      : 0x11,
+        'or'        : 0x12,
+        'and'       : 0x13,
+        'xor'       : 0x14,
+        'not'       : 0x15,
+        #mult->mull
+        'mult'      : 0x0b,
+        #mul->mull
+        'mul'       : 0x0b,
+        'i'         : 0xf0,
+        'o'         : 0xff,
+    },
+    'lut_value' : IdentDict(),
 }
 
 _pe_reg = {
     'alu_op'    : 0xff,
+    'lut_value' : 0x00,
     'op_a_in'   : 0xf0,
     'op_b_in'   : 0xf1,
 }
 
-_load_reg = {
-    'op_a_in'   : 14,
-    'op_b_in'   : 12,
-    'c'   : 10,
-    'd'   : 8,
+
+_port_offsets = {
+    'op_d_p_in' : 25,
+    'op_c_in'   : 21,
+    'op_b_in'   : 19,
+    'op_a_in'   : 17,
 }
 
-_read_wire = {
-    'op_a_in'   : 15,
-    'op_b_in'   : 13,
-    'c'   : 11,
-    'd'   : 9,
+_reg_mode = {
+    'CONST'  : 0x0,
+    'VALID'  : 0x1,
+    'BYPASS' : 0x2,
+    'DELAY'  : 0x3,
 }
+
+_LUT_ENABLE = 9
 
 _mem_translate = {
     'mode' : {
@@ -159,39 +168,58 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
         assert mod.resource == Resource.PE
         if mod.type_ == 'PE':
-            if 'alu_op' in mod.config:
-                data[_pe_reg['alu_op']] |= _op_codes[mod.config['alu_op']]
-                comment[_pe_reg['alu_op']][(4,0)] = 'alu_op = {}'.format(mod.config['alu_op'])
-            if 'lut_value' in mod.config:
-                raise NotImplementedError("Don't know how to write lut_value to bitstream")
+            for k,d in _op_translate.items():
+                if k in mod.config:
+                    idx = _pe_reg[k]
+                    data[idx] |= d[mod.config[k]]
+                    comment[idx][(_bit_widths[k], 0)] = '{} = {}'.format(k, mod.config[k])
 
+            if 'lut_value' in mod.config:
+                idx = _pe_reg['alu_op']
+                data[idx][_LUT_ENABLE] |= 1
+                comment[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
 
             for port in mod.inputs:
                 tie = mod.inputs[port]
 
                 src = tie.src
+                if port not in _port_offsets:
+                    assert src.type_ != 'Const'
+                    assert port not in mod.registered_ports
+                    continue
+
                 if src.type_ == 'Const':
-                    data[_pe_reg[port]] |= src.config # load 'op_a_in' reg with const
-                    comment[_pe_reg[port]][(15,0)] = Annotations.init_reg(port, src.config)
-                    comment[_pe_reg['alu_op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
+                    idx = _pe_reg[port]
+                    data[idx] |= src.config # load 'op_a_in' reg with const
+                    comment[idx][(15,0)] = Annotations.init_reg(port, src.config)
+
+                    idx = _pe_reg['alu_op']
+                    offset =  _port_offsets[port]
+                    data[idx] |= _reg_mode['CONST'] << offset
+                    comment[idx][(offset, offset-1)] = '{}: REG_CONST'.format(port)
+
                 elif port in mod.registered_ports:
-                    data[_pe_reg['alu_op']][_load_reg[port]] |= 1 # load reg with wire
-                    comment[_pe_reg['alu_op']][2*(_load_reg[port],)] = Annotations.load_reg(port)
-                    comment[_pe_reg['alu_op']][2*(_read_wire[port],)] = Annotations.read_from('reg', port)
+                    idx = _pe_reg['alu_op']
+                    offset =  _port_offsets[port]
+                    data[idx] |= _reg_mode['DELAY'] << offset
+                    comment[idx][(offset, offset-1)] = '{}: REG_DELAY'.format(port)
+
                 else:
-                    data[_pe_reg['alu_op']][_read_wire[port]] |=  1 # read from wire
-                    comment[_pe_reg['alu_op']][2*(_read_wire[port],)]  = Annotations.read_from('wire', port)
+                    idx = _pe_reg['alu_op']
+                    offset =  _port_offsets[port]
+                    data[idx] |= _reg_mode['BYPASS'] << offset
+                    comment[idx][(offset, offset-1)] =  '{}: REG_BYPASS'.format(port)
 
 
         elif mod.type_ == 'IO':
-            data[_pe_reg['alu_op']] = _op_codes[mod.config]
+            data[_pe_reg['alu_op']] = _op_translate['alu_op'][mod.config]
 
             if mod.config == 'i':
-                comment[_pe_reg['alu_op']][(4, 0)] = Annotations.op_config('alu_op', 'input')
+                comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'input')
                 data[_pe_reg['op_a_in']]  = 0xffffffff
                 data[_pe_reg['op_b_in']]  = 0xffffffff
             else:
-                comment[_pe_reg['alu_op']][(4, 0)] = Annotations.op_config('alu_op', 'output')
+                comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'output')
                 data[_pe_reg['op_b_in']]  = 0xffffffff
 
 
