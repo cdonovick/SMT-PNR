@@ -25,7 +25,7 @@ def load_core(file, *libs):
             modules[inst_name]['type'] = 'PE'
             modules[inst_name]['res']  = Resource.PE
             modules[inst_name]['conf'] = dict()
-            op_kind = inst.config['op_kind'].value
+            op_kind = inst.generator_args['op_kind'].value
 
             if op_kind in ('alu', 'combined'):
                 modules[inst_name]['layer'] |= Layer.Data
