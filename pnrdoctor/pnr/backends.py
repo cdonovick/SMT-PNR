@@ -195,19 +195,22 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
                     idx = _pe_reg['alu_op']
                     offset =  _port_offsets[port]
-                    data[idx] |= _reg_mode['CONST'] << offset
+                    data[idx][offset+1] = _reg_mode['CONST'] & 1
+                    data[idx][offset] = (_reg_mode['CONST'] >> 1) & 1
                     comment[idx][(offset, offset-1)] = '{}: REG_CONST'.format(port)
 
                 elif port in mod.registered_ports:
                     idx = _pe_reg['alu_op']
                     offset =  _port_offsets[port]
-                    data[idx] |= _reg_mode['DELAY'] << offset
+                    data[idx][offset+1] = _reg_mode['DELAY'] & 1
+                    data[idx][offset] = (_reg_mode['DELAY'] >> 1) & 1
                     comment[idx][(offset, offset-1)] = '{}: REG_DELAY'.format(port)
 
                 else:
                     idx = _pe_reg['alu_op']
                     offset =  _port_offsets[port]
-                    data[idx] |= _reg_mode['BYPASS'] << offset
+                    data[idx][offset+1] = _reg_mode['BYPASS'] & 1
+                    data[idx][offset] = (_reg_mode['BYPASS'] >> 1) & 1
                     comment[idx][(offset, offset-1)] =  '{}: REG_BYPASS'.format(port)
 
 
