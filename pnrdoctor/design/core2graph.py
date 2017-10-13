@@ -33,7 +33,7 @@ def load_core(file, *libs):
 
             if op_kind in ('bit', 'combined'):
                 modules[inst_name]['layer'] |= Layer.Bit
-                modules[inst_name]['conf']['lut_value'] = inst.config['lut_value'].value
+                modules[inst_name]['conf']['lut_value'] = inst.config['lut_value'].value.val
 
             if op_kind not in ('bit', 'alu', 'combined'):
                 raise ValueError("Unkown op_kind `{}' in `{}' expected <`bit', `alu', `combined'>".format(file, op_kind))
@@ -65,7 +65,7 @@ def load_core(file, *libs):
             modules[inst_name]['type']  = 'Const'
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
             modules[inst_name]['layer'] = Layer.Data
-            modules[inst_name]['conf']  = inst.config['value'].value
+            modules[inst_name]['conf']  = inst.config['value'].value.val
         elif inst_type == 'bitconst':
             modules[inst_name]['type']  = 'Const'
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
