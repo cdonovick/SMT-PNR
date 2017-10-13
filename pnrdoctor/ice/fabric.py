@@ -28,11 +28,14 @@ class Fabric:
         self._rows_dim = rd = Scalar('row', self.rows)
         self._cols_dim = cd = Scalar('col', self.cols)
         self._luts_dim = ld = Scalar('lut', self.luts)
-        self._region   = Region(name, (rd, cd, ld), from_space=True)
+
+        self._dims = (rd, cd, ld)
+
+        self._region   = Region('ICE40', (rd, cd, ld), from_space=True)
         self._locations = {
-                Resource.Logic : set(),
-                Resource.Mem   : set(),
-                Resource.IO    : set(),
+                self.Resource.Logic : set(),
+                self.Resource.Mem   : set(),
+                self.Resource.IO    : set(),
         }
 
         for r in range(self.rows):
@@ -80,4 +83,10 @@ class Fabric:
     def locations(self):
         return self._locations
 
+    @property
+    def region(self):
+        return self._region
 
+    @property
+    def dims(self):
+        return self._dims

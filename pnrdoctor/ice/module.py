@@ -43,6 +43,7 @@ class Module(NamedIDObject):
         return self._resource
 
     @resource.setter
+    def resource(self, res):
         if isinstance(res, Resource):
             self._resource = res
         else:

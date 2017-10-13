@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
+
+
 import sys
-from pnrdoctor import design,  pnr, smt, ilp
-from functools import partial
-from pnrdoctor.design import core2graph, blif2graph
-from pnrdoctor.config import ConfigEngine
-from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
-from pnrdoctor.ilp.ilp_solver import ilp_solvers
-from pnrdoctor.ilp.ilp_handlers import ILPScalarHandler
-from timeit import default_timer as timer
-import copy
-
-
 import argparse
+
 parser = argparse.ArgumentParser(description='Run place and route')
 parser.add_argument('design', metavar='<DESIGN_FILE>', help='Mapped coreir file')
 parser.add_argument('fabric', metavar='<FABRIC_FILE>', help='XML Fabric file')
@@ -36,10 +28,39 @@ fabric_file = args.fabric
 seed = args.seed
 
 def ice_flow():
-    modules, ties = design.blif2graph.load_blif(design_file)
-    des           = design.Design(modules, set(ties.keys()))
+    from pnrdoctor.ice import design, blif2graph, fabric, constraints
+    from pnrdoctor.ice.pnr import PNR
+    from pnrdoctor import pnr
+    from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
+    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler), pnr.distinct, constraints.pin_resource_structured, pnr.neighborhood(4)
+
+    modules, nets = blif2graph.load_blif(design_file)
+    print('building design...', end='')
+    des           = design.Design(modules, nets)
+    fab           = fabric.Fabric()
+    p = PNR(fab, des, args.solver, seed)
+    print(' complete')
+    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+        print("success!")
+        sys.stdout.flush()
+    else:
+        print("failure")
+        sys.exit(1)
+        
+    if args.print or args.print_place:
+        print("\nplacement info:")
+        p.write_design(pnr.write_debug(des))
 
 def cgra_flow():
+    from pnrdoctor import design,  pnr, smt, ilp
+    from functools import partial
+    from pnrdoctor.design import core2graph
+    from pnrdoctor.config import ConfigEngine
+    from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
+    from pnrdoctor.ilp.ilp_solver import ilp_solvers
+    from pnrdoctor.ilp.ilp_handlers import ILPScalarHandler
+    from timeit import default_timer as timer
+    import copy
     if args.solver in ilp_solvers.keys():
         # ILP solvers use scalar handlers for scalar and category type
         PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)

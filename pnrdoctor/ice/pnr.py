@@ -44,7 +44,8 @@ class PNR:
         self._route_solver.set_option('random-seed', seed)
 
         # set up region
-        self._region = Region.from_frabic('CGRA', self.fabric)
+        self._region = fabric.region
+
         for module in design.modules:
             r = self._region.make_subregion(module.name)
             # kinda hackish need to make rules dictionary

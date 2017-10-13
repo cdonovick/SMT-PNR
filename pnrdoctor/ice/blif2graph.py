@@ -1,4 +1,7 @@
-from pnrdoctor.fabric.icefabric import IceResource
+from .fabric import Fabric
+from pnrdoctor.util import BiMultiDict
+
+Resource = Fabric.Resource
 
 MODEL_DICT = {
     '.inputs'  : [],
@@ -134,7 +137,7 @@ def load_blif(file_name):
                             d['NETS'][n].append((g_idx, port))
 
     modules = dict() # basically the same as core2graph
-    ties = dict()  # (src_name, src_port, dst_name, dst_port, width==1) -> net_name
+    nets = BiMultiDict()  # (src_name, src_port, dst_name, dst_port, width==1) -> net_name
 
     # build sane module dictionary
     for m, d in models.items():
@@ -142,12 +145,15 @@ def load_blif(file_name):
             inst_name = '{}_{}'.format(m,g_idx)
             g_type = g_dict['type']
             g_config = g_dict['config']
+            g_key = '.gate ' + g_type
             modules[inst_name] = {
                     'type'   : g_type,
-                    'res'    : IceResource.from_str(g_type),
-                    'conf'   : g_config,
-                    '.attr'  : d['.attr'].setdefault(g_idx, None),
-                    '.param' : d['.param'].setdefault(g_idx, None),
+                    'res'    : Resource.from_str(g_type),
+                    'blif'   : {
+                        g_key    : g_config,
+                        '.attr'  : d['.attr'].setdefault(g_idx, None),
+                        '.param' : d['.param'].setdefault(g_idx, None),
+                    }
             }
 
     # build sane net dictionary
@@ -158,9 +164,11 @@ def load_blif(file_name):
 
             for (dst_idx, dst_port) in l[1:]:
                 dst_name = '{}_{}'.format(m,dst_idx)
-                ties[(src_name, src_port, dst_name, dst_port, 1)] = n_name
+                nets[n_name] = (src_name, src_port, dst_name, dst_port, 1)
 
-    return modules, ties
+
+
+    return modules, nets
 
 if __name__ == '__main__':
     import sys
