@@ -25,13 +25,13 @@ def pin_resource_structured(region, fabric, design, state, vars, solver):
         r,c,l = v[fabric.rows_dim], v[fabric.cols_dim], v[fabric.luts_dim]
             
         # no corners
-        c = solver.And([
+        cc = solver.And([
             solver.Or([r != 0,             c !=0]),
             solver.Or([r != 0,             c != fabric.cols-1]),
             solver.Or([r != fabric.rows-1, c != 0]),
             solver.Or([r != fabric.rows-1, c != fabric.cols-1]),
         ])
-        constraints.append(c)
+        constraints.append(cc)
 
         res = module.resource
         if res in (R.IO, R.Logic):
@@ -56,17 +56,17 @@ def pin_resource_structured(region, fabric, design, state, vars, solver):
             c_mem = True
 
         if res == R.Logic:
-            c = solver.And([
+            cc = solver.And([
                 solver.Not(c_io),
                 solver.Not(c_mem),
             ])
         else:
-            c = solver.And([
+            cc = solver.And([
                 c_io,
                 c_mem,
             ])
         
-        constraints.append(c)
-    return solver.And(constriants)
+        constraints.append(cc)
+    return solver.And(constraints)
 
 
