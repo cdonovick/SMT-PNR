@@ -1,6 +1,5 @@
 from enum import Enum, auto
-from pnrdoctor.smt.region import Scalar, Region
-
+from pnrdoctor.smt.region import Scalar, Region, Category
 class Fabric:
     class Resource(Enum):
         UNSET  = 0
@@ -23,7 +22,6 @@ class Fabric:
         self._rows = 18
         self._cols = 18
         self._luts = 8
-
 
         self._rows_dim = rd = Scalar('row', self.rows)
         self._cols_dim = cd = Scalar('col', self.cols)

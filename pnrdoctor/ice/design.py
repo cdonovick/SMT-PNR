@@ -26,7 +26,7 @@ class Design(NamedIDObject):
                 src = mods[src_name]
                 dst = mods[dst_name]
                 ties.add(Tie(src, src_port, dst, dst_port, width))
-            _ties.union(ties)
+            _ties = _ties.union(ties)
             _nets[net_name] = Net(net_name, ties)
 
         self._modules = frozenset(mods.values())

@@ -32,12 +32,18 @@ def ice_flow():
     from pnrdoctor.ice.pnr import PNR
     from pnrdoctor import pnr
     from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
-    PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler), pnr.distinct, constraints.pin_resource_structured, pnr.neighborhood(4)
 
     modules, nets = blif2graph.load_blif(design_file)
     print('building design...', end='')
     des           = design.Design(modules, nets)
     fab           = fabric.Fabric()
+    nmods = len(des.modules)
+    PLACE_CONSTRAINTS = [
+        constraints.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
+        pnr.distinct,
+        constraints.pin_resource_structured,
+        constraints.smart_dist(nmods//6,nmods//3),
+    ]
     p = PNR(fab, des, args.solver, seed)
     print(' complete')
     if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
@@ -46,7 +52,7 @@ def ice_flow():
     else:
         print("failure")
         sys.exit(1)
-        
+
     if args.print or args.print_place:
         print("\nplacement info:")
         p.write_design(pnr.write_debug(des))
