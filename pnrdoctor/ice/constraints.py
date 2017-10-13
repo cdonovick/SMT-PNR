@@ -66,7 +66,7 @@ def pin_resource_structured(region, fabric, design, state, vars, solver):
                 c_mem,
             ])
         
-        constraint.append(c)
+        constraints.append(c)
     return solver.And(constriants)
 
 
