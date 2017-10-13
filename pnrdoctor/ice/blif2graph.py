@@ -131,10 +131,10 @@ def load_blif(file_name):
 
                         if n not in d['NETS']:
                             assert k == 'outputs'
-                            d['NETS'][n] = [(g_idx, port)]
+                            d['NETS'][n] = [(g_idx, port, g_type)]
                         else:
                             assert k == 'inputs'
-                            d['NETS'][n].append((g_idx, port))
+                            d['NETS'][n].append((g_idx, port, g_type))
 
     modules = dict() # basically the same as core2graph
     nets = BiMultiDict()  # (src_name, src_port, dst_name, dst_port, width==1) -> net_name
@@ -142,9 +142,9 @@ def load_blif(file_name):
     # build sane module dictionary
     for m, d in models.items():
         for g_idx, g_dict in d['.gate'].items():
-            inst_name = '{}_{}'.format(m,g_idx)
             g_type = g_dict['type']
             g_config = g_dict['config']
+            inst_name = '{}_{}_{}'.format(m,g_idx,g_type)
             g_key = '.gate ' + g_type
             modules[inst_name] = {
                     'type'   : g_type,
@@ -159,11 +159,11 @@ def load_blif(file_name):
     # build sane net dictionary
     for m, d in models.items():
         for n_name, l in d['NETS'].items():
-            src_idx, src_port = l[0]
-            src_name = '{}_{}'.format(m,src_idx)
+            src_idx, src_port, src_type = l[0]
+            src_name = '{}_{}_{}'.format(m,src_idx, src_type)
 
-            for (dst_idx, dst_port) in l[1:]:
-                dst_name = '{}_{}'.format(m,dst_idx)
+            for (dst_idx, dst_port, dst_type) in l[1:]:
+                dst_name = '{}_{}_{}'.format(m,dst_idx, dst_type)
                 nets[n_name] = (src_name, src_port, dst_name, dst_port, 1)
 
 
