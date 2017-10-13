@@ -157,11 +157,11 @@ def _neighborhood(delta, region, fabric, design, state, vars, solver):
                     if total is None:
                         total = dist
                     else:
-                        constraints.append(total <= total+dist)
+                        constraints.append(solver.BVUle(total,total+dist))
                         total = total + dist
 
             if total is not None:
-                constraints.append(total <= delta)
+                constraints.append(solver.BVUle(total,delta))
         return solver.And(constraints)
 
 
