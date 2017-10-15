@@ -65,10 +65,10 @@ _pe_reg = {
 
 
 _port_offsets = {
-    'op_d_p_in' : 25,
-    'op_c_in'   : 21,
-    'op_b_in'   : 19,
-    'op_a_in'   : 17,
+    'op_d_p_in' : 8, #24,
+    'op_c_in'   : 10, #20,
+    'op_b_in'   : 12, #18,
+    'op_a_in'   : 14, #16,
 }
 
 _reg_mode = {
@@ -195,23 +195,20 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
                     idx = _pe_reg['alu_op']
                     offset =  _port_offsets[port]
-                    data[idx][offset+1] = _reg_mode['CONST'] & 1
-                    data[idx][offset] = (_reg_mode['CONST'] >> 1) & 1
-                    comment[idx][(offset, offset-1)] = '{}: REG_CONST'.format(port)
+                    data[idx] |=  _reg_mode['CONST'] << offset
+                    comment[idx][(offset+1, offset)] = '{}: REG_CONST'.format(port)
 
                 elif port in mod.registered_ports:
                     idx = _pe_reg['alu_op']
                     offset =  _port_offsets[port]
-                    data[idx][offset+1] = _reg_mode['DELAY'] & 1
-                    data[idx][offset] = (_reg_mode['DELAY'] >> 1) & 1
-                    comment[idx][(offset, offset-1)] = '{}: REG_DELAY'.format(port)
+                    data[idx] |=  _reg_mode['DELAY'] << offset
+                    comment[idx][(offset+1, offset)] = '{}: REG_DELAY'.format(port)
 
                 else:
                     idx = _pe_reg['alu_op']
                     offset =  _port_offsets[port]
-                    data[idx][offset+1] = _reg_mode['BYPASS'] & 1
-                    data[idx][offset] = (_reg_mode['BYPASS'] >> 1) & 1
-                    comment[idx][(offset, offset-1)] =  '{}: REG_BYPASS'.format(port)
+                    data[idx] |=  _reg_mode['BYPASS'] << offset
+                    comment[idx][(offset+1, offset)] = '{}: REG_BYPASS'.format(port)
 
 
         elif mod.type_ == 'IO':
