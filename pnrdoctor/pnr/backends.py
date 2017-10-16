@@ -78,7 +78,7 @@ _reg_mode = {
     'DELAY'  : 0x3,
 }
 
-_LUT_ENABLE = 9
+_LUT_ENABLE = 7 #9
 
 _mem_translate = {
     'mode' : {
