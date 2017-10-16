@@ -112,7 +112,7 @@ def _io_hack(mods, ties):
         for mod_name in inputmods:
             saved_args = mods[mod_name].copy()
             mods[mod_name]['type'] = 'PE'
-            mods[mod_name]['conf'] = 'add'
+            mods[mod_name]['conf'] = {'alu_op' : 'add'}
             mods[mod_name]['res']  = Resource.PE
 
             hack_io_name = '__HACK__' + mod_name

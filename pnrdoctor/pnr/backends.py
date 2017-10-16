@@ -221,7 +221,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             else:
                 comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'output')
                 data[_pe_reg['op_b_in']]  = 0xffffffff
-
+        else:
+            raise ValueError("Unkown mod.type_ : `{}'".format(mod.type_))
 
         return data, comment, config_engine[configindex(resource=Resource.PE, ps=(row, col))].feature_address
 
