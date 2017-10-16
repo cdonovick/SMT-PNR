@@ -21,7 +21,7 @@ _bit_widths = {
     'feature'   : 8,
     'reg'       : 8,
     'alu_op'    : 5,
-    'lut_value' : 8,
+    'lut_value' : 2, #8,
 }
 
 _op_translate = {
@@ -171,8 +171,18 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             for k,d in _op_translate.items():
                 if k in mod.config:
                     idx = _pe_reg[k]
+
+                    if d[mod.config[k]].bit_length() > _bit_widths[k]:
+                        raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
+                            k,
+                            _bit_widths[k],
+                            d[mod.config[k]],
+                            d[mod.config[k]].bit_length()
+                            ))
+
+
                     data[idx] |= d[mod.config[k]]
-                    comment[idx][(_bit_widths[k], 0)] = '{} = {}'.format(k, mod.config[k])
+                    comment[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
 
             if 'lut_value' in mod.config:
                 idx = _pe_reg['alu_op']
