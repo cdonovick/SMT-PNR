@@ -216,7 +216,6 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
         elif mod.type_ == 'IO':
             data[_pe_reg['alu_op']] = _op_translate['alu_op'][mod.config]
-
             if mod.config == 'i':
                 comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'input') + ' # mod := {:0{l}}'.format(mod.id, l=l)
                 data[_pe_reg['op_a_in']]  = 0xffffffff
@@ -224,6 +223,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             else:
                 comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'output') + ' # mod := {:0{l}}'.format(mod.id, l=l)
                 data[_pe_reg['op_b_in']]  = 0xffffffff
+
+        else:
+            raise ValueError('Unknown mod.type_: {}'.format(mod.type_))
 
 
         return data, comment, config_engine[configindex(resource=Resource.PE, ps=(row, col))].feature_address
@@ -290,6 +292,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                 if isinstance(vtie, tuple) and vtie[1] == 'debug':
                     continue
                 bs.write('# {:0{l}} := {}\n'.format(vtie.id, vtie, l=l))
+            bs.write('\n')
 
         # Process r_state
         # organize track indices by location

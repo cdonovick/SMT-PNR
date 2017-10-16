@@ -4,7 +4,7 @@ TESTS=$PREFIX/conv_2_1.json
 FABRICS=$PREFIX/cgra_8_8_info.xml
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
-COMMANDS="--annotate $ANNOTATED"
+COMMANDS="--annotate $ANNOTATED --print"
 LIMIT=300
 
 if [[ "$SOLVER" != "" ]]; then
