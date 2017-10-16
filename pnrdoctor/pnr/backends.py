@@ -174,7 +174,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                 if k in mod.config:
                     idx = _pe_reg[k]
                     data[idx] |= d[mod.config[k]]
-                    comment[idx][(_bit_widths[k], 0)] = '{} = {}'.format(k, mod.config[k])
+                    comment[idx][(_bit_widths[k], 0)] = '{} = {}'.format(k, mod.config[k]) + '# mod := {:0{l}}'.format(mod.id, l=l)
+
 
             if 'lut_value' in mod.config:
                 idx = _pe_reg['alu_op']
@@ -217,11 +218,11 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             data[_pe_reg['alu_op']] = _op_translate['alu_op'][mod.config]
 
             if mod.config == 'i':
-                comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'input')
+                comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'input') + '# mod := {:0{l}}'.format(mod.id, l=l)
                 data[_pe_reg['op_a_in']]  = 0xffffffff
                 data[_pe_reg['op_b_in']]  = 0xffffffff
             else:
-                comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'output')
+                comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'output') + '# mod := {:0{l}}'.format(mod.id, l=l)
                 data[_pe_reg['op_b_in']]  = 0xffffffff
 
 
@@ -232,6 +233,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         comment = defaultdict(dict)
 
         assert mod.resource == Resource.Mem
+
         for opt, value in mod.config.items():
 
             val = int(_mem_translate[opt][value])
@@ -246,7 +248,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
             assert val.bit_length() <= sel_w
             data[reg] |= val << offset
-            comment[reg][(sel_w + offset - 1, offset)] = Annotations.op_config(opt, value)
+            comment[reg][(sel_w + offset - 1, offset)] = Annotations.op_config(opt, value) + '# mod := {:0{l}}'.format(mod.id, l=l)
 
         return data, comment, c.feature_address
 
@@ -280,7 +282,10 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
     # open bit stream then loop
     with open(bitstream, 'w') as bs:
         if annotate:
-            l = len(str(len(r_state) - 1))
+            l = max(len(str(len(r_state) - 1)), len(str(len(p_state) - 1)))
+            for mod in p_state:
+                bs.write('# {:0{l}} := {}\n'.format(mod.id, mod, l=l))
+            bs.write('\n')
             for vtie in r_state:
                 if isinstance(vtie, tuple) and vtie[1] == 'debug':
                     continue
