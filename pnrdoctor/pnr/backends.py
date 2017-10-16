@@ -10,7 +10,6 @@ from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList, BiMultiDi
 from .pnrutils import configindex
 
 __all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
-
 # -------------------------------------------------
 # write_bitsream consants
 # -------------------------------------------------
@@ -120,18 +119,20 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         for tindex in tindexlist:
             c = config_engine[tindex]
             feature_address = c.feature_address
+            vtie = r_state.I[tindex][0]
             data[0] = c.sel
             comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
-                                                                    c.snk_name, row=row, col=col)
+                                                                    c.snk_name, row=row, col=col) +  ' # tie := {}'.format(vtie.id)
 
         return data, comment, feature_address
 
 
-    def _proc_sb():
+    def _proc_sb(t_indices):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
         feature_address = None
+
 
         for tindex in t_indices:
             if tindex.snk.port:
@@ -142,6 +143,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             c = config_engine[tindex]
             feature_address = c.feature_address
             vtie = r_state.I[tindex][0]
+            
 
             # check if the dst is a register
             # and if the current track is the last track in the path
@@ -157,7 +159,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             reg = c.configl // 32
             offset = c.configl % 32
             data[reg] |= c.sel << offset
-            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col)
+            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col) + ' # tie := {}'.format(vtie.id)
 
         return data, comment, feature_address
 
@@ -277,6 +279,12 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
     # open bit stream then loop
     with open(bitstream, 'w') as bs:
+        if annotate:
+            l = len(str(len(r_state) - 1)) +1
+            for vtie in r_state:
+                if isinstance(vtie, tuple) and vtie[1] == 'debug':
+                    continue
+                bs.write('# {:0{l}} : {}\n'.format(vtie.id, vtie, l=l))
 
         # Process r_state
         # organize track indices by location
@@ -301,7 +309,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             row, col = pos
             t_indices = processed_r_state[(pos, layer)]
 
-            data, comment, feature_address = _proc_sb()
+            data, comment, feature_address = _proc_sb(t_indices)
             _write(data, tile_addr, feature_address, bs, comment)
             for mod in pos_map.I[pos]:
                 for port in fabric.port_names[(mod.resource, layer)].sinks:
