@@ -122,7 +122,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             vtie = r_state.I[tindex][0]
             data[0] = c.sel
             comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
-                                                                    c.snk_name, row=row, col=col) +  ' # tie := {}'.format(vtie.id)
+                    c.snk_name, row=row, col=col) +  ' # tie := {:0{l}}'.format(vtie.id, l=l)
 
         return data, comment, feature_address
 
@@ -143,7 +143,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             c = config_engine[tindex]
             feature_address = c.feature_address
             vtie = r_state.I[tindex][0]
-            
+
 
             # check if the dst is a register
             # and if the current track is the last track in the path
@@ -159,7 +159,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             reg = c.configl // 32
             offset = c.configl % 32
             data[reg] |= c.sel << offset
-            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col) + ' # tie := {}'.format(vtie.id)
+            comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col) + ' # tie := {:0{l}}'.format(vtie.id, l=l)
 
         return data, comment, feature_address
 
@@ -280,11 +280,11 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
     # open bit stream then loop
     with open(bitstream, 'w') as bs:
         if annotate:
-            l = len(str(len(r_state) - 1)) +1
+            l = len(str(len(r_state) - 1))
             for vtie in r_state:
                 if isinstance(vtie, tuple) and vtie[1] == 'debug':
                     continue
-                bs.write('# {:0{l}} : {}\n'.format(vtie.id, vtie, l=l))
+                bs.write('# {:0{l}} := {}\n'.format(vtie.id, vtie, l=l))
 
         # Process r_state
         # organize track indices by location
