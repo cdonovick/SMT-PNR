@@ -24,9 +24,9 @@ parser.add_argument('--annotate', metavar='<ANNOTATED_FILE>', help='output bitst
 parser.add_argument('--noroute', action='store_true')
 parser.add_argument('--solver', help='choose the smt solver to use for placement', default='Z3')
 parser.add_argument('--seed', help='Seed the randomness in solvers', default=1)
-parser.add_argument('--time', action='store_true', help='Print timing information.')
-parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
-
+parser.add_argument('--time', action='store_true', help='Print timing information')
+parser.add_argument('--info', action='store_true', help='Print information about design and fabric')
+parser.add_argument('--debug', action='store_true', help='Add debuging symbols to annotated bitstream')
 args = parser.parse_args()
 
 design_file = args.design
@@ -136,6 +136,6 @@ if args.bitstream:
 if args.annotate:
     bit_file = args.annotate
     print("Writing bitsream to: {}".format(bit_file))
-    pnr.write_bitstream(fab, bit_file, ce, True)
+    pnr.write_bitstream(fab, bit_file, ce, True, args.debug)
 
 

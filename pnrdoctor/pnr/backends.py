@@ -93,7 +93,7 @@ _mem_translate = {
 }
 
 
-def write_bitstream(fabric, bitstream, config_engine, annotate):
+def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
     # -------------------------------------------------
     # write_bitsream utilities
     # -------------------------------------------------
@@ -124,10 +124,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             comment[0][(c.sel_w-1, 0)] = Annotations.connect_wire(data[0], c.src_name,
                                                                     c.snk_name, row=row, col=col)
 
+            if debug:
+                vtie = r_state.I[tindex][0]
+                comment[0][(c.sel_w-1, 0)] += id_fmt.format(vtie.id)
+
         return data, comment, feature_address
 
 
-    def _proc_sb():
+    def _proc_sb(t_indices):
         data = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
         comment = defaultdict(dict)
 
@@ -153,11 +157,16 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                 offset = c.configr % 32
                 data[reg] |= 1 << offset
                 comment[reg][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
+                if debug:
+                    comment[reg][(offset, offset)] += id_fmt.format(vtie.id)
 
             reg = c.configl // 32
             offset = c.configl % 32
             data[reg] |= c.sel << offset
             comment[reg][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col)
+            if debug:
+                comment[reg][(c.sel_w + offset - 1, offset)] += id_fmt.format(vtie.id)
+
 
         return data, comment, feature_address
 
@@ -168,8 +177,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
 
         assert mod.resource == Resource.PE
         if mod.type_ == 'PE':
-            for k,d in _op_translate.items():
-                if k in mod.config:
+            for k in mod.config:
+                if k in _op_translate:
+                    d = _op_translate[k]
                     idx = _pe_reg[k]
 
                     if d[mod.config[k]].bit_length() > _bit_widths[k]:
@@ -180,14 +190,18 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                             d[mod.config[k]].bit_length()
                             ))
 
-
                     data[idx] |= d[mod.config[k]]
                     comment[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
+                    if debug:
+                        comment[idx][(_bit_widths[k]-1, 0)] += id_fmt.format(mod.id)
 
             if 'lut_value' in mod.config:
                 idx = _pe_reg['alu_op']
                 data[idx][_LUT_ENABLE] |= 1
                 comment[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
+                if debug:
+                    comment[idx][(_LUT_ENABLE, _LUT_ENABLE)] += id_fmt.format(mod.id)
+
 
             for port in mod.inputs:
                 tie = mod.inputs[port]
@@ -220,6 +234,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
                     data[idx] |=  _reg_mode['BYPASS'] << offset
                     comment[idx][(offset+1, offset)] = '{}: REG_BYPASS'.format(port)
 
+                if debug:
+                    comment[idx][(offset+1, offset)] += id_fmt.format(mod.id)
+
 
         elif mod.type_ == 'IO':
             data[_pe_reg['alu_op']] = _op_translate['alu_op'][mod.config]
@@ -231,6 +248,10 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             else:
                 comment[_pe_reg['alu_op']][(5, 0)] = Annotations.op_config('alu_op', 'output')
                 data[_pe_reg['op_b_in']]  = 0xffffffff
+
+            if debug:
+                comment[_pe_reg['alu_op']][(5, 0)] += id_fmt.format(mod.id)
+
         else:
             raise ValueError("Unkown mod.type_ : `{}'".format(mod.type_))
 
@@ -257,6 +278,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             data[reg] |= val << offset
             comment[reg][(sel_w + offset - 1, offset)] = Annotations.op_config(opt, value)
 
+            if debug:
+                comment[reg][(sel_w + offset - 1, offset)] + id_fmt.format(mod.id)
+
         return data, comment, c.feature_address
 
     def _write(data, tile_address, feature_address, bs, comment):
@@ -278,6 +302,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         return '{:0{bits}X}'.format(elem, bits=elem_bits//4)
 
 
+    def _is_debug_tie(tie):
+        return isinstance(tie, tuple) and len(tie) == 2 and tie[1] == 'debug'
+
     # -------------------------------------------------
     # write_bitsream
     # -------------------------------------------------
@@ -293,7 +320,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
         # organize track indices by location
         processed_r_state = defaultdict(SetList)
         for k, tindex in r_state.items():
-            if isinstance(k, tuple) and k[1] == 'debug':
+            if _is_debug_tie(k):
                 # this is debug information
                 continue
 
@@ -301,6 +328,25 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             processed_r_state[(tindex.snk.ps, tindex.bw)].add(tindex)
 
         pos_map = BiMultiDict(default=True)
+        id_fmt = ''
+        if debug:
+            id_len = max(
+                    max(len(str(m.id)) for m in p_state),
+                    max(len(str(t.id)) for t in r_state if not _is_debug_tie(t)),
+                    )
+            id_fmt = '{' + ':0{l}'.format(l=id_len) + '}'
+
+            for mod in p_state:
+                bs.write(('# ' + id_fmt + ' := {}\n').format(mod.id, mod.name))
+            bs.write('\n')
+            for tie in r_state:
+                if _is_debug_tie(tie):
+                    continue
+                bs.write(('# ' + id_fmt + ' := {}\n').format(tie.id, tie))
+            bs.write('\n')
+            id_fmt = ' ; ' + id_fmt
+
+
 
         for module,reg in p_state.items():
             if module.resource != Resource.Reg:
@@ -312,7 +358,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate):
             row, col = pos
             t_indices = processed_r_state[(pos, layer)]
 
-            data, comment, feature_address = _proc_sb()
+            data, comment, feature_address = _proc_sb(t_indices)
             _write(data, tile_addr, feature_address, bs, comment)
             for mod in pos_map.I[pos]:
                 for port in fabric.port_names[(mod.resource, layer)].sinks:
