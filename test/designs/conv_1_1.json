@@ -4,47 +4,47 @@
     "modules":{
       "DesignTop":{
         "type":["Record",{
-          "out":["Array",16,"Bit"],
-          "in":["Array",1,["Array",16,"BitIn"]]
+          "in":["Array",1,["Array",16,"BitIn"]],
+          "out":["Array",16,"Bit"]
         }],
         "instances":{
-          "add_285_289_PE":{
+          "_284const0_":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],0]}
+          },
+          "_288const3_":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],3]}
+          },
+          "add_285_289_290_PE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"add", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"alu"}
-          },
-          "const0_":{
-            "genref":"coreir.const",
-            "genargs":{"width":16},
-            "configargs":{"value":0}
-          },
-          "const3_":{
-            "genref":"coreir.const",
-            "genargs":{"width":16},
-            "configargs":{"value":3}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+            "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
           },
           "io16_out":{
             "genref":"cgralib.IO",
-            "genargs":{"width":16},
-            "configargs":{"mode":"o"}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"mode":["String","o"]}
           },
           "io16in_in_0":{
             "genref":"cgralib.IO",
-            "genargs":{"width":16},
-            "configargs":{"mode":"i"}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"mode":["String","i"]}
           },
-          "mul_287_288_PE":{
+          "mul_287_288_289_PE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"mul", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":0, "op_kind":"alu"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+            "modargs":{"alu_op":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
           }
         },
         "connections":[
-          ["mul_287_288_PE.data.in.1","const3_.out"],
-          ["mul_287_288_PE.data.in.0","io16in_in_0.out"],
-          ["add_285_289_PE.data.in.1","mul_287_288_PE.data.out"],
-          ["add_285_289_PE.data.in.0","const0_.out"],
-          ["add_285_289_PE.data.out","io16_out.in"]
+          ["_284const0_.out","add_285_289_290_PE.data.in.0"],
+          ["_288const3_.out","mul_287_288_289_PE.data.in.1"],
+          ["io16_out.in","add_285_289_290_PE.data.out"],
+          ["io16in_in_0.out","mul_287_288_289_PE.data.in.0"],
+          ["mul_287_288_289_PE.data.out","add_285_289_290_PE.data.in.1"]
         ]
       }
     }

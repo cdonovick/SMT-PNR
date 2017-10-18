@@ -4,1078 +4,1078 @@
     "modules":{
       "BitonicSorter2":{
         "type":["Record",{
-          "O":["Array",2,"Bit"],
-          "I":["Array",2,"BitIn"]
+          "I":["Array",2,"BitIn"],
+          "O":["Array",2,"Bit"]
         }],
         "instances":{
           "inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst0$inst1_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst0$inst0_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.1","inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst0$inst0_lut_bitPE.bit.out"]
+          ["inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["self.I.0","inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.1","inst0$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "BitonicSorter4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "instances":{
           "inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst4$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst1$inst1_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst1$inst1_lut_bitPE.bit.in.0","self.I.1"],
-          ["inst1$inst1$inst0_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst1$inst0_lut_bitPE.bit.in.0","self.I.1"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.1","self.I.2"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.1","self.I.2"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.3","inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.2","inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.1","inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst3$inst0$inst0_lut_bitPE.bit.out"]
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst3$inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst3$inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["inst4$inst0$inst0_lut_bitPE.bit.out","self.O.2"],
+          ["inst4$inst0$inst1_lut_bitPE.bit.out","self.O.3"],
+          ["self.I.0","inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.2","inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst1$inst1$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Merger4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "instances":{
           "inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst4$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst1$inst1_lut_bitPE.bit.in.1","self.I.2"],
-          ["inst1$inst1$inst1_lut_bitPE.bit.in.0","self.I.1"],
-          ["inst1$inst1$inst0_lut_bitPE.bit.in.1","self.I.2"],
-          ["inst1$inst1$inst0_lut_bitPE.bit.in.0","self.I.1"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.3","inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.2","inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.1","inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst3$inst0$inst0_lut_bitPE.bit.out"]
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst3$inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst3$inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["inst4$inst0$inst0_lut_bitPE.bit.out","self.O.2"],
+          ["inst4$inst0$inst1_lut_bitPE.bit.out","self.O.3"],
+          ["self.I.0","inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.2","inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst1$inst0$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Merger8":{
         "type":["Record",{
-          "O":["Array",8,"Bit"],
-          "I":["Array",8,"BitIn"]
+          "I":["Array",8,"BitIn"],
+          "O":["Array",8,"Bit"]
         }],
         "instances":{
           "inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst2$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst2$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst3$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst3$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst4$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst4$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst4$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst4$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst4$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst4$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst4$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst4$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst4$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst4$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst4$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst4$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst4$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst4$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst4$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst4$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst4$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst4$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst4$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst4$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst1$inst2$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst1$inst2$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst3$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst4$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst3$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst3$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst3$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst3$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst3$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst3$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst3$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst3$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst3$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst3$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst1$inst3$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst1$inst3$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst2$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst2$inst0_lut_bitPE.bit.out"],
-          ["inst3$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst3$inst1_lut_bitPE.bit.in.1","self.I.4"],
-          ["inst1$inst3$inst1_lut_bitPE.bit.in.0","self.I.3"],
-          ["inst1$inst3$inst0_lut_bitPE.bit.in.1","self.I.4"],
-          ["inst1$inst3$inst0_lut_bitPE.bit.in.0","self.I.3"],
-          ["inst1$inst2$inst1_lut_bitPE.bit.in.1","self.I.5"],
-          ["inst1$inst2$inst1_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst1$inst2$inst0_lut_bitPE.bit.in.1","self.I.5"],
-          ["inst1$inst2$inst0_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst1$inst1$inst1_lut_bitPE.bit.in.1","self.I.6"],
-          ["inst1$inst1$inst1_lut_bitPE.bit.in.0","self.I.1"],
-          ["inst1$inst1$inst0_lut_bitPE.bit.in.1","self.I.6"],
-          ["inst1$inst1$inst0_lut_bitPE.bit.in.0","self.I.1"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.1","self.I.7"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.1","self.I.7"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.7","inst4$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.6","inst4$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.5","inst4$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.4","inst4$inst3$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.3","inst3$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.2","inst3$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.1","inst3$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst3$inst3$inst0$inst0_lut_bitPE.bit.out"]
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst2$inst0_lut_bitPE.bit.out","inst3$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst2$inst0_lut_bitPE.bit.out","inst3$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst2$inst1_lut_bitPE.bit.out","inst4$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst2$inst1_lut_bitPE.bit.out","inst4$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst3$inst0_lut_bitPE.bit.out","inst3$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst3$inst0_lut_bitPE.bit.out","inst3$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst3$inst1_lut_bitPE.bit.out","inst4$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst3$inst1_lut_bitPE.bit.out","inst4$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst3$inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst3$inst1$inst0$inst0_lut_bitPE.bit.out","inst3$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst3$inst1$inst0$inst1_lut_bitPE.bit.out","inst3$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst3$inst1$inst0$inst1_lut_bitPE.bit.out","inst3$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst3$inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst3$inst1$inst1$inst0_lut_bitPE.bit.out","inst3$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst3$inst1$inst1$inst1_lut_bitPE.bit.out","inst3$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst3$inst1$inst1$inst1_lut_bitPE.bit.out","inst3$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst3$inst3$inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst3$inst3$inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["inst3$inst4$inst0$inst0_lut_bitPE.bit.out","self.O.2"],
+          ["inst3$inst4$inst0$inst1_lut_bitPE.bit.out","self.O.3"],
+          ["inst4$inst1$inst0$inst0_lut_bitPE.bit.out","inst4$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst4$inst1$inst0$inst0_lut_bitPE.bit.out","inst4$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst4$inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst4$inst1$inst0$inst1_lut_bitPE.bit.out","inst4$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst4$inst1$inst1$inst0_lut_bitPE.bit.out","inst4$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst4$inst1$inst1$inst0_lut_bitPE.bit.out","inst4$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst4$inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst4$inst1$inst1$inst1_lut_bitPE.bit.out","inst4$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst4$inst3$inst0$inst0_lut_bitPE.bit.out","self.O.4"],
+          ["inst4$inst3$inst0$inst1_lut_bitPE.bit.out","self.O.5"],
+          ["inst4$inst4$inst0$inst0_lut_bitPE.bit.out","self.O.6"],
+          ["inst4$inst4$inst0$inst1_lut_bitPE.bit.out","self.O.7"],
+          ["self.I.0","inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst1$inst2$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst1$inst2$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.3","inst1$inst3$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.3","inst1$inst3$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.4","inst1$inst3$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.4","inst1$inst3$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.5","inst1$inst2$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.5","inst1$inst2$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.6","inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.6","inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.7","inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.7","inst1$inst0$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "ReverseRiffle4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "connections":[
-          ["self.O.3","self.I.2"],
-          ["self.O.2","self.I.1"],
-          ["self.O.1","self.I.3"],
-          ["self.O.0","self.I.0"]
+          ["self.I.0","self.O.0"],
+          ["self.I.1","self.O.2"],
+          ["self.I.2","self.O.3"],
+          ["self.I.3","self.O.1"]
         ]
       },
       "ReverseRiffle8":{
         "type":["Record",{
-          "O":["Array",8,"Bit"],
-          "I":["Array",8,"BitIn"]
+          "I":["Array",8,"BitIn"],
+          "O":["Array",8,"Bit"]
         }],
         "connections":[
-          ["self.O.7","self.I.4"],
-          ["self.O.6","self.I.3"],
-          ["self.O.5","self.I.5"],
-          ["self.O.4","self.I.2"],
-          ["self.O.3","self.I.6"],
-          ["self.O.2","self.I.1"],
-          ["self.O.1","self.I.7"],
-          ["self.O.0","self.I.0"]
+          ["self.I.0","self.O.0"],
+          ["self.I.1","self.O.2"],
+          ["self.I.2","self.O.4"],
+          ["self.I.3","self.O.6"],
+          ["self.I.4","self.O.7"],
+          ["self.I.5","self.O.5"],
+          ["self.I.6","self.O.3"],
+          ["self.I.7","self.O.1"]
         ]
       },
       "Riffle4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "connections":[
-          ["self.O.3","self.I.3"],
-          ["self.O.2","self.I.1"],
-          ["self.O.1","self.I.2"],
-          ["self.O.0","self.I.0"]
+          ["self.I.0","self.O.0"],
+          ["self.I.1","self.O.2"],
+          ["self.I.2","self.O.1"],
+          ["self.I.3","self.O.3"]
         ]
       },
       "Sorter2":{
         "type":["Record",{
-          "O":["Array",2,"Bit"],
-          "I":["Array",2,"BitIn"]
+          "I":["Array",2,"BitIn"],
+          "O":["Array",2,"Bit"]
         }],
         "instances":{
           "inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst0$inst1_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst0$inst0_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.1","inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst0$inst0_lut_bitPE.bit.out"]
+          ["inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["self.I.0","inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.1","inst0$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Sorter4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "instances":{
           "inst0$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst2$inst0$inst1_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst2$inst0$inst1_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst2$inst0$inst0_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst2$inst0$inst0_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst1$inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst1$inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst0$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.3","inst0$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.2","inst0$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["self.O.1","inst0$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst0$inst3$inst0$inst0_lut_bitPE.bit.out"]
+          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst3$inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst0$inst3$inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["inst0$inst4$inst0$inst0_lut_bitPE.bit.out","self.O.2"],
+          ["inst0$inst4$inst0$inst1_lut_bitPE.bit.out","self.O.3"],
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst2$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.0","inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.1","inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.2","inst2$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst2$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.3","inst2$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst2$inst0$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Sorter8":{
         "type":["Record",{
-          "O":["Array",8,"Bit"],
-          "I":["Array",8,"BitIn"]
+          "I":["Array",8,"BitIn"],
+          "O":["Array",8,"Bit"]
         }],
         "instances":{
           "inst0$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst1$inst2$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1$inst2$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst1$inst3$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1$inst3$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst3$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst3$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst3$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst3$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst3$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst3$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst3$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst3$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst4$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst4$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst4$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst4$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst4$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst4$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst0$inst4$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst4$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst0$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst2$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst2$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst0$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst0$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst0$inst1$inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst0$inst1$inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst0$inst3$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst0$inst3$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst0$inst4$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst0$inst4$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst1$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst1$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst2$inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst2$inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "io1in_I_0":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_1":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_2":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_3":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_4":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_5":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_6":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           },
           "io1in_I_7":{
             "modref":"cgralib.BitIO",
-            "configargs":{"mode":"i"}
+            "modargs":{"mode":["String","i"]}
           }
         },
         "connections":[
-          ["inst2$inst2$inst0$inst1_lut_bitPE.bit.in.1","io1in_I_7.out"],
-          ["inst2$inst2$inst0$inst1_lut_bitPE.bit.in.0","io1in_I_6.out"],
-          ["inst2$inst2$inst0$inst0_lut_bitPE.bit.in.1","io1in_I_7.out"],
-          ["inst2$inst2$inst0$inst0_lut_bitPE.bit.in.0","io1in_I_6.out"],
-          ["inst2$inst1$inst0$inst1_lut_bitPE.bit.in.1","io1in_I_5.out"],
-          ["inst2$inst1$inst0$inst1_lut_bitPE.bit.in.0","io1in_I_4.out"],
-          ["inst2$inst1$inst0$inst0_lut_bitPE.bit.in.1","io1in_I_5.out"],
-          ["inst2$inst1$inst0$inst0_lut_bitPE.bit.in.0","io1in_I_4.out"],
-          ["inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst2$inst2$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst2$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst2$inst2$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst2$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst2$inst2$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst2$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst2$inst2$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst2$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst2$inst0$inst1_lut_bitPE.bit.in.1","io1in_I_3.out"],
-          ["inst1$inst2$inst0$inst1_lut_bitPE.bit.in.0","io1in_I_2.out"],
-          ["inst1$inst2$inst0$inst0_lut_bitPE.bit.in.1","io1in_I_3.out"],
-          ["inst1$inst2$inst0$inst0_lut_bitPE.bit.in.0","io1in_I_2.out"],
-          ["inst1$inst1$inst0$inst1_lut_bitPE.bit.in.1","io1in_I_1.out"],
-          ["inst1$inst1$inst0$inst1_lut_bitPE.bit.in.0","io1in_I_0.out"],
-          ["inst1$inst1$inst0$inst0_lut_bitPE.bit.in.1","io1in_I_1.out"],
-          ["inst1$inst1$inst0$inst0_lut_bitPE.bit.in.0","io1in_I_0.out"],
-          ["inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst1$inst2$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst1$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst1$inst2$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst1$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst1$inst2$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst1$inst2$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst0$inst1$inst2$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst0$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst0$inst1$inst2$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst1$inst3$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst1$inst3$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst4$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst4$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst4$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst4$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst3$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst3$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst3$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst3$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst0$inst1$inst3$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst0$inst1$inst3$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst0$inst1$inst1$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst0$inst1$inst2$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst0$inst1$inst2$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst0$inst1$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst3$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst3$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst3$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst3$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst2$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst2$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst2$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst2$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1","inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0","inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1","inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.out"],
-          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0","inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.out"]
+          ["io1in_I_0.out","inst1$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["io1in_I_0.out","inst1$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["io1in_I_1.out","inst1$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["io1in_I_1.out","inst1$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["io1in_I_2.out","inst1$inst2$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["io1in_I_2.out","inst1$inst2$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["io1in_I_3.out","inst1$inst2$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["io1in_I_3.out","inst1$inst2$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["io1in_I_4.out","inst2$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["io1in_I_4.out","inst2$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["io1in_I_5.out","inst2$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["io1in_I_5.out","inst2$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["io1in_I_6.out","inst2$inst2$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["io1in_I_6.out","inst2$inst2$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["io1in_I_7.out","inst2$inst2$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["io1in_I_7.out","inst2$inst2$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst2$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst2$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst2$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst2$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst3$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst3$inst0_lut_bitPE.bit.out","inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst1$inst3$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst1$inst3$inst1_lut_bitPE.bit.out","inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst3$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst3$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst3$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst3$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst3$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst3$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst3$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst3$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst3$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst3$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst3$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst3$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst4$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst4$inst1$inst0$inst0_lut_bitPE.bit.out","inst0$inst4$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst4$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst0$inst4$inst1$inst0$inst1_lut_bitPE.bit.out","inst0$inst4$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst4$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst4$inst1$inst1$inst0_lut_bitPE.bit.out","inst0$inst4$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst4$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst0$inst4$inst1$inst1$inst1_lut_bitPE.bit.out","inst0$inst4$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst3$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst3$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst2$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst4$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst2$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst3$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst0$inst4$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst3$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst0$inst0_lut_bitPE.bit.out","inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst0$inst0_lut_bitPE.bit.out","inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst0$inst1_lut_bitPE.bit.out","inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst1$inst1$inst0$inst1_lut_bitPE.bit.out","inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst1$inst2$inst0$inst0_lut_bitPE.bit.out","inst1$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst2$inst0$inst0_lut_bitPE.bit.out","inst1$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst1$inst2$inst0$inst1_lut_bitPE.bit.out","inst1$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst1$inst2$inst0$inst1_lut_bitPE.bit.out","inst1$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.out","inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.out","inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.out","inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.out","inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst3$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst3$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst3$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst2$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst3$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst2$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst4$inst0$inst0_lut_bitPE.bit.out","inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst0$inst4$inst0$inst1_lut_bitPE.bit.out","inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst1$inst0$inst0_lut_bitPE.bit.out","inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.0"],
+          ["inst2$inst1$inst0$inst0_lut_bitPE.bit.out","inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.0"],
+          ["inst2$inst1$inst0$inst1_lut_bitPE.bit.out","inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.0"],
+          ["inst2$inst1$inst0$inst1_lut_bitPE.bit.out","inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.0"],
+          ["inst2$inst2$inst0$inst0_lut_bitPE.bit.out","inst2$inst0$inst1$inst1$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst2$inst0$inst0_lut_bitPE.bit.out","inst2$inst0$inst1$inst1$inst1_lut_bitPE.bit.in.1"],
+          ["inst2$inst2$inst0$inst1_lut_bitPE.bit.out","inst2$inst0$inst1$inst0$inst0_lut_bitPE.bit.in.1"],
+          ["inst2$inst2$inst0$inst1_lut_bitPE.bit.out","inst2$inst0$inst1$inst0$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Swap":{
         "type":["Record",{
-          "O":["Array",2,"Bit"],
-          "I":["Array",2,"BitIn"]
+          "I":["Array",2,"BitIn"],
+          "O":["Array",2,"Bit"]
         }],
         "instances":{
           "inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst1_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst0_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.1","inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst0_lut_bitPE.bit.out"]
+          ["inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst1_lut_bitPE.bit.out","self.O.1"],
+          ["self.I.0","inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst0_lut_bitPE.bit.in.1"],
+          ["self.I.1","inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Swap4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "instances":{
           "inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst1$inst1_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst1_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst1$inst0_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst0_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst0$inst1_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst0$inst0_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.3","inst1$inst1_lut_bitPE.bit.out"],
-          ["self.O.2","inst1$inst0_lut_bitPE.bit.out"],
-          ["self.O.1","inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst0$inst0_lut_bitPE.bit.out"]
+          ["inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["inst1$inst0_lut_bitPE.bit.out","self.O.2"],
+          ["inst1$inst1_lut_bitPE.bit.out","self.O.3"],
+          ["self.I.0","inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.1","inst0$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.2","inst1$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst1$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.3","inst1$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst1$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "Swap8":{
         "type":["Record",{
-          "O":["Array",8,"Bit"],
-          "I":["Array",8,"BitIn"]
+          "I":["Array",8,"BitIn"],
+          "O":["Array",8,"Bit"]
         }],
         "instances":{
           "inst0$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst0$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst1$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst1$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst2$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst2$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           },
           "inst3$inst0_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":136, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],136]}
           },
           "inst3$inst1_lut_bitPE":{
             "genref":"cgralib.PE",
-            "genargs":{"numbitports":3, "numdataports":2, "width":16},
-            "configargs":{"alu_op":"nop", "bit0_mode":"BYPASS", "bit0_value":false, "data0_mode":"BYPASS", "data0_value":0, "data1_mode":"BYPASS", "data1_value":0, "lut_value":238, "op_kind":"bit"}
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],238]}
           }
         },
         "connections":[
-          ["inst3$inst1_lut_bitPE.bit.in.1","self.I.7"],
-          ["inst3$inst1_lut_bitPE.bit.in.0","self.I.6"],
-          ["inst3$inst0_lut_bitPE.bit.in.1","self.I.7"],
-          ["inst3$inst0_lut_bitPE.bit.in.0","self.I.6"],
-          ["inst2$inst1_lut_bitPE.bit.in.1","self.I.5"],
-          ["inst2$inst1_lut_bitPE.bit.in.0","self.I.4"],
-          ["inst2$inst0_lut_bitPE.bit.in.1","self.I.5"],
-          ["inst2$inst0_lut_bitPE.bit.in.0","self.I.4"],
-          ["inst1$inst1_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst1_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst1$inst0_lut_bitPE.bit.in.1","self.I.3"],
-          ["inst1$inst0_lut_bitPE.bit.in.0","self.I.2"],
-          ["inst0$inst1_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst1_lut_bitPE.bit.in.0","self.I.0"],
-          ["inst0$inst0_lut_bitPE.bit.in.1","self.I.1"],
-          ["inst0$inst0_lut_bitPE.bit.in.0","self.I.0"],
-          ["self.O.7","inst3$inst1_lut_bitPE.bit.out"],
-          ["self.O.6","inst3$inst0_lut_bitPE.bit.out"],
-          ["self.O.5","inst2$inst1_lut_bitPE.bit.out"],
-          ["self.O.4","inst2$inst0_lut_bitPE.bit.out"],
-          ["self.O.3","inst1$inst1_lut_bitPE.bit.out"],
-          ["self.O.2","inst1$inst0_lut_bitPE.bit.out"],
-          ["self.O.1","inst0$inst1_lut_bitPE.bit.out"],
-          ["self.O.0","inst0$inst0_lut_bitPE.bit.out"]
+          ["inst0$inst0_lut_bitPE.bit.out","self.O.0"],
+          ["inst0$inst1_lut_bitPE.bit.out","self.O.1"],
+          ["inst1$inst0_lut_bitPE.bit.out","self.O.2"],
+          ["inst1$inst1_lut_bitPE.bit.out","self.O.3"],
+          ["inst2$inst0_lut_bitPE.bit.out","self.O.4"],
+          ["inst2$inst1_lut_bitPE.bit.out","self.O.5"],
+          ["inst3$inst0_lut_bitPE.bit.out","self.O.6"],
+          ["inst3$inst1_lut_bitPE.bit.out","self.O.7"],
+          ["self.I.0","inst0$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.0","inst0$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.1","inst0$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.1","inst0$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.2","inst1$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.2","inst1$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.3","inst1$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.3","inst1$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.4","inst2$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.4","inst2$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.5","inst2$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.5","inst2$inst1_lut_bitPE.bit.in.1"],
+          ["self.I.6","inst3$inst0_lut_bitPE.bit.in.0"],
+          ["self.I.6","inst3$inst1_lut_bitPE.bit.in.0"],
+          ["self.I.7","inst3$inst0_lut_bitPE.bit.in.1"],
+          ["self.I.7","inst3$inst1_lut_bitPE.bit.in.1"]
         ]
       },
       "UnReverseRiffle4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "connections":[
-          ["self.O.3","self.I.1"],
-          ["self.O.2","self.I.3"],
-          ["self.O.1","self.I.2"],
-          ["self.O.0","self.I.0"]
+          ["self.I.0","self.O.0"],
+          ["self.I.1","self.O.3"],
+          ["self.I.2","self.O.1"],
+          ["self.I.3","self.O.2"]
         ]
       },
       "UnReverseRiffle8":{
         "type":["Record",{
-          "O":["Array",8,"Bit"],
-          "I":["Array",8,"BitIn"]
+          "I":["Array",8,"BitIn"],
+          "O":["Array",8,"Bit"]
         }],
         "connections":[
-          ["self.O.7","self.I.1"],
-          ["self.O.6","self.I.3"],
-          ["self.O.5","self.I.5"],
-          ["self.O.4","self.I.7"],
-          ["self.O.3","self.I.6"],
-          ["self.O.2","self.I.4"],
-          ["self.O.1","self.I.2"],
-          ["self.O.0","self.I.0"]
+          ["self.I.0","self.O.0"],
+          ["self.I.1","self.O.7"],
+          ["self.I.2","self.O.1"],
+          ["self.I.3","self.O.6"],
+          ["self.I.4","self.O.2"],
+          ["self.I.5","self.O.5"],
+          ["self.I.6","self.O.3"],
+          ["self.I.7","self.O.4"]
         ]
       },
       "UnRiffle4":{
         "type":["Record",{
-          "O":["Array",4,"Bit"],
-          "I":["Array",4,"BitIn"]
+          "I":["Array",4,"BitIn"],
+          "O":["Array",4,"Bit"]
         }],
         "connections":[
-          ["self.O.3","self.I.3"],
-          ["self.O.2","self.I.1"],
-          ["self.O.1","self.I.2"],
-          ["self.O.0","self.I.0"]
+          ["self.I.0","self.O.0"],
+          ["self.I.1","self.O.2"],
+          ["self.I.2","self.O.1"],
+          ["self.I.3","self.O.3"]
         ]
       }
     }
