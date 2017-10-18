@@ -60,8 +60,8 @@ def route_model_reader(simultaneous=False):
                 edge = graph.getEdge(n1, n2)
                 track = vars[edge]
 
-                if track in invariant_check:
-                    assert tie.src == invariant_check[track.dst], '{} driven by {} and {}'.format(track.dst, invariant_check[track.dst], tie.src)
+                if track.dst in invariant_check:
+                    assert tie.src == invariant_check[track.dst], '{} driven by {} and {}'.format(track.dst, invariant_check[track.dst].name, tie.src.name)
 
                 invariant_check[track.dst] = tie.src
                 dst = track.dst

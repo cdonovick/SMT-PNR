@@ -296,11 +296,10 @@ def _get_nonreg_input(reg):
 
 ################################ Graph Building/Modifying Functions #############################
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):
+    node_inedges = defaultdict(list)
+
     for layer in design.layers:
         graph = solver.add_graph(layer)
-
-        node_inedges = defaultdict(list)
-
         # add nodes for modules
         for mod in design.modules:
             if mod.resource == Resource.Reg:
@@ -331,10 +330,10 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
             vars[e] = track  # we need to recover the track in model_reader
 
-        # save the node in edges for later use
-        # it's cleaner to have this constraint in a separate  function
-        node_inedges = map(lambda l: tuple(l), node_inedges.values())  # make hashable
-        vars['node_inedges'] = frozenset(node_inedges)
+    # save the node in edges for later use
+    # it's cleaner to have this constraint in a separate  function
+    node_inedges = map(lambda l: tuple(l), node_inedges.values())  # make hashable
+    vars['node_inedges'] = frozenset(node_inedges)
 
     return solver.And([])
 

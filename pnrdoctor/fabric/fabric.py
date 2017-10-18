@@ -23,10 +23,11 @@ class Port(IDObject):
             res = muxindex.resource
 
         # naming scheme is (x, y)Side_direction[track]
-        self.name = '({}, {}){}_{}[{}]'.format(muxindex.ps[0],
+        self.name = '({}, {}){}_{}_b{}[{}]'.format(muxindex.ps[0],
                                                muxindex.ps[1],
                                                res.name,
                                                direction,
+                                               muxindex.bw,
                                                muxindex.track if muxindex.track is not None
                                                else muxindex.port)
         self._row = muxindex.ps[0]
