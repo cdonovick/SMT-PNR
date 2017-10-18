@@ -1,5 +1,9 @@
+import sys
+from collections import OrderedDict
+from functools import partial
+
 from .fabric import Fabric
-from pnrdoctor.util import BiMultiDict
+from pnrdoctor.util import BiMultiDict, smart_open
 
 Resource = Fabric.Resource
 
@@ -15,18 +19,18 @@ MODEL_DICT = {
 
 
 
-IO_DICT = {
-    'PACKAGE_PIN'       : None,
-    'LATCH_INPUT_VALUE' : None,
-    'CLOCK_ENABLE'      : None,
-    'OUTPUT_ENABLE'     : None,
-    'INPUT_CLK'         : None,
-    'OUTPUT_CLK'        : None,
-    'D_OUT_0'           : None,
-    'D_OUT_1'           : None,
-    'D_IN_0'            : None,
-    'D_IN_1'            : None,
-}
+IO_DICT = OrderedDict([
+    ('PACKAGE_PIN'       , None),
+    ('LATCH_INPUT_VALUE' , None),
+    ('CLOCK_ENABLE'      , None),
+    ('INPUT_CLK'         , None),
+    ('OUTPUT_CLK'        , None),
+    ('OUTPUT_ENABLE'     , None),
+    ('D_OUT_0'           , None),
+    ('D_OUT_1'           , None),
+    ('D_IN_0'            , None),
+    ('D_IN_1'            , None),
+])
 
 LC_DICT = {
     'I0'   : None,
@@ -169,6 +173,45 @@ def load_blif(file_name):
 
 
     return modules, nets
+
+def write_blif(design, output=sys.stdout):
+    return partial(_write_blif, design, output)
+
+
+def _write_blif(design, output, p_state, r_state):
+    with smart_open(output, 'w') as f:
+        f.write('# arachne-pnr 0.1+217+0 (git sha1 c07ecb5, g++ 7.2.0-8 -O2)\n')
+        f.write('.model main\n')
+        f.write('.inputs I\n')
+        f.write('.outputs O\n')
+        f.write('.names $false\n')
+        for module in design.modules:
+            pos = {d.name : v for d,v in p_state[module].position.items() if v is not None}
+            pos.update({d.name : v for d,v in p_state[module].category.items() if v is not None} )
+            for k,v in module.blif.items():
+                if v is None:
+                    continue
+                f.write(k)
+                if isinstance(v, dict):
+                    for i, j in v.items():
+                        f.write(' {}={}'.format(i,j))
+                    f.write('\n')
+                    f.write('.attr loc "{},{}/{}"'.format(pos['col'], pos['row'], pos['lut'],))
+                elif isinstance(v, list):
+                    f.write(' ')
+                    f.write(' '.join(v[0]))
+                else:
+                    assert 0,v
+                f.write('\n')
+
+                #f.write("module: {} @ {})\n".format(module.name, pos))
+
+            #f.write("inputs: {}\n".format(', '.join(d.src.name for d in module.inputs.values())))
+            #f.write("outputs: {}\n".format(', '.join(d.dst.name for d in module.outputs.values())))
+            #f.write("\n")
+        f.write('.end')
+
+
 
 if __name__ == '__main__':
     import sys

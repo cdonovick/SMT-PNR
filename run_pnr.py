@@ -46,12 +46,14 @@ def ice_flow():
     ]
     p = PNR(fab, des, args.solver, seed)
     print(' complete')
+
     if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
         print("success!")
         sys.stdout.flush()
     else:
         print("failure")
         sys.exit(1)
+    p.write_design(blif2graph.write_blif(des, fabric_file))
 
     if args.print or args.print_place:
         print("\nplacement info:")

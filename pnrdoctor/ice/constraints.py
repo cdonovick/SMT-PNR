@@ -1,5 +1,7 @@
+import operator
 from .fabric import Fabric
 from functools import partial
+from pnrdoctor.smt import smt_util as su
 
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 def init_regions(one_hot_type, category_type, scalar_type):
@@ -88,15 +90,17 @@ def _smart_dist(delta, max, region, fabric, design, state, vars, solver):
                 if total_i is None:
                     total_i = dist
                 else:
-                    constraints.append(solver.BVUle(total_i, total_i + dist))
-                    total_i = total_i + dist
+                    part = su.safe_op(operator.add, solver, total_i, dist)
+                    constraints.append(solver.BVUle(total_i, part))
+                    total_i = part
         if total_i is not None:
             constraints.append(solver.BVUle(total_i, delta))
             if total is None:
                 total = total_i
             else:
-                constraints.append(solver.BVUle(total, total+total_i))
-                total = total + total_i
+                part = su.safe_op(operator.add, solver, total, total_i)
+                constraints.append(solver.BVUle(total, part))
+                total = part
 
     if total is not None:
         constraints.append(solver.BVUle(total, max))

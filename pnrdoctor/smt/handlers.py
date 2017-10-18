@@ -72,7 +72,7 @@ class ScalarHandler(BVHandler):
 
     def delta(self, other):
         if isinstance(other, type(self)):
-            return self._var - other._var
+            return self.var - other.var
         return self - self.encode(other)
 
     def abs_delta(self, other):

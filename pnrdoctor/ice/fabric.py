@@ -20,7 +20,7 @@ class Fabric:
 
     def __init__(self):
         self._rows = 18
-        self._cols = 18
+        self._cols = 14
         self._luts = 8
 
         self._rows_dim = rd = Scalar('row', self.rows)
