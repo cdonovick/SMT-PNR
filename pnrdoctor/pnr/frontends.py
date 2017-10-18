@@ -382,7 +382,7 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in processed_tracks
+                assert tindex not in processed_tracks, tindex
                 processed_tracks.add(tindex)
 
                 track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
@@ -411,32 +411,65 @@ def _connect_ports(root, params):
 
 # Helper Functions
 def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
-    # note: sometimes need to pass bus width because can't be inferred from name
-    # e.g. pe_out_res
-    # also use for some sanity checks -- there will be redundancy occasionally
+    if resource == Resource.Mem:
+        return _get_index_mem(ps, name, resource, direc, bw, tile_row)
+    else:
+        return _get_index_regular(ps, name, resource, bw)
 
-    row = ps[0]
-    col = ps[1]
 
-    p = re.compile(r'(?P<mem_int>sb_wire_)'
-                   '?(?P<direc>in|out)(?:_\d*)?_'
+def _get_index_regular(ps, name, resource, bw):
+    row, col = ps
+
+    p = re.compile('(?P<direc>in|out)'
+                   '(?:_\d*)?_'
+                    'BUS(?P<bus>\d+)_'
+                    'S?(?P<side>\d+)_'
+                    'T?(?P<track>\d+)')
+
+    m = p.search(name)
+
+    if not m:
+        return muxindex(resource=resource, ps=ps, bw=bw, port=name)
+    else:
+        signal_direc = m.group('direc')
+        _side = Side(int(m.group('side')))
+        _track = int(m.group('track'))
+        _bus = int(m.group('bus'))
+
+        if bw is not None:
+            assert _bus == bw, 'Expected bus width to be '
+            '{} but it is {}'.format(bw, _bus)
+
+        rown, coln, _ = mapSide(row, col, _side)
+
+        if signal_direc == 'out':
+            return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
+        elif signal_direc == 'in':
+            # pself and pother swapped for in wires
+            return muxindex(resource=Resource.SB, ps=(rown, coln), po=ps, bw=_bus, track=_track)
+        else:
+            raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
+
+
+def _get_index_mem(ps, name, resource, direc, bw, tile_row):
+
+    row, col = ps
+
+    p = re.compile(r'(?P<mem_int>sb_wire_)?'
+                   '(?P<direc>in|out)(?:_\d*)?_'
                    'BUS(?P<bus>\d+)_'
                    'S?(?P<side>\d+)_'
                    'T?(?P<track>\d+)')
 
     m = p.search(name)
 
-    # see fabric.fabricutils for muxindex documentation
-
     if not m:
-        if resource == Resource.Mem and direc == 'i':
-            # special case for memory tile output
-            # want to make sure referring to same port even from switch
-            # boxes of different rows
+        if direc == 'i':
             assert tile_row is not None
             return muxindex(resource=resource, ps=(tile_row, col), bw=bw, port=name)
         else:
             return muxindex(resource=resource, ps=ps, bw=bw, port=name)
+
     else:
         signal_direc = m.group('direc')
         _side = Side(int(m.group('side')))
@@ -457,10 +490,13 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
 
         rown, coln, _ = mapSide(row, col, _side)
 
-        if signal_direc == 'out':
-            return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
-        elif signal_direc == 'in':
-            # pself and pother swapped for in wires
-            return muxindex(resource=Resource.SB, ps=(rown, coln), po=ps, bw=_bus, track=_track)
-        else:
-            raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
+        po = (rown, coln)
+
+        if m.group('mem_int') and direc == 'i' or signal_direc == 'in':
+            # if incoming, switch direction
+            # for internal mem wires (sb_wire*), need to use direc because
+            # signal_direc is always "out"
+            po = ps
+            ps = (rown, coln)
+
+        return muxindex(resource=Resource.SB, ps=ps, po=po, bw=_bus, track=_track)
