@@ -32,6 +32,7 @@ def ice_flow():
     from pnrdoctor.ice.pnr import PNR
     from pnrdoctor import pnr
     from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
+    from timeit import default_timer as timer
 
     modules, nets = blif2graph.load_blif(design_file)
     print('building design...', end='')
@@ -42,13 +43,17 @@ def ice_flow():
         constraints.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
         pnr.distinct,
         constraints.pin_resource_structured,
-        constraints.smart_dist(nmods//6,nmods//3),
+        constraints.HPWL(1, 5),
     ]
     p = PNR(fab, des, args.solver, seed)
     print(' complete')
 
+    start = timer()
     if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
         print("success!")
+        end = timer()
+        if args.time:
+            print("placement took {}s".format(end - start))
         sys.stdout.flush()
     else:
         print("failure")

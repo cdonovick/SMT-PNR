@@ -1,9 +1,12 @@
 import operator
+from collections import defaultdict
+from functools import partial, reduce
+
 from .fabric import Fabric
-from functools import partial
 from pnrdoctor.smt import smt_util as su
 
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
+
 def init_regions(one_hot_type, category_type, scalar_type):
     def initializer(region, fabric, design, state, vars, solver):
         constraints = []
@@ -40,39 +43,11 @@ def init_regions(one_hot_type, category_type, scalar_type):
         return solver.And(constraints)
     return initializer
 
-def neighborhood(delta):
-    return partial(_neighborhood, delta)
 
-def _neighborhood(delta, region, fabric, design, state, vars, solver):
-        # HACK will break for non-square fabric
-        print('neighborhood')
-        constraints = []
-        for tie in design.ties:
-            src = tie.src
-            dst = tie.dst
-            c = []
-            src_v = vars[src]
-            dst_v = vars[dst]
-            s = src_v.keys() & dst_v.keys()
+def dist(delta, max):
+    return partial(_dist, delta, max)
 
-            total = None
-            for d in s:
-                if d is not fabric.luts_dim:
-                    dist = src_v[d].abs_delta(dst_v[d])
-                    if total is None:
-                        total = dist
-                    else:
-                        constraints.append(solver.BVUle(total, total+dist))
-                        total = total + dist
-
-            if total is not None:
-                constraints.append(solver.BVUle(total, delta))
-        return solver.And(constraints)
-
-def smart_dist(delta, max):
-    return partial(_smart_dist, delta, max)
-
-def _smart_dist(delta, max, region, fabric, design, state, vars, solver):
+def _dist(delta, max, region, fabric, design, state, vars, solver):
     constraints = []
     total = None
     for tie in design.ties:
@@ -90,17 +65,13 @@ def _smart_dist(delta, max, region, fabric, design, state, vars, solver):
                 if total_i is None:
                     total_i = dist
                 else:
-                    part = su.safe_op(operator.add, solver, total_i, dist)
-                    constraints.append(solver.BVUle(total_i, part))
-                    total_i = part
+                    total_i = su.safe_op(operator.add, solver, total_i, dist, pad=1)
         if total_i is not None:
             constraints.append(solver.BVUle(total_i, delta))
             if total is None:
                 total = total_i
             else:
-                part = su.safe_op(operator.add, solver, total, total_i)
-                constraints.append(solver.BVUle(total, part))
-                total = part
+                total = su.safe_op(operator.add, solver, total, total_i, pad=1)
 
     if total is not None:
         constraints.append(solver.BVUle(total, max))
@@ -171,4 +142,37 @@ def pin_resource_structured(region, fabric, design, state, vars, solver):
 
     return solver.And(constraints)
 
+def HPWL(n_max, g_max):
+    return partial(_HPWL, n_max, g_max)
 
+def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
+    constraints = []
+    total = None
+    for net in design.nets:
+        max = {
+            d : reduce(partial(su.max_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+        }
+
+        min = {
+            d : reduce(partial(su.min_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+        }
+
+        total_i = None
+        for d in max:
+            dist = max[d] - min[d]
+            if total_i is None:
+                total_i = dist
+            else:
+                total_i  = su.safe_op(operator.add, solver, total_i, dist, pad=1)
+
+        if total_i is not None:
+            constraints.append(solver.BVUle(total_i, n_max))
+            if total is None:
+                total = total_i
+            else:
+                total = su.safe_op(operator.add, solver, total, total_i, pad=1)
+
+    if total is not None:
+        constraints.append(solver.BVUle(total, g_max))
+
+    return solver.And(constraints)

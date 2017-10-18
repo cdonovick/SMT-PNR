@@ -79,7 +79,7 @@ class ScalarHandler(BVHandler):
         delta = self.delta(other)
 
         #return self.solver.Ite(delta >= 0, delta, -delta)
-        return su.absolute_value(delta)
+        return su.abs_ite(self.solver, delta)
 
     def distinct(self, other):
         if isinstance(other, type(self)):

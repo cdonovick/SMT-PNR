@@ -43,6 +43,12 @@ class Net(NamedIDObject):
     def __init__(self, name='', ties=set()):
         super().__init__(name)
         self._ties=frozenset(ties)
+        terms = set()
+        for t in self.ties:
+            terms.add(t.src)
+            terms.add(t.dst)
+
+        self._terminals = frozenset(terms)
 
 
     @property
@@ -52,3 +58,7 @@ class Net(NamedIDObject):
     @property
     def width(self):
         return self._width
+
+    @property
+    def terminals(self):
+        return self._terminals
