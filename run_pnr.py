@@ -112,7 +112,10 @@ def cgra_flow():
 
     for iterations in range(1):
         fab = pnr.parse_xml(fabric_file, ce)
-        p = pnr.PNR(fab, des, args.solver, seed)
+        try:
+            p = pnr.PNR(fab, des, args.solver, seed)
+        except RuntimeError:
+            sys.exit(0)
 
         if iterations == 0 and args.info:
             print(p.info)
@@ -140,6 +143,7 @@ def cgra_flow():
             else:
                 print("!!!failure!!!")
                 sys.exit(1)
+
 
         if not args.noroute:
     #        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
