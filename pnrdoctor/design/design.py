@@ -45,6 +45,17 @@ class Design(NamedIDObject):
 
         self._layers = frozenset(layers)
 
+
+        nets = MultiDict()
+        for tie in ties:
+            nets[(tie.src, tie.src_port, tie.width)] = tie
+
+        _nets = set()
+        for n in nets:
+            _nets.add(Net(nets[n]))
+
+        self._nets = frozenset(_nets)
+
         # assertions
         for module in self.modules:
             assert module.resource != Resource.UNSET, module
@@ -67,6 +78,10 @@ class Design(NamedIDObject):
     @property
     def ties(self):
         return self._ties
+
+    @property
+    def nets(self):
+        return self._nets
 
     @property
     def layers(self):

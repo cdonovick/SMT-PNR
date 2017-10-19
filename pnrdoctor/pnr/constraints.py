@@ -1,7 +1,8 @@
 '''
 Constraint generators
 '''
-from functools import partial
+from functools import partial, reduce
+import operator
 import itertools
 import random
 import string
@@ -12,8 +13,9 @@ from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 from pnrdoctor.util import STAR
 
-from .pnrutils import get_muxindex
 
+from .pnrutils import get_muxindex
+from pnrdoctor.smt import smt_util as su
 
 def init_regions(one_hot_type, category_type, scalar_type):
     def initializer(region, fabric, design, state, vars, solver):
@@ -164,6 +166,76 @@ def _neighborhood(delta, region, fabric, design, state, vars, solver):
                 constraints.append(solver.BVUle(total,delta))
         return solver.And(constraints)
 
+
+def dist(delta, max):
+    return partial(_dist, delta, max)
+
+def _dist(delta, max, region, fabric, design, state, vars, solver):
+    constraints = []
+    total = None
+    for tie in design.ties:
+        src = tie.src
+        dst = tie.dst
+        c = []
+        src_v = vars[src]
+        dst_v = vars[dst]
+        s = src_v.keys() & dst_v.keys()
+        total_i = None
+        for d in s:
+            if isinstance(d, Scalar):
+                dist = src_v[d].abs_delta(dst_v[d])
+
+                if total_i is None:
+                    total_i = dist
+                else:
+                    total_i = su.safe_op(operator.add, solver, total_i, dist, pad=1)
+
+        if total_i is not None:
+            constraints.append(solver.BVUle(total_i, delta))
+            if total is None:
+                total = total_i
+            else:
+                total = su.safe_op(operator.add, solver, total, total_i, pad=1)
+
+    if total is not None:
+        constraints.append(solver.BVUle(total, max))
+
+    return solver.And(constraints)
+
+def HPWL(n_max, g_max):
+    return partial(_HPWL, n_max, g_max)
+
+def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
+    constraints = []
+    total = None
+    for net in design.nets:
+        max = {
+            d : reduce(partial(su.max_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+        }
+
+        min = {
+            d : reduce(partial(su.min_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+        }
+
+        total_i = None
+        for d in max:
+            dist = max[d] - min[d]
+            if total_i is None:
+                total_i = dist
+            else:
+                total_i  = su.safe_op(operator.add, solver, total_i, dist, pad=1)
+
+        if total_i is not None:
+            constraints.append(solver.BVUle(total_i, n_max))
+            if total is None:
+                total = total_i
+            else:
+                total = su.safe_op(operator.add, solver, total, total_i, pad=1)
+
+    if total is not None:
+        constraints.append(solver.BVUle(total, g_max))
+
+    return solver.And(constraints)
 
 def register_colors(region, fabric, design, state, vars, solver):
     constraints = []

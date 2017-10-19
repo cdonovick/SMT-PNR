@@ -40,34 +40,23 @@ class Net(IDObject):
     '''
        Holds a collection of ties that make up a net.
     '''
-    def __init__(self, ties=None):
-        IDObject.__init__(self)
-        if not isinstance(ties, set):
-            self._ties = set()
-            self._width = None
-        else:
-            self._ties = ties
-            self._width = next(iter(ties)).width
-            for tie in ties:
-                assert tie.width == self._width, \
-                  'Expecting net to contain ties of the same width'
-                tie.net = self
-                for rtie in tie.regs:
-                    rtie.net = self
+    def __init__(self, ties=set()):
+        super().__init__()
+        self._ties=frozenset(ties)
+        terms = set()
+        w = None
+        for t in self.ties:
+            if w is None:
+                w = t.width
+            else:
+                assert t.width == w
 
+            terms.add(t.src)
+            terms.add(t.dst)
 
-    def add_tie(self, tie):
-        self._ties.add(tie)
-        if self._width is None:
-            self._width = tie.width
-        else:
-            assert tie.width == self._width, \
-              'Cannot add tie of different width'
-        tie.net = self
+        self._terminals = frozenset(terms)
+        self._width = w
 
-    def remove_tie(self, tie):
-        self._ties.remove(tie)
-        tie.net = None
 
     @property
     def ties(self):
@@ -77,11 +66,6 @@ class Net(IDObject):
     def width(self):
         return self._width
 
-    def __repr__(self):
-        tie_strs = ''
-        for tie in self._ties:
-            tie_strs += tie.__repr__() + ', '
-
-        tie_strs = tie_strs[:-2]
-
-        return 'Net: <{}>'.format(tie_strs)
+    @property
+    def terminals(self):
+        return self._terminals

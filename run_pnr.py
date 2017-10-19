@@ -43,7 +43,7 @@ def ice_flow():
         constraints.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
         pnr.distinct,
         constraints.pin_resource_structured,
-        constraints.HPWL(1, 5),
+        constraints.HPWL(1, 4),
     ]
     p = PNR(fab, des, args.solver, seed)
     print(' complete')
@@ -74,26 +74,43 @@ def cgra_flow():
     from pnrdoctor.ilp.ilp_handlers import ILPScalarHandler
     from timeit import default_timer as timer
     import copy
-    if args.solver in ilp_solvers.keys():
-        # ILP solvers use scalar handlers for scalar and category type
-        PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
-        PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(8)
-    else:
-        PLACE_CONSTRAINTS = pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler), pnr.distinct, pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured, pnr.neighborhood(4)
-        PLACE_RELAXED     = pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler), pnr.distinct, pnr.register_colors, pnr.pin_IO, pnr.pin_resource_structured, pnr.neighborhood(8)
-
-
-    simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
-    simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
+    import math
 
     print("Loading design: {}".format(design_file))
     ce = ConfigEngine()
     modules, ties = design.core2graph.load_core(design_file, *args.libs)
     des = design.Design(modules, ties)
+    nmods = len(des.modules)
+
+    if args.solver in ilp_solvers.keys():
+        # ILP solvers use scalar handlers for scalar and category type
+        PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
+        PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(8)
+    else:
+        PLACE_CONSTRAINTS = [
+            pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
+            pnr.distinct,
+            pnr.register_colors,
+            pnr.pin_IO,
+            pnr.pin_resource_structured,
+            pnr.HPWL(math.ceil(nmods**.5), math.ceil(nmods**1.25))
+        ]
+        PLACE_RELAXED     = [
+            pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
+            pnr.distinct,
+            pnr.register_colors,
+            pnr.pin_IO,
+            pnr.pin_resource_structured,
+            pnr.HPWL(2*math.ceil(nmods**.5), math.ceil(nmods**1.75))
+        ]
+
+    simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
+    simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
+
 
     print("Loading fabric: {}".format(fabric_file))
 
-    for iterations in range(10):
+    for iterations in range(1):
         fab = pnr.parse_xml(fabric_file, ce)
         p = pnr.PNR(fab, des, args.solver, seed)
 

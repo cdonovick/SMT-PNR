@@ -44,7 +44,12 @@ class Net(NamedIDObject):
         super().__init__(name)
         self._ties=frozenset(ties)
         terms = set()
+        w = None
         for t in self.ties:
+            if w is None:
+                w = t.width
+            else:
+                assert t.width == w
             terms.add(t.src)
             terms.add(t.dst)
 

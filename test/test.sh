@@ -4,8 +4,8 @@ TESTS=$PREFIX/designs/*
 FABRICS=$PREFIX/cgra_8_8_info.xml
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
-COMMANDS="--time"
-LIMIT=300
+COMMANDS="--time --noroute"
+LIMIT=60
 
 if [[ "$SOLVER" != "" ]]; then
     COMMANDS="$COMMANDS --solver $SOLVER"
