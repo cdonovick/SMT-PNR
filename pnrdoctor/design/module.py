@@ -10,7 +10,7 @@ class Module(NamedIDObject):
         self._outputs = BiMultiDict()
         self._resource = Resource.UNSET
         self._registered_ports = set()
-        self._layer = Layer.NONE
+        self._layer = Layer.UNSET
 
     @property
     def inputs(self):
@@ -118,7 +118,7 @@ class Resource(Enum):
     CB    = 7
 
 class Layer(Flag):
-    NONE     = 0
+    UNSET    = 0
     Data     = auto()
     Bit      = auto()
     Combined = Data | Bit
@@ -140,3 +140,8 @@ class Layer(Flag):
             return 16
 
         raise ValueError('No width for layer: {}'.format(self))
+
+# For now, ties and routing still use 1/16 instead of Bit/Data
+# This is used in pnr/constraints to do this conversion
+# Eventually everything will be moved to Layer
+layer2widths = {Layer.Data: {16}, Layer.Bit: {1}, Layer.Combined: {1, 16}}

@@ -1,8 +1,8 @@
-from pnrdoctor.util import IDObject
+from pnrdoctor.util import IDObject, NamedIDObject
 
 class Tie(IDObject):
     def __init__(self, src, src_port, dst, dst_port, width=1):
-        IDObject.__init__(self)
+        super().__init__()
 
         self._src = src
         self._dst = dst
@@ -36,12 +36,12 @@ class Tie(IDObject):
         return '{}:{} -[{}]-> {}:{}'.format(self.src.name,self.src.id, self.width, self.dst.name, self.dst.id)
 
 
-class Net(IDObject):
+class Net(NamedIDObject):
     '''
        Holds a collection of ties that make up a net.
     '''
-    def __init__(self, ties=set()):
-        super().__init__()
+    def __init__(self, name='', ties=set()):
+        super().__init__(name)
         self._ties=frozenset(ties)
         terms = set()
         w = None
@@ -50,12 +50,10 @@ class Net(IDObject):
                 w = t.width
             else:
                 assert t.width == w
-
             terms.add(t.src)
             terms.add(t.dst)
 
         self._terminals = frozenset(terms)
-        self._width = w
 
 
     @property

@@ -11,14 +11,10 @@ from pnrdoctor.ilp.ilp_solver import ilp_solvers
 from collections import defaultdict, namedtuple
 
 
-''' Class for handling place & route '''
 class PNR:
     def __init__(self, fabric, design, solver_str, seed=1):
         self._fabric = fabric
         self._design = design
-
-        assert design.layers <= fabric.layers, \
-          "The layers in the design should be a subset of the layers available in the fabric."
 
         self._place_state = BiDict()
         self._route_state = BiMultiDict()
@@ -48,37 +44,17 @@ class PNR:
         self._route_solver.set_option('random-seed', seed)
 
         # set up region
-        self._region = Region.from_frabic('CGRA', self.fabric)
+        self._region = fabric.region
+
         for module in design.modules:
             r = self._region.make_subregion(module.name)
             # kinda hackish need to make rules dictionary
             # so r.sizes can be safely mutated directly
             r.set_size({d : 0 for d in r.size})
             r.set_position({d : SYMBOLIC for d in r.position})
-            for d in r.category:
-                if d == fabric.layers_dim:
-                    r.set_category({d : module.layer.value})
-                elif module.resource == Resource.Reg or d != fabric.tracks_dim:
-                    r.set_category({d : SYMBOLIC})
+            r.set_category({d : SYMBOLIC for d in r.category})
 
             self._place_state[module] = r
-
-        # Gather some info about the pnr problem
-        # info is a named tuple with design info and fabric info
-        # each of those are dicts with resource --> number
-        self._info = namedtuple("info", "design fabric")(defaultdict(int), defaultdict(int))
-        for m in design.modules:
-            self._info.design[m.resource] += 1
-            self._info.design["total modules"] += 1
-
-        self._info.design["total ties"] = len(design.ties)
-
-        for res, locs in fabric.locations.items():
-            self._info.fabric[res] = len(locs)
-            # check that there are enough resources in fabric to place design
-            if self._info.fabric[res] < self._info.design[res]:
-                raise RuntimeError("There are not enough {}s in fabric to support the design".format(res.name))
-
 
     def pin_module(self, module, placement):
         raise NotImplementedError()
@@ -98,7 +74,7 @@ class PNR:
             if self._smt_solver:
                 self._place_solver.SetOption('produce-models', 'true')
                 self._place_solver.SetLogic('QF_BV')
-                self._place_vars = dict()
+                self._place_vars = BiDict()
             return False
 
         model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)

@@ -63,9 +63,9 @@ class Solver_monosat(Solver_base):
         self.graphs = dict()
         self.at_most_one_builtin_size = 10
 
-    def solve(self):
+    def solve(self, *args):
         ms.Assert(self.And(self.constraints))
-        self.sat = ms.Solve()
+        self.sat = ms.Solve(*args)
         return self.sat
 
     def add_graph(self, layer):
@@ -94,10 +94,10 @@ class Solver_monosat(Solver_base):
 
     def And(self, *pargs, **kwargs):
         if pargs == ([],):
-            return True
+            return ms.true()
 
         if not pargs and not kwargs:
-            return True
+            return ms.true()
         else:
             return ms.And(*pargs, **kwargs)
 
