@@ -59,6 +59,7 @@ class Design(NamedIDObject):
         # assertions
         for module in self.modules:
             assert module.resource != Resource.UNSET, module
+            assert module.layer != Layer.UNSET, module
 
         for tie in self.ties:
             assert tie in tie.dst.inputs.values(), tie

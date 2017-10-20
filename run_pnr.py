@@ -87,15 +87,17 @@ def cgra_flow():
         PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
         PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(8)
     else:
+        fac = sum(len(n.terminals) - 1 for n in des.nets) / len(des.nets)
         nmods = len(des.modules)
-        rmods = math.ceil(nmods**.5)
+        rmods = math.ceil(fac*nmods**.5)
+
         PLACE_CONSTRAINTS = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_IO,
             pnr.pin_resource_structured,
-            pnr.dist(2, 2*nmods**2)
+            pnr.HPWL(rmods, nmods + rmods)
         ]
         PLACE_RELAXED     = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -103,7 +105,7 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_IO,
             pnr.pin_resource_structured,
-            pnr.HPWL(rmods, 2*(nmods+rmods//2))
+            pnr.HPWL(rmods, 2*nmods + rmods)
         ]
         PLACE_EXTRA_RELAXED = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -111,7 +113,7 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_IO,
             pnr.pin_resource_structured,
-            pnr.HPWL(rmods, 3*(nmods+rmods//2))
+            pnr.HPWL(rmods, 4*nmods + rmods)
         ]
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
@@ -128,7 +130,6 @@ def cgra_flow():
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
             print('Not enough resources')
-            print(p.info)
             sys.exit(0)
 
         if iterations == 0 and args.info:
@@ -141,7 +142,6 @@ def cgra_flow():
         if tight and p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
             end = timer()
             print("success!")
-            p.write_design(pnr.write_debug(des))
             if args.time:
                 print("placement took {}s".format(end - start))
             sys.stdout.flush()
@@ -153,7 +153,6 @@ def cgra_flow():
             if relaxed and p.place_design(PLACE_RELAXED, pnr.place_model_reader):
                 end = timer()
                 print("success!")
-                p.write_design(pnr.write_debug(des))
                 if args.time:
                     print("placement took {}s".format(end - start))
                 sys.stdout.flush()
@@ -163,7 +162,6 @@ def cgra_flow():
                 if p.place_design(PLACE_EXTRA_RELAXED, pnr.place_model_reader):
                     end = timer()
                     print("success!")
-                    p.write_design(pnr.write_debug(des))
                     if args.time:
                         print("placement took {}s".format(end - start))
                 else:
