@@ -17,17 +17,28 @@ from pnrdoctor.util import STAR
 from .pnrutils import get_muxindex
 from pnrdoctor.smt import smt_util as su
 
-def init_regions(one_hot_type, category_type, scalar_type):
+def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
     def initializer(region, fabric, design, state, vars, solver):
         constraints = []
-        for module in design.modules:
+        if r_init:
+            it = list(design.modules)
+            random.shuffle(it)
+        else:
+            it = design.modules
+
+
+        for module in it:
             if module not in vars:
                 vars[module] = dict()
 
             r = state[module]
             for d,p in r.position.items():
+                randstring = ''
                 if p is SYMBOLIC:
-                    var = scalar_type(module.name + '_' + d.name, solver, d.size)
+                    if r_init:
+                        for s in random.sample(string.ascii_letters + string.digits, 5):
+                            randstring += s
+                    var = scalar_type(module.name + '_' + d.name + randstring, solver, d.size)
                     constraints.append(var.invariants)
                 elif p is None:
                     continue
@@ -45,7 +56,11 @@ def init_regions(one_hot_type, category_type, scalar_type):
                     T = category_type
 
                 if c is SYMBOLIC:
-                    var = T(module.name + '_' + d.name, solver, d.size)
+                    randstring = ''
+                    if r_init:
+                        for s in random.sample(string.ascii_letters + string.digits, 5):
+                            randstring += s
+                    var = T(module.name + '_' + d.name + randstring, solver, d.size)
                     constraints.append(var.invariants)
                 elif c is None:
                     continue
@@ -661,6 +676,6 @@ def reach_and_notreach(dist_factor):
 
 def recommended_route_settings(relaxed=False):
     if relaxed:
-        return regional_replace(0, 3)
+        return regional_replace(0, 6)
     else:
         return regional_replace(0, 1)

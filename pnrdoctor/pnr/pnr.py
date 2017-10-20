@@ -98,7 +98,7 @@ class PNR:
             if self._smt_solver:
                 self._place_solver.SetOption('produce-models', 'true')
                 self._place_solver.SetLogic('QF_BV')
-                self._place_vars = BiDict()
+                self._place_vars = dict()
             return False
 
         model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
