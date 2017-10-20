@@ -94,10 +94,10 @@ class Solver_monosat(Solver_base):
 
     def And(self, *pargs, **kwargs):
         if pargs == ([],):
-            return True
+            return ms.true()
 
         if not pargs and not kwargs:
-            return True
+            return ms.true()
         else:
             return ms.And(*pargs, **kwargs)
 

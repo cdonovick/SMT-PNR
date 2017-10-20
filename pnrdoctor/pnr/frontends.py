@@ -415,12 +415,6 @@ def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
         idx = _get_index_mem(ps, name, resource, direc, bw, tile_row)
     else:
         idx = _get_index_regular(ps, name, resource, bw)
-
-    # debugging
-    with open("debug.txt", "a") as f:
-        f.write("ps={}, name={}, resource={}, direc={}, bw={}, tile_row={}\n".format(ps, name, resource, direc, bw, tile_row))
-        f.write("idx={}\n\n".format(idx))
-
     return idx
 
 def _get_index_regular(ps, name, resource, bw):
