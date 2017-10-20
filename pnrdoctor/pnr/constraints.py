@@ -13,7 +13,6 @@ from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 from pnrdoctor.util import STAR
 
-
 from .pnrutils import get_muxindex
 from pnrdoctor.smt import smt_util as su
 
@@ -413,7 +412,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
             # create a monosat edge
             e = graph.addEdge(vars[src], vars[dst])
 
-            node_inedges[vars[dst]].append(e)
+            node_inedges[(vars[dst], layer)].append(e)
 
             vars[e] = track  # we need to recover the track in model_reader
 
@@ -519,7 +518,6 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         graph = solver.graphs[tie.width]
         reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
                                      vars[(tie.dst, tie.dst_port)]))
-
     return solver.And(reaches)
 
 
@@ -530,7 +528,6 @@ def at_most_one_driver(fabric, design, p_state, r_state, vars, solver):
     for inedges in vars['node_inedges']:  # 'node_inedges' maps to a frozenset of lists of edges
         if len(inedges) > 1:
             solver.AtMostOne(inedges)
-
     return solver.And([])
 
 
@@ -577,7 +574,8 @@ def unreachability(fabric, design, p_state, r_state, vars, solver):
         # hacky don't handle wrong layer here
         # and if destination is a register, it only has one port
         # so it doesn't need exclusivity constraints
-        graph = solver.graphs[tie.width]
+        layer = tie.width
+        graph = solver.graphs[layer]
         if tie.dst.resource == Resource.Reg:
             continue
 
@@ -593,19 +591,21 @@ def unreachability(fabric, design, p_state, r_state, vars, solver):
                                     vars[(dst, port)]))
 
     # make sure modules that aren't connected are not connected
-    for mdst in design.modules:
-        inputs = {x.src for x in mdst.inputs.values()}
+    for layer in design.layers:
+        graph = solver.graphs[layer]
+        for mdst in design.modules:
+            inputs = {x.src for x in mdst.inputs.values()}
 
-        for msrc in design.modules:
-            if msrc != mdst and msrc not in inputs:
-                # iterate through all port combinations for m2-->m1 connections
-                for src_port, dst_port \
-                    in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
-                                         fabric.port_names[(mdst.resource, layer)].sinks):
+            for msrc in design.modules:
+                if msrc != mdst and msrc not in inputs:
+                    # iterate through all port combinations for m2-->m1 connections
+                    for src_port, dst_port \
+                        in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
+                                             fabric.port_names[(mdst.resource, layer)].sinks):
 
-                    # assert that these modules' ports do not connect
-                    c.append(~graph.reaches(vars[(msrc, src_port)],
-                                            vars[(mdst, dst_port)]))
+                        # assert that these modules' ports do not connect
+                        c.append(~graph.reaches(vars[(msrc, src_port)],
+                                                vars[(mdst, dst_port)]))
 
     return solver.And(c)
 

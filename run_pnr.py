@@ -4,6 +4,7 @@
 import sys
 import argparse
 import random
+
 parser = argparse.ArgumentParser(description='Run place and route')
 parser.add_argument('design', metavar='<DESIGN_FILE>', help='Mapped coreir file')
 parser.add_argument('fabric', metavar='<FABRIC_FILE>', help='XML Fabric file')
@@ -80,7 +81,7 @@ def cgra_flow():
     ce = ConfigEngine()
     modules, ties = design.core2graph.load_core(design_file, *args.libs)
     des = design.Design(modules, ties)
-    
+
     if args.solver in ilp_solvers.keys():
         # ILP solvers use scalar handlers for scalar and category type
         PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
@@ -115,7 +116,6 @@ def cgra_flow():
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
 
-
     print("Loading fabric: {}".format(fabric_file))
 
     tight = True
@@ -127,7 +127,7 @@ def cgra_flow():
             seed = random.randint(0, 100)
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
-            print('Not enough resources') 
+            print('Not enough resources')
             print(p.info)
             sys.exit(0)
 
@@ -243,5 +243,3 @@ except KeyError:
     sys.exit(1)
 
 f()
-
-

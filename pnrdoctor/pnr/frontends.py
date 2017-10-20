@@ -412,10 +412,16 @@ def _connect_ports(root, params):
 # Helper Functions
 def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
     if resource == Resource.Mem:
-        return _get_index_mem(ps, name, resource, direc, bw, tile_row)
+        idx = _get_index_mem(ps, name, resource, direc, bw, tile_row)
     else:
-        return _get_index_regular(ps, name, resource, bw)
+        idx = _get_index_regular(ps, name, resource, bw)
 
+    # debugging
+    with open("debug.txt", "a") as f:
+        f.write("ps={}, name={}, resource={}, direc={}, bw={}, tile_row={}\n".format(ps, name, resource, direc, bw, tile_row))
+        f.write("idx={}\n\n".format(idx))
+
+    return idx
 
 def _get_index_regular(ps, name, resource, bw):
     row, col = ps
@@ -487,15 +493,20 @@ def _get_index_mem(ps, name, resource, direc, bw, tile_row):
             # everything except for the side should stay the same
             assert b == 'BUS' + str(_bus)
             assert int(t) == _track
+#            print("name={}, signal_direc={}, direc={}, _side={}, _track={}, _bus={}".format(name, signal_direc, direc, _side, _track, _bus))
 
         rown, coln, _ = mapSide(row, col, _side)
 
         po = (rown, coln)
 
-        if m.group('mem_int') and direc == 'i' or signal_direc == 'in':
+        if not m.group('mem_int') and signal_direc == 'in':
             # if incoming, switch direction
-            # for internal mem wires (sb_wire*), need to use direc because
-            # signal_direc is always "out"
+            po = ps
+            ps = (rown, coln)
+        elif m.group('mem_int') and direc == 'i':
+            # switch for incoming
+            # internal mem wires (sb_wire*) are used as sinks and sources and thus the signal_direc is meaningless
+            # need to rely on the extra direc argument to determine if it's being used as a sink or source
             po = ps
             ps = (rown, coln)
 
