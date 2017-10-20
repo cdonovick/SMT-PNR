@@ -442,7 +442,8 @@ def build_spnr(region=0):
 
         # add virtual nodes for modules
         for mod in design.modules:
-            widths = layer2widths[mod.layer]
+            # get widths that are used in design and needed for this module
+            widths = layer2widths[mod.layer] & design.layers
 
             if mod.resource != Resource.Reg:
                 for _type, width in itertools.product({'sources', 'sinks'}, widths):
