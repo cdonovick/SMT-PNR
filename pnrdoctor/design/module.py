@@ -140,3 +140,8 @@ class Layer(Flag):
             return 16
 
         raise ValueError('No width for layer: {}'.format(self))
+
+# For now, ties and routing still use 1/16 instead of Bit/Data
+# This is used in pnr/constraints to do this conversion
+# Eventually everything will be moved to Layer
+layer2widths = {Layer.Data: {16}, Layer.Bit: {1}, Layer.Combined: {1, 16}}
