@@ -540,28 +540,29 @@ def reg_unreachability(fabric, design, p_state, r_state, vars, solver):
         Enforce unreachability constraints when register is a source.
         Intended to be used with at_most_one_driver
     '''
+    constraints = []
 
-    for layer in design.layers:
+    for m in design.modules:
+        if m.resource == Resource.Reg:
+            widths = layer2widths[m.layer]
+            assert len(widths) == 1, "Register should only be on one layer"
 
-        graph = solver.graphs[layer]
-        constraints = []
+            width = next(iter(widths))
+            graph = solver.graphs[width]
 
-        for m in design.modules:
-            if m.resource == Resource.Reg:
+            # get the first non register in the input path
+            input_m = _get_nonreg_input(m)
+            # get the outputs of the registers input
+            input_m_outputs = {t for t in input_m.outputs.values()}
 
-                # get the first non register in the input path
-                input_m = _get_nonreg_input(m)
-                # get the outputs of the registers input
-                input_m_outputs = {t for t in input_m.outputs.values()}
+            for outport in fabric.port_names[(Resource.Reg, width)].sources:
+                for tie in input_m_outputs:
+                    if tie.dst == m:
+                        # ignore tie to itself
+                        continue
 
-                for outport in fabric.port_names[(Resource.Reg, layer)].sources:
-                    for tie in input_m_outputs:
-                        if tie.dst == m:
-                            # ignore tie to itself
-                            continue
-
-                        constraints.append(~graph.reaches(vars[(m, outport)],
-                                                          vars[tie.dst, tie.dst_port]))
+                    constraints.append(~graph.reaches(vars[(m, outport)],
+                                                      vars[tie.dst, tie.dst_port]))
 
     return solver.And(constraints)
 

@@ -64,9 +64,12 @@ class Solver_monosat(Solver_base):
         self.at_most_one_builtin_size = 10
 
     def solve(self, *args):
-        ms.Assert(self.And(self.constraints))
+#        ms.Assert(self.And(self.constraints))
         self.sat = ms.Solve(*args)
         return self.sat
+
+    def add(self, constraints):
+        ms.Assert(constraints)
 
     def add_graph(self, layer):
         g = ms.Graph()
