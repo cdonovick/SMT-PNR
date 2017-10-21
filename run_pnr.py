@@ -192,7 +192,7 @@ def cgra_flow():
                     print("success!")
                     if args.time:
                         print("routing took {}s".format(end-start))
-                        break
+                    break
                 else:
                     print("!!!failure!!!")
         else:
