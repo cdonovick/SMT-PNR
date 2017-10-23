@@ -3,7 +3,7 @@
 '''
 from collections import defaultdict
 from pnrdoctor.util import NamedIDObject, SortedDict, MultiDict
-from .module import Module, Resource
+from .module import Module, Resource, Layer
 from .net import Net, Tie
 from functools import lru_cache
 
@@ -45,9 +45,21 @@ class Design(NamedIDObject):
 
         self._layers = frozenset(layers)
 
+
+        nets = MultiDict()
+        for tie in ties:
+            nets[(tie.src, tie.src_port, tie.width)] = tie
+
+        _nets = set()
+        for n in nets:
+            _nets.add(Net(nets[n]))
+
+        self._nets = frozenset(_nets)
+
         # assertions
         for module in self.modules:
             assert module.resource != Resource.UNSET, module
+            assert module.layer != Layer.UNSET, module
 
         for tie in self.ties:
             assert tie in tie.dst.inputs.values(), tie
@@ -67,6 +79,10 @@ class Design(NamedIDObject):
     @property
     def ties(self):
         return self._ties
+
+    @property
+    def nets(self):
+        return self._nets
 
     @property
     def layers(self):
@@ -102,16 +118,17 @@ def _io_hack(mods, ties):
         const_0_name = '__HACK__io_const_0'
         assert const_0_name  not in mods, 'Hack name ({}) in use things are going to break'.format(const_0_name)
         mods[const_0_name] = {
-                'type' : 'Const',
-                'conf' : 0,
-                'res'  : Resource.Fused,  # always fuse constants
+                'type'  : 'Const',
+                'res'   : Resource.Fused,  # always fuse constants
+                'layer' : Layer.Data,
+                'conf'  : 0,
             }
 
         #change all the mods to be adders
         for mod_name in inputmods:
             saved_args = mods[mod_name].copy()
             mods[mod_name]['type'] = 'PE'
-            mods[mod_name]['conf'] = 'add'
+            mods[mod_name]['conf'] = {'alu_op' : 'add'}
             mods[mod_name]['res']  = Resource.PE
 
             hack_io_name = '__HACK__' + mod_name
@@ -122,9 +139,9 @@ def _io_hack(mods, ties):
 
             # make a tie from the hack mod to original io (the now adder)
             # assuming 16 width but we are fucked if its not anyway as the adder trick wont work
-            ties.add((hack_io_name, 'pe_out_res', mod_name, 'a', 16))
+            ties.add((hack_io_name, 'pe_out_res', mod_name, 'op_a_in', Layer.Data.width))
             # make a tie from the const 0 to original io (the now adder)
-            ties.add((const_0_name, 'out', mod_name, 'b', 16))
+            ties.add((const_0_name, 'out', mod_name, 'op_b_in', Layer.Data.width))
     return mods, ties
 
 def _split_registers(mods, ties):
@@ -154,8 +171,9 @@ def _split_registers(mods, ties):
             # add new register
             mods[f_name] = dict()
             mods[f_name]['type'] = 'Reg'
-            mods[f_name]['conf'] = None
             mods[f_name]['res']  = Resource.Fused  # mark the new register as fused
+            mods[f_name]['layer'] = mods[r_name]['layer']
+            mods[f_name]['conf'] = None
 
             # add new tie
             ties.add((f_name, src_port, dst_name, dst_port, width))
@@ -202,6 +220,7 @@ def _build_modules(mods, ties):
             mod.config = args['conf']
 
         mod.resource = args['res']
+        mod.layer = args['layer']
         _mods[mod_name] = mod
 
     return _mods, ties
@@ -224,7 +243,7 @@ def _build_ties(mods, ties):
 def _fuse_regs(mods, ties):
     # fuse all Register to PE connections
     for m in mods.values():
-        if m.resource == Resource.Fused and m.type_ == 'Reg':
+        if m.resource == Resource.Fused and 'Reg' in m.type_:
             assert len(m.outputs) == 1, 'Fused regs should have one output'
             output_tie = next(iter(m.outputs.values()))
             assert output_tie.dst.resource == Resource.PE, 'Fused register should have one PE output'

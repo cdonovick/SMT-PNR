@@ -47,10 +47,10 @@ class BVHandler(BaseHandler):
         if const_value is None:
             self._var = solver.DeclareConst(self.name, solver.BitVec(bits))
         else:
-            self._var = self.encode(const_value)
+            self._var = self.solver.TheoryConst(self.solver.BitVec(bits), const_value)
 
     def encode(self, value):
-        return self.solver.TheoryConst(self.solver.BitVec(self._bits), int(value))
+        return type(self)('encoded_{}'.format(value), self.solver, self._bits, value)
 
     @property
     def value(self):
@@ -71,32 +71,29 @@ class ScalarHandler(BVHandler):
         self._is_pow2 = upper_bound & (upper_bound - 1) == 0
 
     def delta(self, other):
-        try:
-            return self._var - other._var
-        except AttributeError:
-            return self._var - self.encode(other)
+        if isinstance(other, type(self)):
+            return self.var - other.var
+        return self - self.encode(other)
 
     def abs_delta(self, other):
         delta = self.delta(other)
 
         #return self.solver.Ite(delta >= 0, delta, -delta)
-        return su.absolute_value(delta)
+        return su.abs_ite(self.solver, delta)
 
     def distinct(self, other):
-        try:
+        if isinstance(other, type(self)):
             return self._var != other._var
-        except AttributeError:
-            return self._var != self.encode(other)
+        return self != self.encode(other)
 
     def equal(self, other):
-        try:
+        if isinstance(other, type(self)):
             return self._var == other._var
-        except AttributeError:
-            return self._var == self.encode(other)
+        return self.equal(self.encode(other))
 
     def encode(self, value):
         assert 0 <= int(value) < self._upper_bound, 'Cannot encode given value'
-        return self.solver.TheoryConst(self.solver.BitVec(self._bits), int(value))
+        return type(self)('encoded_{}'.format(value), self.solver, self._upper_bound, value)
 
     @property
     def value(self):
@@ -120,20 +117,18 @@ class CategoryHandler(BVHandler):
         super().__init__(name, solver, bits, const_value)
 
     def distinct(self, other):
-        try:
+        if isinstance(other, type(self)):
             return self._var & other._var == 0
-        except AttributeError:
-            return self._var & self.encode(other) == 0
+        return self & self.encode(other) == 0
 
     def equal(self, other):
-        try:
+        if isinstance(other, type(self)):
             return self._var == other._var
-        except AttributeError:
-            return self._var == self.encode(other)
+        return self.equal(self.encode(other))
 
     def encode(self, value):
         assert 0 <= int(value) < 2**self._bits, 'Cannot enode given value'
-        return self.solver.TheoryConst(self.solver.BitVec(self._bits), int(value))
+        return super().encode(value)
 
     @property
     def value(self):

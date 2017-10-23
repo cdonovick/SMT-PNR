@@ -1,31 +1,43 @@
 '''
 Constraint generators
 '''
-from functools import partial
+from functools import partial, reduce
+import operator
 import itertools
 import random
 import string
 from collections import defaultdict
 
-from pnrdoctor.design.module import Resource
+from pnrdoctor.design.module import Resource, Layer, layer2widths
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 from pnrdoctor.util import STAR
 
 from .pnrutils import get_muxindex
+from pnrdoctor.smt import smt_util as su
 
-
-def init_regions(category_type, scalar_type):
+def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
     def initializer(region, fabric, design, state, vars, solver):
         constraints = []
-        for module in design.modules:
+        if r_init:
+            it = list(design.modules)
+            random.shuffle(it)
+        else:
+            it = design.modules
+
+
+        for module in it:
             if module not in vars:
                 vars[module] = dict()
 
             r = state[module]
             for d,p in r.position.items():
+                randstring = ''
                 if p is SYMBOLIC:
-                    var = scalar_type(module.name + '_' + d.name, solver, d.size)
+                    if r_init:
+                        for s in random.sample(string.ascii_letters + string.digits, 5):
+                            randstring += s
+                    var = scalar_type(module.name + '_' + d.name + randstring, solver, d.size)
                     constraints.append(var.invariants)
                 elif p is None:
                     continue
@@ -36,13 +48,24 @@ def init_regions(category_type, scalar_type):
             for d,c in r.category.items():
                 if d == fabric.tracks_dim and module.resource != Resource.Reg:
                     continue
+
+                if d.is_one_hot:
+                    T = one_hot_type
+                else:
+                    T = category_type
+
                 if c is SYMBOLIC:
-                    var = category_type(module.name + '_' + d.name, solver, d.size)
+                    randstring = ''
+                    if r_init:
+                        for s in random.sample(string.ascii_letters + string.digits, 5):
+                            randstring += s
+                    var = T(module.name + '_' + d.name + randstring, solver, d.size)
                     constraints.append(var.invariants)
                 elif c is None:
                     continue
                 else:
-                    var = scalar_type(module.name + '_' + d.name, solver, d.size, c)
+                    var = T(module.name + '_' + d.name, solver, d.size, c)
+
                 vars[module][d] = var
         return solver.And(constraints)
     return initializer
@@ -73,14 +96,29 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     within a given resource
     '''
 
+    # Note: Doesn't support BitPE/DataPE distinction yet
+
     res2numids = defaultdict(int)
     mod2id = dict()
     res2sorts = dict()
 
+    # hack
+    # find out if there's BitPE/DataPE in this design
+    new_PE = False
+    for m in design.modules:
+        if m.type_ in {"DataPE", "BitPE"}:
+            new_PE = True
+
+    def _get_idx(mod):
+        if new_PE and mod.resource == Resource.PE:
+            return (mod.resource, mod.type_)
+        else:
+            return mod.resource
+
     # create an id for each module
     for m in design.modules:
-        mod2id[m] = res2numids[m.resource]
-        res2numids[m.resource] += 1
+        mod2id[m] = res2numids[_get_idx(m)]
+        res2numids[_get_idx(m)] += 1
 
         if m.resource in res2sorts:
             assert res2sorts[m.resource] == [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort], \
@@ -91,15 +129,19 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     # convert num ids to a bitwidth
     # and make a function for each resource
     res2fun = dict()
-    for res, num_ids in res2numids.items():
+
+    for idx, num_ids in res2numids.items():
+        res = idx
+        if isinstance(idx, tuple) and len(idx) == 2:
+            res = idx[0]
         if num_ids > 1: num_ids = num_ids - 1  # want only the necessary bit width
         uf = solver.DeclareFun(res.name + "_F", res2sorts[res], solver.BitVec(num_ids.bit_length()))
-        res2fun[res] = uf
+        res2fun[idx] = uf
 
     # map module's position to module id through the uninterpreted function
     c = []
     for m in design.modules:
-        UF = res2fun[m.resource]
+        UF = res2fun[_get_idx(m)]
         pos = vars[m]
         rowv, colv = pos[fabric.rows_dim].var, pos[fabric.cols_dim].var
         c.append(UF(rowv, colv) == mod2id[m])
@@ -131,13 +173,83 @@ def _neighborhood(delta, region, fabric, design, state, vars, solver):
                     if total is None:
                         total = dist
                     else:
-                        constraints.append(total <= total+dist)
+                        constraints.append(solver.BVUle(total,total+dist))
                         total = total + dist
 
             if total is not None:
-                constraints.append(total <= delta)
+                constraints.append(solver.BVUle(total,delta))
         return solver.And(constraints)
 
+
+def dist(delta, max):
+    return partial(_dist, delta, max)
+
+def _dist(delta, max, region, fabric, design, state, vars, solver):
+    constraints = []
+    total = None
+    for tie in design.ties:
+        src = tie.src
+        dst = tie.dst
+        c = []
+        src_v = vars[src]
+        dst_v = vars[dst]
+        s = src_v.keys() & dst_v.keys()
+        total_i = None
+        for d in s:
+            if isinstance(d, Scalar):
+                dist = src_v[d].abs_delta(dst_v[d])
+
+                if total_i is None:
+                    total_i = dist
+                else:
+                    total_i = su.safe_op(operator.add, solver, total_i, dist, pad=1)
+
+        if total_i is not None:
+            constraints.append(solver.BVUle(total_i, delta))
+            if total is None:
+                total = total_i
+            else:
+                total = su.safe_op(operator.add, solver, total, total_i, pad=1)
+
+    if total is not None:
+        constraints.append(solver.BVUle(total, max))
+
+    return solver.And(constraints)
+
+def HPWL(n_max, g_max):
+    return partial(_HPWL, n_max, g_max)
+
+def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
+    constraints = []
+    total = None
+    for net in design.nets:
+        max = {
+            d : reduce(partial(su.max_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+        }
+
+        min = {
+            d : reduce(partial(su.min_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+        }
+
+        total_i = None
+        for d in max:
+            dist = max[d] - min[d]
+            if total_i is None:
+                total_i = dist
+            else:
+                total_i  = su.safe_op(operator.add, solver, total_i, dist, pad=1)
+
+        if total_i is not None:
+            constraints.append(solver.BVUle(total_i, n_max))
+            if total is None:
+                total = total_i
+            else:
+                total = su.safe_op(operator.add, solver, total, total_i, pad=1)
+
+    if total is not None:
+        constraints.append(solver.BVUle(total, g_max))
+
+    return solver.And(constraints)
 
 def register_colors(region, fabric, design, state, vars, solver):
     constraints = []
@@ -270,11 +382,10 @@ def _get_nonreg_input(reg):
 
 ################################ Graph Building/Modifying Functions #############################
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):
+    node_inedges = defaultdict(list)
+
     for layer in design.layers:
         graph = solver.add_graph(layer)
-
-        node_inedges = defaultdict(list)
-
         # add nodes for modules
         for mod in design.modules:
             if mod.resource == Resource.Reg:
@@ -301,14 +412,14 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
             # create a monosat edge
             e = graph.addEdge(vars[src], vars[dst])
 
-            node_inedges[vars[dst]].append(e)
+            node_inedges[(vars[dst], layer)].append(e)
 
             vars[e] = track  # we need to recover the track in model_reader
 
-        # save the node in edges for later use
-        # it's cleaner to have this constraint in a separate  function
-        node_inedges = map(lambda l: tuple(l), node_inedges.values())  # make hashable
-        vars['node_inedges'] = frozenset(node_inedges)
+    # save the node in edges for later use
+    # it's cleaner to have this constraint in a separate  function
+    node_inedges = map(lambda l: tuple(l), node_inedges.values())  # make hashable
+    vars['node_inedges'] = frozenset(node_inedges)
 
     return solver.And([])
 
@@ -321,78 +432,82 @@ def build_spnr(region=0):
            Modifies an existing monosat graph to allow monosat to 'replace' components
            within a region around the original placement
         '''
-        for layer in design.layers:
 
-            # For each port of each module, create an external node
-            # make undirected edges to each location
-            node_dict = dict()
-            graph = solver.graphs[layer]
+        # For each port of each module, create an external node
+        # make undirected edges to each location
+        node_dict = dict()
 
-            # list for holding edge equality constraints
-            edge_constraints = list()
+        # list for holding edge equality constraints
+        edge_constraints = list()
 
-            # add virtual nodes for modules
-            for mod in design.modules:
+        # add virtual nodes for modules
+        for mod in design.modules:
+            # get widths that are used in design and needed for this module
+            widths = layer2widths[mod.layer] & design.layers
+
+            if mod.resource != Resource.Reg:
+                for _type, width in itertools.product({'sources', 'sinks'}, widths):
+                    for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
+                        n = solver.graphs[width].addNode('{}_{}'.format(mod.name, port_name))
+                        vars[(mod, port_name)] = n
+                        node_dict[(n, width)] = list()
+            else:
+                # registers are not split
+                # i.e. both port names point to same node
+                assert len(widths) == 1, "Registers should only exist on one layer"
+                width = next(iter(widths))
+                regnode = solver.graphs[width].addNode(mod.name)
+                vars[mod] = regnode  # have one index just for mod
+                node_dict[(regnode, width)] = list()
+                for _type, width in itertools.product({'sources', 'sinks'}, widths):
+                    for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
+                        vars[(mod, port_name)] = regnode  # convenient to also index the same as other modules
+
+            # take intersection with possible locations
+            # register locations include the track, so remove track using map
+            pos = p_state[mod].position
+            orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
+            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
                 if mod.resource != Resource.Reg:
-                    for _type in {'sources', 'sinks'}:
-                        for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                            n = graph.addNode('{}_{}'.format(mod.name, port_name))
-                            vars[(mod, port_name)] = n
-                            node_dict[n] = list()
-                else:
-                    # registers are not split
-                    # i.e. both port names point to same node
-                    regnode = graph.addNode(mod.name)
-                    vars[mod] = regnode  # have one index just for mod
-                    node_dict[regnode] = list()
-                    for _type in {'sources', 'sinks'}:
-                        for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                            vars[(mod, port_name)] = regnode  # convenient to also index the same as other modules
-
-                # take intersection with possible locations
-                # register locations include the track, so remove track using map
-                pos = p_state[mod].position
-                orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
-                for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
-                    if mod.resource != Resource.Reg:
-                        eqedges = list()
-                        for _type in {'sources', 'sinks'}:
-                            for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                                mindex = muxindex(resource=mod.resource, ps=loc, bw=layer, port=port_name)
-                                e = graph.addUndirectedEdge(vars[(mod, port_name)],
+                    eqedges = list()
+                    for _type, width in itertools.product({'sources', 'sinks'}, widths):
+                        for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
+                            mindex = muxindex(resource=mod.resource, ps=loc, bw=width, port=port_name)
+                            e = solver.graphs[width].addUndirectedEdge(vars[(mod, port_name)],
                                                             vars[getattr(fabric[mindex], _type[:-1])])
                                                             # source/sink instead of sources/sinks
-                                eqedges.append(e)
-                                node_dict[vars[(mod, port_name)]].append(e)
+                            eqedges.append(e)
+                            node_dict[(vars[(mod, port_name)], width)].append(e)
 
-                        # assert that a placement places all ports of a given module in the same location
-                        for e1, e2 in zip(eqedges, eqedges[1:]):
-                            edge_constraints.append(solver.Eq(e1, e2))
+                    # assert that a placement places all ports of a given module in the same location
+                    for e1, e2 in zip(eqedges, eqedges[1:]):
+                        edge_constraints.append(solver.Eq(e1, e2))
 
-                    else:
-                        # this is a register
+                else:
+                    # this is a register
+                    assert len(widths) == 1, "Register should only exist on one layer"
+                    width = next(iter(widths))
+                    # get all of the switch box muxes at the current location
+                    mindices_pattern = muxindex(resource=Resource.SB, ps=loc,
+                                                po=STAR, bw=width, track=STAR)
 
-                        # get all of the switch box muxes at the current location
-                        mindices_pattern = muxindex(resource=Resource.SB, ps=loc,
-                                                    po=STAR, bw=layer, track=STAR)
+                    # take only the ones with registers
+                    mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
 
-                        # take only the ones with registers
-                        mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
-
-                        for mindex in mindices:
-                            assert fabric[mindex].source == fabric[mindex].sink, \
-                              'Cannot split registers and use build_spnr'
-                            e = graph.addUndirectedEdge(vars[mod],
+                    for mindex in mindices:
+                        assert fabric[mindex].source == fabric[mindex].sink, \
+                          'Cannot split registers and use build_spnr'
+                        e = solver.graphs[width].addUndirectedEdge(vars[mod],
                                                         vars[fabric[mindex].source])
-                            node_dict[vars[mod]].append(e)
+                        node_dict[(vars[mod], width)].append(e)
 
             # assert that modules are only placed in one location
-            for n, edges in node_dict.items():
-                solver.AtMostOne(edges)
+            for edges in node_dict.values():
+                if len(edges) > 1:
+                    solver.AtMostOne(edges)
 
         return solver.And(edge_constraints)
     return _build_spnr
-
 
 ################################ Reachability Constraints #################################
 
@@ -407,7 +522,6 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         graph = solver.graphs[tie.width]
         reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
                                      vars[(tie.dst, tie.dst_port)]))
-
     return solver.And(reaches)
 
 
@@ -418,7 +532,6 @@ def at_most_one_driver(fabric, design, p_state, r_state, vars, solver):
     for inedges in vars['node_inedges']:  # 'node_inedges' maps to a frozenset of lists of edges
         if len(inedges) > 1:
             solver.AtMostOne(inedges)
-
     return solver.And([])
 
 
@@ -427,28 +540,29 @@ def reg_unreachability(fabric, design, p_state, r_state, vars, solver):
         Enforce unreachability constraints when register is a source.
         Intended to be used with at_most_one_driver
     '''
+    constraints = []
 
-    for layer in design.layers:
+    for m in design.modules:
+        if m.resource == Resource.Reg:
+            widths = layer2widths[m.layer]
+            assert len(widths) == 1, "Register should only be on one layer"
 
-        graph = solver.graphs[layer]
-        constraints = []
+            width = next(iter(widths))
+            graph = solver.graphs[width]
 
-        for m in design.modules:
-            if m.resource == Resource.Reg:
+            # get the first non register in the input path
+            input_m = _get_nonreg_input(m)
+            # get the outputs of the registers input
+            input_m_outputs = {t for t in input_m.outputs.values()}
 
-                # get the first non register in the input path
-                input_m = _get_nonreg_input(m)
-                # get the outputs of the registers input
-                input_m_outputs = {t for t in input_m.outputs.values()}
+            for outport in fabric.port_names[(Resource.Reg, width)].sources:
+                for tie in input_m_outputs:
+                    if tie.dst == m:
+                        # ignore tie to itself
+                        continue
 
-                for outport in fabric.port_names[(Resource.Reg, layer)].sources:
-                    for tie in input_m_outputs:
-                        if tie.dst == m:
-                            # ignore tie to itself
-                            continue
-
-                        constraints.append(~graph.reaches(vars[(m, outport)],
-                                                          vars[tie.dst, tie.dst_port]))
+                    constraints.append(~graph.reaches(vars[(m, outport)],
+                                                      vars[tie.dst, tie.dst_port]))
 
     return solver.And(constraints)
 
@@ -465,7 +579,8 @@ def unreachability(fabric, design, p_state, r_state, vars, solver):
         # hacky don't handle wrong layer here
         # and if destination is a register, it only has one port
         # so it doesn't need exclusivity constraints
-        graph = solver.graphs[tie.width]
+        layer = tie.width
+        graph = solver.graphs[layer]
         if tie.dst.resource == Resource.Reg:
             continue
 
@@ -481,19 +596,21 @@ def unreachability(fabric, design, p_state, r_state, vars, solver):
                                     vars[(dst, port)]))
 
     # make sure modules that aren't connected are not connected
-    for mdst in design.modules:
-        inputs = {x.src for x in mdst.inputs.values()}
+    for layer in design.layers:
+        graph = solver.graphs[layer]
+        for mdst in design.modules:
+            inputs = {x.src for x in mdst.inputs.values()}
 
-        for msrc in design.modules:
-            if msrc != mdst and msrc not in inputs:
-                # iterate through all port combinations for m2-->m1 connections
-                for src_port, dst_port \
-                    in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
-                                         fabric.port_names[(mdst.resource, layer)].sinks):
+            for msrc in design.modules:
+                if msrc != mdst and msrc not in inputs:
+                    # iterate through all port combinations for m2-->m1 connections
+                    for src_port, dst_port \
+                        in itertools.product(fabric.port_names[(msrc.resource, layer)].sources,
+                                             fabric.port_names[(mdst.resource, layer)].sinks):
 
-                    # assert that these modules' ports do not connect
-                    c.append(~graph.reaches(vars[(msrc, src_port)],
-                                            vars[(mdst, dst_port)]))
+                        # assert that these modules' ports do not connect
+                        c.append(~graph.reaches(vars[(msrc, src_port)],
+                                                vars[(mdst, dst_port)]))
 
     return solver.And(c)
 
@@ -564,6 +681,6 @@ def reach_and_notreach(dist_factor):
 
 def recommended_route_settings(relaxed=False):
     if relaxed:
-        return regional_replace(0, 3)
+        return regional_replace(0, 6)
     else:
         return regional_replace(0, 1)

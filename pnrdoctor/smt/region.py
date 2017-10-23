@@ -14,7 +14,7 @@ def _is_set(*vals): return all(v not in _NO_VAL for v in vals)
 class Region(NamedIDObject):
     @classmethod
     def from_frabic(cls, name, fabric):
-        return cls(name, (fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim), from_space=True)
+        return cls(name, (fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim, fabric.layers_dim), from_space=True)
 
 
     def __init__(self,
@@ -246,10 +246,11 @@ class Scalar(Dimension):
         return self._size
 
 class Category(Dimension):
-    def __init__(self, name, n_categories):
+    def __init__(self, name, n_categories, one_hot=False):
         super().__init__(name)
         self._size = n_categories
         self._mask = 2**n_categories - 1
+        self._one_hot = one_hot
 
     @property
     def mask(self):
@@ -258,3 +259,7 @@ class Category(Dimension):
     @property
     def size(self):
         return self._size
+
+    @property
+    def is_one_hot(self):
+        return self._one_hot

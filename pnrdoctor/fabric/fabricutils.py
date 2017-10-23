@@ -123,19 +123,19 @@ def pos_to_side(ps, po, direc='o'):
         po = ps
         ps = temp
 
-    delx = ps[0] - po[0]
-    dely = ps[1] - po[1]
+    delrow = ps[0] - po[0]
+    delcol = ps[1] - po[1]
 
     # there should only be a change of 1 in L1 norm
-    assert abs(delx) + abs(dely) == 1
+    assert abs(delcol) + abs(delrow) == 1
 
-    x2side = {-1: Side.E, 1: Side.W}
-    y2side = {-1: Side.S, 1: Side.N}
+    col2side = {-1: Side.E, 1: Side.W}
+    row2side = {-1: Side.S, 1: Side.N}
 
-    if delx in x2side:
-        return x2side[delx]
+    if delrow in row2side:
+        return row2side[delrow]
     else:
-        return y2side[dely]
+        return col2side[delcol]
 
 
 def mapSide(row, col, side):

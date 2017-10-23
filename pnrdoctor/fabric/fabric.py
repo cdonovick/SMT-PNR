@@ -1,4 +1,4 @@
-from pnrdoctor.design.module import Resource
+from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.util import IDObject
 from pnrdoctor.smt.region import Scalar, Category
 from .fabricutils import Side, pos_to_side
@@ -23,14 +23,15 @@ class Port(IDObject):
             res = muxindex.resource
 
         # naming scheme is (x, y)Side_direction[track]
-        self.name = '({}, {}){}_{}[{}]'.format(muxindex.ps[0],
+        self.name = '({}, {}){}_{}_b{}[{}]'.format(muxindex.ps[0],
                                                muxindex.ps[1],
                                                res.name,
                                                direction,
+                                               muxindex.bw,
                                                muxindex.track if muxindex.track is not None
                                                else muxindex.port)
-        self._x = muxindex.ps[0]
-        self._y = muxindex.ps[1]
+        self._row = muxindex.ps[0]
+        self._col = muxindex.ps[1]
         self._resource = res
         self._track = muxindex.track  # could be none
         self._inputs = set()
@@ -38,12 +39,12 @@ class Port(IDObject):
         self._index = muxindex
 
     @property
-    def x(self):
-        return self._x
+    def row(self):
+        return self._row
 
     @property
-    def y(self):
-        return self._y
+    def col(self):
+        return self._col
 
     @property
     def side(self):
@@ -75,7 +76,7 @@ class Port(IDObject):
 
     @property
     def loc(self):
-        return (self._x, self._y)
+        return (self._row, self._col)
 
     def split(self):
         snkport = Port(self._index)
@@ -85,13 +86,13 @@ class Port(IDObject):
 
         srcport = Port(self._index, 'i')
         # overwrite x, y and name
-        srcport._x = self._index.po[0]
-        srcport._y = self._index.po[1]
+        srcport._row = self._index.po[0]
+        srcport._col = self._index.po[1]
         # reverse positions
         s = pos_to_side(self._index.po, self._index.ps)
         # make the name look right/nice for printout
-        srcport.name = '({}, {}){}_{}[{}]'.format(srcport._x,
-                                                  srcport._y,
+        srcport.name = '({}, {}){}_{}[{}]'.format(srcport._row,
+                                                  srcport._col,
                                                   s.name,
                                                   'i',
                                                   self._index.track if self._index.track is not None
@@ -156,13 +157,16 @@ class Fabric:
 
         # Hacky hardcoding register port names
         # because they're not provided by cgra_info
-        self._port_names[(Resource.Reg, 16)].sources.add('out')
-        self._port_names[(Resource.Reg, 16)].sinks.add('a')
+        self._port_names[(Resource.Reg, Layer.Data.width)].sources.add('out')
+        self._port_names[(Resource.Reg, Layer.Data.width)].sinks.add('in')
 
+        self._port_names[(Resource.Reg, Layer.Bit.width)].sources.add('out')
+        self._port_names[(Resource.Reg, Layer.Bit.width)].sinks.add('in')
         # Dimensions for region building
-        self._rows_dim = Scalar('rows', self.rows)
-        self._cols_dim = Scalar('cols', self.cols)
-        self._tracks_dim = Category('tracks', self.num_tracks)
+        self._rows_dim = Scalar('row', self.rows)
+        self._cols_dim = Scalar('col', self.cols)
+        self._tracks_dim = Category('track', self.num_tracks, one_hot=True)
+        self._layers_dim = Category('layer', len(self.layers))
 
     @property
     def rows(self):
@@ -196,6 +200,10 @@ class Fabric:
         Available layers in the parsed fabric
         '''
         return self._layers
+
+    @property
+    def layers_dim(self):
+        return self._layers_dim
 
     @property
     def num_tracks(self):
@@ -252,3 +260,10 @@ class Fabric:
 
     def matching_keys(self, named_tuple_key):
         return self._fab.matching_keys(named_tuple_key)
+
+#class rand_fabric(fabric):
+#    def __init__(self, ncols, nrows, ntracks, resource_dist=None):
+#        if resource_dist is None:
+#            resource_dist = {
+#                    'IO' : {(Resource.IO, r, c) for r in range(nrows) for c in range(ncols) if r == 0 or c == 0}
+#                    'PE' : {(Resource.PE,

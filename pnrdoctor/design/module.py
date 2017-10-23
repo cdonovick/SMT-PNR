@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, Flag, auto
 from pnrdoctor.util import NamedIDObject, BiDict, BiMultiDict
 from .net import Tie
 
@@ -10,6 +10,7 @@ class Module(NamedIDObject):
         self._outputs = BiMultiDict()
         self._resource = Resource.UNSET
         self._registered_ports = set()
+        self._layer = Layer.UNSET
 
     @property
     def inputs(self):
@@ -52,6 +53,17 @@ class Module(NamedIDObject):
             self._resource = res
         else:
             raise TypeError('Expected Resource not {}'.format(type(res)))
+
+    @property
+    def layer(self):
+        return self._layer
+
+    @layer.setter
+    def layer(self, layer):
+        if isinstance(layer, Layer):
+            self._layer = layer
+        else:
+            raise TypeError('Expected Layer not {}'.format(type(layer)))
 
     def __str__(self):
         return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
@@ -104,3 +116,32 @@ class Resource(Enum):
     # Eventually we should move this
     SB    = 6
     CB    = 7
+
+class Layer(Flag):
+    UNSET    = 0
+    Data     = auto()
+    Bit      = auto()
+    Combined = Data | Bit
+
+    @classmethod
+    def width_to_layer(cls, w):
+        if w == 1:
+            return cls.Bit
+        if w == 16:
+            return cls.Data
+
+        raise ValueError('No layer for width: {}'.format(w))
+
+    @property
+    def width(self):
+        if self is type(self).Bit:
+            return 1
+        if self is type(self).Data:
+            return 16
+
+        raise ValueError('No width for layer: {}'.format(self))
+
+# For now, ties and routing still use 1/16 instead of Bit/Data
+# This is used in pnr/constraints to do this conversion
+# Eventually everything will be moved to Layer
+layer2widths = {Layer.Data: {16}, Layer.Bit: {1}, Layer.Combined: {1, 16}}

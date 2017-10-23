@@ -72,7 +72,10 @@ def hamming_d(bv):
 hamming = hamming_d
 
 
-def absolute_value(bv):
+def abs_ite(solver, bv):
+    return solver.Ite(solver.BVSlt(bv, 0), -bv, bv)
+
+def abs_bit(solver, bv):
     '''
     Based on: https://graphics.stanford.edu/~seander/bithacks.html#IntegerAbs
 
@@ -91,10 +94,68 @@ def absolute_value(bv):
         else bv == 0^(bv + 0) == mask^(bv + mask)
         hence for all bv, absolute_value(bv) == mask ^ (bv + mask)
     '''
-    mask = bv >> (bv.sort.width - 1)
+    mask = solver.BVAshr(bv, bv.sort.width - 1)
     return mask ^ (bv + mask)
+
+
+def safe_op(op, solver, b1, b2, pad=0):
+    w1 = b1.sort.width
+    w2 = b2.sort.width
+    w = max(w1, w2)
+    zeros_1 = solver.TheoryConst(solver.BitVec(w-w1+pad), 0)
+    zeros_2 = solver.TheoryConst(solver.BitVec(w-w2+pad), 0)
+    return op(solver.Concat(zeros_1, b1), solver.Concat(zeros_2, b2))
+
+
+def min_ite(solver, b1, b2):
+    return solver.Ite(solver.BVUle(b1, b2), b1, b2)
+
+
+def max_ite(solver, b1, b2):
+    return solver.Ite(solver.BVUge(b1, b2), b1, b2)
+
+def min_bit(solver, b1, b2):
+    '''
+    Based on: https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+
+    Operation:
+        Desired behavior is (b1 < b2) ? b1 : b2
+
+        let diff := b1 - b2
+        by definiton diff < 0 iff b1 < b2
+
+        let mask := diff >> (diff.size() - 1)
+        note because of sign extension:
+        mask == (diff < 0) ? -1 : 0
+            == (b1 < b2) ? -1 : 0
+
+        so
+        diff & mask == (diff < 0) ? diff & -1 : diff & 0
+            == (b1 < b2) ? diff : 0
+
+        therefore,
+        b2 + (diff & mask) == (b1 < b2) ? b2 + diff  : b2 + 0
+            == (b1 < b2) ? b2 + (b1 - b2) : b2
+            == (b1 < b2) ? b1 : b2
+        QED
+    '''
+    diff = b1 - b2
+    mask = solver.BVAshr(diff, diff.sort.width - 1)
+    return b2 + (diff & mask)
+
+def max_bit(solver, b1, b2):
+    '''
+    Proof similar to min_bit with last lines:
+
+        b1 - (diff & mask) == (b1 < b2) ? b1 - diff  : b1 - 0
+            == (b1 < b2) ? b1 - (b1 - b2) : b1
+            == (b1 < b2) ? b2 : b1
+
+    '''
+    diff = b1 - b2
+    mask = solver.BVAshr(diff, diff.sort.width-1)
+    return b1 - (diff & mask)
 
 
 #used in testing
 _GIANT_NUMBER = 5016456510113118655434598811035278955030765345404790744303017523831112055108147451509157692220295382716162651878526895249385292291816524375083746691371804094271873160484737966720260389217684476157468082573 * 14197795064947621068722070641403218320880622795441933960878474914617582723252296732303717722150864096521202355549365628174669108571814760471015076148029755969804077320157692458563003215304957150157403644460363550505412711285966361610267868082893823963790439336411086884584107735010676915
-

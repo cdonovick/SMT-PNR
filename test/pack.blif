@@ -1,0 +1,47 @@
+# arachne-pnr 0.1+204+ 0 (git sha1 b1e8750, c++ 8.0.0 -O2)
+.model main
+.inputs I
+.outputs O
+.names $false
+.gate SB_IO PACKAGE_PIN=I  LATCH_INPUT_VALUE=  CLOCK_ENABLE=  INPUT_CLK=  OUTPUT_CLK=  OUTPUT_ENABLE=  D_OUT_0=         D_OUT_1=  D_IN_0=I$2  D_IN_1=
+.param PIN_TYPE 000001
+
+.gate SB_IO PACKAGE_PIN=O  LATCH_INPUT_VALUE=  CLOCK_ENABLE=  INPUT_CLK=  OUTPUT_CLK=  OUTPUT_ENABLE=  D_OUT_0=inst8_O  D_OUT_1=  D_IN_0=     D_IN_1=
+.param PIN_TYPE 011001
+
+.gate ICESTORM_LC I0=I$2 I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst0_O COUT=
+.attr src "route.v:11"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst0_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst1_O COUT=
+.attr src "route.v:12"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst1_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst2_O COUT=
+.attr src "route.v:13"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst2_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst3_O COUT=
+.attr src "route.v:14"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst3_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst4_O COUT=
+.attr src "route.v:15"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst4_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst5_O COUT=
+.attr src "route.v:16"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst5_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst6_O COUT=
+.attr src "route.v:17"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst6_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst7_O COUT=
+.attr src "route.v:18"
+.param LUT_INIT 0101010101010101
+
+.gate ICESTORM_LC I0=inst7_O I1=$false I2=$false I3=$false CIN= CLK= CEN= SR= LO= O=inst8_O COUT=
+.attr src "route.v:19"
+.param LUT_INIT 0101010101010101
+.end

@@ -1,6 +1,6 @@
 import coreir
-from .module import Resource
-from pnrdoctor.util import SortedDict
+from .module import Resource, Layer
+from pnrdoctor.util import SortedDict, IdentDict
 
 def load_core(file, *libs):
     context = coreir.Context()
@@ -14,44 +14,78 @@ def load_core(file, *libs):
     for inst in top_def.instances:
         inst_name = inst.selectpath[0]
         inst_type = inst.module_name
-        modules[inst_name] = dict()
+        modules[inst_name] = {
+            'type'  : None,
+            'res'   : Resource.UNSET,
+            'layer' : Layer.UNSET,
+            'conf'  : None,
+        }
 
-#        print(inst_type)
-        if inst_type[:2] == 'PE':
+        if inst_type == 'PE':
             modules[inst_name]['type'] = 'PE'
-            modules[inst_name]['conf'] = inst.config['op'].value
             modules[inst_name]['res']  = Resource.PE
+            modules[inst_name]['conf'] = dict()
+            op_kind = inst.generator_args['op_kind'].value
 
-        elif inst_type[:5] == 'Const':
-            modules[inst_name]['type'] = 'Const'
-            modules[inst_name]['conf'] = inst.config['value'].value
-            modules[inst_name]['res']  = Resource.Fused # always fuse constants
+            if op_kind in ('alu', 'combined'):
+                modules[inst_name]['layer'] |= Layer.Data
+                modules[inst_name]['conf']['alu_op'] = inst.config['alu_op'].value
 
-        elif inst_type[:2] == 'IO':
-            modules[inst_name]['type'] = 'IO'
-            modules[inst_name]['conf'] = inst.config['mode'].value
-            modules[inst_name]['res']  = Resource.IO
+            if op_kind in ('bit', 'combined'):
+                modules[inst_name]['layer'] |= Layer.Bit
+                modules[inst_name]['conf']['lut_value'] = inst.config['lut_value'].value.val
 
-        elif inst_type[:3] == 'Reg':
-            modules[inst_name]['type'] = 'Reg'
-            modules[inst_name]['conf'] = None
-            modules[inst_name]['res']  = Resource.Reg
+            if op_kind not in ('bit', 'alu', 'combined'):
+                raise ValueError("Unkown op_kind `{}' in `{}' expected <`bit', `alu', `combined'>".format(file, op_kind))
 
-        elif inst_type[:3] == 'Mem':
-            modules[inst_name]['type'] = 'Mem'
-
-            modules[inst_name]['conf'] = {
-                    'mode'              : 'linebuffer', #HACK inst.get_config_value('mode'),
-                    'fifo_depth'        : inst.generator_args['depth'].value,
-                    'almost_full_count' : '0', #HACK
+        elif inst_type == 'Mem':
+            modules[inst_name]['type']  = 'Mem'
+            modules[inst_name]['res']   = Resource.Mem
+            modules[inst_name]['layer'] = Layer.Combined
+            modules[inst_name]['conf']  = {
+                    'mode'              : inst.config['mode'].value,
+                    'fifo_depth'        : inst.config['fifo_depth'].value,
+                    'almost_full_count' : inst.config['almost_full_cnt'].value,
                     'chain_enable'      : '0', #HACK
                     'tile_en'           : '1', #HACK
             }
 
-            modules[inst_name]['res']  = Resource.Mem
+        elif inst_type == 'reg':
+            modules[inst_name]['type']  = 'Reg'
+            modules[inst_name]['res']   = Resource.Reg
+            modules[inst_name]['layer'] = Layer.Data
+            modules[inst_name]['conf']  = None
+        elif inst_type == 'bitreg':
+            modules[inst_name]['type']  = 'BitReg'
+            modules[inst_name]['res']   = Resource.Reg
+            modules[inst_name]['layer'] = Layer.Bit
+            modules[inst_name]['conf']  = None
+
+        elif inst_type == 'const':
+            modules[inst_name]['type']  = 'Const'
+            modules[inst_name]['res']   = Resource.Fused # always fuse constants
+            modules[inst_name]['layer'] = Layer.Data
+            modules[inst_name]['conf']  = inst.config['value'].value.val
+        elif inst_type == 'bitconst':
+            modules[inst_name]['type']  = 'Const'
+            modules[inst_name]['res']   = Resource.Fused # always fuse constants
+            modules[inst_name]['layer'] = Layer.Bit
+            modules[inst_name]['conf']  = inst.config['value'].value
+
+        elif inst_type == 'IO':
+            modules[inst_name]['type']  = 'IO'
+            modules[inst_name]['res']   = Resource.IO
+            modules[inst_name]['layer'] = Layer.Data
+            modules[inst_name]['conf']  = inst.config['mode'].value
+        elif inst_type == 'BitIO':
+            modules[inst_name]['type']  = 'BitIO'
+            modules[inst_name]['res']   = Resource.IO
+            modules[inst_name]['layer'] = Layer.Bit
+            modules[inst_name]['conf']  = inst.config['mode'].value
 
         else:
-            raise ValueError("Unknown module_name '{}' expected <'PE', 'Const', 'IO', 'Reg', 'Mem'>".format(inst_type))
+            raise ValueError("Unknown module_name `{}' in `{}' expected <`PE', `[bit]const', `[Bit]IO',  `[bit]reg', `Mem'>".format(inst_type, file))
+
 
     ties = set()
     for con in top_module.directed_module.connections:
@@ -79,31 +113,39 @@ def load_core(file, *libs):
 
 _PORT_TRANSLATION = {
     'PE' : {
-        'data.in.0' : 'a',
-        'data.in.1' : 'b',
+        'data.in.0' : 'op_a_in',
+        'data.in.1' : 'op_b_in',
         'data.out'  : 'pe_out_res',
-        'bit.in.0'  : 'd',
-        'bit.out'   : 'pe_out_p',
+        'bit.in.0'  : 'op_d_p_in',
+        'bit.in.1'  : 'op_e_p_in',
+        'bit.in.2'  : 'op_f_p_in',
+        'bit.out'   : 'pe_out_res_p',
     },
+
     'Const' : {
         'out' : 'out',
     },
+
     'IO' : {
-        'in'  : 'a',
+        'in'  : 'op_a_in',
         'out' : 'pe_out_res',
     },
+
+    'BitIO' : {
+        'in'  : 'op_d_p_in',
+        'out' : 'pe_out_res_p',
+    },
+
     'Reg' : {
-        'in'  : 'a',
+        'in'  : 'in',
         'out' : 'out',
     },
-    'Mem' : {
-        'rdata'  : 'mem_out',
-        'addr'   : 'ain',
-        'ren'    : 'ren',
-        'empty'  : 'valid',
-        'wdata'  : 'din',
-        'wen'    : 'wen',
-        'full'   : 'almost_full',
+
+    'BitReg' : {
+        'in'  : 'in',
+        'out' : 'out',
     },
+
+    'Mem' : IdentDict(),
 }
 
