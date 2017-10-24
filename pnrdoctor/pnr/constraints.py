@@ -268,11 +268,11 @@ def pin_IO(region, fabric, design, state, vars, solver):
         v = vars[module]
         r,c = v[fabric.rows_dim], v[fabric.cols_dim]
         if module.config == 'i':
-            assert not seen_i
+            assert not seen_i, 'Current IO hack requires single input'
             seen_i = True
             constraints.append(solver.And([r == 0, c == 0]))
         else:
-            assert not seen_o
+            assert not seen_o, 'Current iO hack requires single output'
             seen_o = True
             constraints.append(solver.And([r == 1, c == 0]))
 

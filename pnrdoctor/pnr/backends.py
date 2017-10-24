@@ -58,12 +58,12 @@ _op_translate = {
 }
 
 _const_reg = {
-    'op_a_in'   : (0xf0, 16,),
-    'op_b_in'   : (0xf1, 16,),
-    'op_c_in'   : (0xf2, 16,),
-    'op_d_p_in' : (0xf3,  1,),
-    'op_e_p_in' : (0xf4,  1,),
-    'op_f_p_in' : (0xf5,  1,),
+    'data0'   : (0xf0, 16,),
+    'data1'   : (0xf1, 16,),
+    'data2'   : (0xf2, 16,),
+    'bit0'    : (0xf3,  1,),
+    'bit1'    : (0xf4,  1,),
+    'bit2'    : (0xf5,  1,),
 }
 
 #[(reg, (bith, bitll), value)] 
@@ -75,12 +75,12 @@ _const_reg = {
 
 
 _port_offsets = {
-    'op_a_in'   : 16,
-    'op_b_in'   : 18,
-    'op_c_in'   : 20,
-    'op_d_p_in' : 24,
-    'op_e_p_in' : 26,
-    'op_f_p_in' : 28,
+    'data0'   : 16,
+    'data1'   : 18,
+    'data2'   : 20,
+    'bit0'    : 24,
+    'bit1'    : 26,
+    'bit2'    : 28,
 }
 
 _reg_mode = {
@@ -230,7 +230,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                             d.bit_length()
                             ))
 
-                    b_dict[idx] |= d # load 'op_a_in' reg with const
+                    b_dict[idx] |= d # load 'data0' reg with const
                     c_dict[idx][(width-1,0)] = Annotations.init_reg(port, src.config)
                     d_dict[idx][(width-1,0)] = id_fmt.format(mod.id)
                     mode = 'CONST'
@@ -261,18 +261,18 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 c_dict[idx][(5, 0)] = Annotations.op_config('alu_op', 'input')
                 d_dict[idx][(5, 0)] = id_fmt.format(mod.id)
 
-                reg, _ = _const_reg['op_a_in']
+                reg, _ = _const_reg['data0']
                 idx = (tile_addr, feature_address, reg)
                 b_dict[idx]  = 0xffffffff
 
-                reg, _ = _const_reg['op_b_in']
+                reg, _ = _const_reg['data1']
                 idx = (tile_addr, feature_address, reg)
                 b_dict[idx]  = 0xffffffff
             else:
                 c_dict[idx][(5, 0)] = Annotations.op_config('alu_op', 'output')
                 d_dict[idx][(5, 0)] = id_fmt.format(mod.id)
 
-                reg, _ = _const_reg['op_b_in']
+                reg, _ = _const_reg['data1']
                 idx = (tile_addr, feature_address, reg)
                 b_dict[idx]  = 0xffffffff
 
