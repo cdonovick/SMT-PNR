@@ -55,7 +55,7 @@ def load_core(file, *libs):
             modules[inst_name]['res']   = Resource.Reg
             modules[inst_name]['layer'] = Layer.Data
             modules[inst_name]['conf']  = None
-        elif inst_type == 'bitreg':
+        elif inst_type == 'dff':
             modules[inst_name]['type']  = 'BitReg'
             modules[inst_name]['res']   = Resource.Reg
             modules[inst_name]['layer'] = Layer.Bit
@@ -66,11 +66,6 @@ def load_core(file, *libs):
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
             modules[inst_name]['layer'] = Layer.Data
             modules[inst_name]['conf']  = inst.config['value'].value.val
-        elif inst_type == 'bitconst':
-            modules[inst_name]['type']  = 'Const'
-            modules[inst_name]['res']   = Resource.Fused # always fuse constants
-            modules[inst_name]['layer'] = Layer.Bit
-            modules[inst_name]['conf']  = inst.config['value'].value
 
         elif inst_type == 'IO':
             modules[inst_name]['type']  = 'IO'
@@ -84,7 +79,7 @@ def load_core(file, *libs):
             modules[inst_name]['conf']  = inst.config['mode'].value
 
         else:
-            raise ValueError("Unknown module_name `{}' in `{}' expected <`PE', `[bit]const', `[Bit]IO',  `[bit]reg', `Mem'>".format(inst_type, file))
+            raise ValueError("Unknown module_name `{}' in `{}' expected <`PE', `const', `[Bit]IO',  `reg', `dff', `Mem'>".format(inst_type, file))
 
 
     ties = set()
