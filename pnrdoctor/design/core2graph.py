@@ -75,12 +75,12 @@ def load_core(file, *libs):
         elif inst_type == 'IO':
             modules[inst_name]['type']  = 'IO'
             modules[inst_name]['res']   = Resource.IO
-            modules[inst_name]['layer'] = Layer.Data
+            modules[inst_name]['layer'] = Layer.Combined
             modules[inst_name]['conf']  = inst.config['mode'].value
         elif inst_type == 'BitIO':
             modules[inst_name]['type']  = 'BitIO'
             modules[inst_name]['res']   = Resource.IO
-            modules[inst_name]['layer'] = Layer.Bit
+            modules[inst_name]['layer'] = Layer.Combined
             modules[inst_name]['conf']  = inst.config['mode'].value
 
         else:
@@ -113,12 +113,13 @@ def load_core(file, *libs):
 
 _PORT_TRANSLATION = {
     'PE' : {
-        'data.in.0' : 'op_a_in',
-        'data.in.1' : 'op_b_in',
+        'data.in.0' : 'data0',
+        'data.in.1' : 'data1',
+        'data.in.2' : 'data2',
         'data.out'  : 'pe_out_res',
-        'bit.in.0'  : 'op_d_p_in',
-        'bit.in.1'  : 'op_e_p_in',
-        'bit.in.2'  : 'op_f_p_in',
+        'bit.in.0'  : 'bit0',
+        'bit.in.1'  : 'bit1',
+        'bit.in.2'  : 'bit2',
         'bit.out'   : 'pe_out_res_p',
     },
 
@@ -127,12 +128,12 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'op_a_in',
+        'in'  : 'data0',
         'out' : 'pe_out_res',
     },
 
     'BitIO' : {
-        'in'  : 'op_d_p_in',
+        'in'  : 'bit0',
         'out' : 'pe_out_res_p',
     },
 

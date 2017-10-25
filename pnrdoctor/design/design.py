@@ -139,9 +139,9 @@ def _io_hack(mods, ties):
 
             # make a tie from the hack mod to original io (the now adder)
             # assuming 16 width but we are fucked if its not anyway as the adder trick wont work
-            ties.add((hack_io_name, 'pe_out_res', mod_name, 'op_a_in', Layer.Data.width))
+            ties.add((hack_io_name, 'pe_out_res', mod_name, 'data0', Layer.Data.width))
             # make a tie from the const 0 to original io (the now adder)
-            ties.add((const_0_name, 'out', mod_name, 'op_b_in', Layer.Data.width))
+            ties.add((const_0_name, 'out', mod_name, 'data1', Layer.Data.width))
     return mods, ties
 
 def _split_registers(mods, ties):

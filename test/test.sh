@@ -1,7 +1,7 @@
 #!/bin/bash
 PREFIX=$(dirname $0)
 TESTS=$PREFIX/designs/*
-FABRICS=$PREFIX/cgra_8_8_info.xml
+FABRICS=$PREFIX/cgra_info.txt
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
 COMMANDS="--time --print --annotate $ANNOTATED"

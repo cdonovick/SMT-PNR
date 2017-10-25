@@ -21,54 +21,66 @@ _bit_widths = {
     'feature'   : 8,
     'reg'       : 8,
     'alu_op'    : 5,
-    'lut_value' : 2, #8,
+    'lut_value' : 8,
 }
+
+_ALU_REG = 0xFF
+_LUT_REG = 0x00
+_LUT_ENABLE = 9
 
 _op_translate = {
-    'alu_op' : {
-        'add'       : 0x00,
-        'sub'       : 0x01,
-        #2-3
-        'lt'        : 0x04,
-        'ge'        : 0x05,
-        'xnorr'     : 0x06,
-        'xorr'      : 0x07,
-        'select'    : 0x08,
-        #9-A
-        'mull'      : 0x0b,
-        'mulm'      : 0x0c,
-        'mulh'      : 0x0d,
-        #E
-        'lrsh'      : 0x0f,
-        'arsh'      : 0x10,
-        'alsh'      : 0x11,
-        'or'        : 0x12,
-        'and'       : 0x13,
-        'xor'       : 0x14,
-        'not'       : 0x15,
-        #mult->mull
-        'mult'      : 0x0b,
-        #mul->mull
-        'mul'       : 0x0b,
-        'i'         : 0xf0,
-        'o'         : 0xff,
-    },
-    'lut_value' : IdentDict(),
+    'add'       : 0x00,
+    'sub'       : 0x01,
+    #2-3
+    'lt'        : 0x04,
+    'ge'        : 0x05,
+    'xnorr'     : 0x06,
+    'xorr'      : 0x07,
+    'select'    : 0x08,
+    #9-A
+    'mull'      : 0x0b,
+    'mulm'      : 0x0c,
+    'mulh'      : 0x0d,
+    #E
+    'lrsh'      : 0x0f,
+    'arsh'      : 0x10,
+    'alsh'      : 0x11,
+    'or'        : 0x12,
+    'and'       : 0x13,
+    'xor'       : 0x14,
+    'not'       : 0x15,
+    #mult->mull
+    'mult'      : 0x0b,
+    #mul->mull
+    'mul'       : 0x0b,
+    'i'         : 0xf0,
+    'o'         : 0xff,
 }
 
-_pe_reg = {
-    'alu_op'    : 0xff,
-    'lut_value' : 0x00,
-    'op_a_in'   : 0xf0,
-    'op_b_in'   : 0xf1,
+_const_reg = {
+    'data0'   : (0xf0, 16,),
+    'data1'   : (0xf1, 16,),
+    'data2'   : (0xf2, 16,),
+    'bit0'    : (0xf3,  1,),
+    'bit1'    : (0xf4,  1,),
+    'bit2'    : (0xf5,  1,),
 }
+
+#[(reg, (bith, bitll), value)] 
+#_op_reg = {
+#    'alu_op'    : [(0xff, (5,0), None),]
+#    'lut_value' : [(0x00, (8,0), None), (0xff, (9,9), 1),]
+#}
+
 
 
 _port_offsets = {
-    'op_d_p_in' : 8, #24,
-    'op_c_in'   : 10, #20,
-    'op_b_in'   : 12, #18,
-    'op_a_in'   : 14, #16,
+    'data0'   : 16,
+    'data1'   : 18,
+    'data2'   : 20,
+    'bit0'    : 24,
+    'bit1'    : 26,
+    'bit2'    : 28,
 }
 
 _reg_mode = {
@@ -78,7 +90,6 @@ _reg_mode = {
     'DELAY'  : 0x3,
 }
 
-_LUT_ENABLE = 7 #9
 
 _mem_translate = {
     'mode' : {
@@ -170,101 +181,98 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
         if mod.type_ == 'PE':
             for k in mod.config:
-                if k in _op_translate:
-                    d = _op_translate[k]
-                    reg = _pe_reg[k]
-                    idx = (tile_addr, feature_address, reg)
+                if k == 'alu_op':
+                    reg = _ALU_REG
+                    d = _op_translate[mod.config[k]]
+                elif k == 'lut_value':
+                    idx = (tile_addr, feature_address, _ALU_REG)
+                    b_dict[idx][_LUT_ENABLE] |= 1
+                    c_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
+                    d_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = id_fmt.format(mod.id)
+                    reg = _LUT_REG
+                    d = mod.config[k]
+                else:
+                    print(k)
 
-                    if d[mod.config[k]].bit_length() > _bit_widths[k]:
-                        raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
-                            k,
-                            _bit_widths[k],
-                            d[mod.config[k]],
-                            d[mod.config[k]].bit_length()
-                            ))
+                if d.bit_length() > _bit_widths[k]:
+                    raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
+                        k,
+                        _bit_widths[k],
+                        d,
+                        d.bit_length()
+                        ))
 
-                    b_dict[idx] |= d[mod.config[k]]
-                    c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
-                    d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
-
-
-            if 'lut_value' in mod.config:
-                reg = _pe_reg['alu_op']
                 idx = (tile_addr, feature_address, reg)
+                b_dict[idx] |= d
+                c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
+                d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
 
-                b_dict[idx][_LUT_ENABLE] |= 1
-                c_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
-                d_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = id_fmt.format(mod.id)
 
 
             for port in mod.inputs:
                 tie = mod.inputs[port]
-
                 src = tie.src
+
                 if port not in _port_offsets:
                     assert src.type_ != 'Const'
                     assert port not in mod.registered_ports
                     continue
 
                 if src.type_ == 'Const':
-                    reg = _pe_reg[port]
+                    reg, width = _const_reg[port]
                     idx = (tile_addr, feature_address, reg)
+                    d = src.config
+                    if d.bit_length() > width:
+                        raise ValueError("Const on port `{}' should be {} bits. Given value `{}' requires {} bits".format(
+                            port,
+                            widt,
+                            d,
+                            d.bit_length()
+                            ))
 
-
-                    b_dict[idx] |= src.config # load 'op_a_in' reg with const
-                    c_dict[idx][(15,0)] = Annotations.init_reg(port, src.config)
-                    d_dict[idx][(15,0)] = id_fmt.format(mod.id)
-
-                    reg  = _pe_reg['alu_op']
-                    idx = (tile_addr, feature_address, reg)
-
-                    offset =  _port_offsets[port]
-                    b_dict[idx] |=  _reg_mode['CONST'] << offset
-                    c_dict[idx][(offset+1, offset)] = '{}: REG_CONST'.format(port)
-                    d_dict[idx][(offset+1, offset)] = id_fmt.format(mod.id)
+                    b_dict[idx] |= d # load 'data0' reg with const
+                    c_dict[idx][(width-1,0)] = Annotations.init_reg(port, src.config)
+                    d_dict[idx][(width-1,0)] = id_fmt.format(mod.id)
+                    mode = 'CONST'
 
                 elif port in mod.registered_ports:
-                    reg = _pe_reg['alu_op']
-                    idx = (tile_addr, feature_address, reg)
-                    offset =  _port_offsets[port]
-                    b_dict[idx] |=  _reg_mode['DELAY'] << offset
-                    c_dict[idx][(offset+1, offset)] = '{}: REG_DELAY'.format(port)
-                    d_dict[idx][(offset+1, offset)] = id_fmt.format(mod.id)
+                    mode = 'DELAY'
 
                 else:
-                    reg = _pe_reg['alu_op']
-                    idx = (tile_addr, feature_address, reg)
-                    offset =  _port_offsets[port]
+                    mode = 'BYPASS'
 
-                    b_dict[idx] |=  _reg_mode['BYPASS'] << offset
-                    c_dict[idx][(offset+1, offset)] = '{}: REG_BYPASS'.format(port)
-                    d_dict[idx][(offset+1, offset)] = id_fmt.format(mod.id)
+                reg = _ALU_REG
+                idx = (tile_addr, feature_address, reg)
+                offset =  _port_offsets[port]
 
+                b_dict[idx] |=  _reg_mode[mode] << offset
+                c_dict[idx][(offset+1, offset)] = '{}: REG_{}'.format(port, mode)
+                d_dict[idx][(offset+1, offset)] = id_fmt.format(mod.id)
 
 
         elif mod.type_ == 'IO':
-            reg = _pe_reg['alu_op']
+            reg = _ALU_REG
             idx = (tile_addr, feature_address, reg)
 
-            b_dict[idx] |= _op_translate['alu_op'][mod.config]
+            b_dict[idx] |= _op_translate[mod.config]
 
 
             if mod.config == 'i':
                 c_dict[idx][(5, 0)] = Annotations.op_config('alu_op', 'input')
                 d_dict[idx][(5, 0)] = id_fmt.format(mod.id)
 
-                reg = _pe_reg['op_a_in']
+                reg, _ = _const_reg['data0']
                 idx = (tile_addr, feature_address, reg)
                 b_dict[idx]  = 0xffffffff
 
-                reg = _pe_reg['op_b_in']
+                reg, _ = _const_reg['data1']
                 idx = (tile_addr, feature_address, reg)
                 b_dict[idx]  = 0xffffffff
             else:
                 c_dict[idx][(5, 0)] = Annotations.op_config('alu_op', 'output')
                 d_dict[idx][(5, 0)] = id_fmt.format(mod.id)
 
-                reg = _pe_reg['op_b_in']
+                reg, _ = _const_reg['data1']
                 idx = (tile_addr, feature_address, reg)
                 b_dict[idx]  = 0xffffffff
 

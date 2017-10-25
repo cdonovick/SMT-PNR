@@ -262,10 +262,20 @@ def register_colors(region, fabric, design, state, vars, solver):
 
 def pin_IO(region, fabric, design, state, vars, solver):
     constraints = []
+    seen_i = False
+    seen_o = False
     for module in design.modules_with_attr_val('type_', 'IO'):
         v = vars[module]
         r,c = v[fabric.rows_dim], v[fabric.cols_dim]
-        constraints.append(solver.Or([r == 0, c == 0]))
+        if module.config == 'i':
+            assert not seen_i, 'Current IO hack requires single input'
+            seen_i = True
+            constraints.append(solver.And([r == 0, c == 0]))
+        else:
+            assert not seen_o, 'Current iO hack requires single output'
+            seen_o = True
+            constraints.append(solver.And([r == 1, c == 0]))
+
     return solver.And(constraints)
 
 
