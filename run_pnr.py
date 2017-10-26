@@ -147,24 +147,38 @@ def cgra_flow():
             sys.stdout.flush()
         else:
             tight = False
+            end = timer()
+            if args.time:
+                print("Unsat after {}s".format(end - start))
+                
             print('relaxing...', end=' ')
+
             sys.stdout.flush()
 
             if relaxed and p.place_design(PLACE_RELAXED, pnr.place_model_reader):
-                end = timer()
+                end_2 = timer()
                 print("success!")
                 if args.time:
-                    print("placement took {}s".format(end - start))
+                    print("Sat after {}s".format(end_2 - end)) 
+                    print("placement took {}s".format(end_2 - start))
                 sys.stdout.flush()
             else:
                 relaxed = False
+                end_2 = timer()
+                if args.time:
+                    print("Unsat after {}s".format(end_2 - end))
+
                 print('relaxing...', end=' ')
                 if p.place_design(PLACE_EXTRA_RELAXED, pnr.place_model_reader):
-                    end = timer()
+                    end_3 = timer()
                     print("success!")
                     if args.time:
-                        print("placement took {}s".format(end - start))
+                        print("Sat after {}s".format(end_3 - end_2)) 
+                        print("placement took {}s".format(end_3 - start))
                 else:
+                    end_3 = timer()
+                    if args.timer():
+                        print("Unsat after {}s".format(end_3 - end_2))
                     print("!!!failure!!!")
                     sys.exit(1)
 
