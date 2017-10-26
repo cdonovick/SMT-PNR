@@ -94,16 +94,15 @@ class PNR:
             c = f(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.Assert(c)
 
+        if smt_dir is not None:
+            c = 0
+            fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
+            while os.path.isfile(fname):
+                c += 1
+                fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
+            self._place_solver.ToSmt2(fname)
+
         if not self._place_solver.CheckSat():
-            if smt_dir is not None:
-                c = 0
-                fname = os.path.join(smt_dir, 'u_{}_{}'.format(self._solver_str, c))
-                while os.path.isfile(fname):
-                    c += 1
-                    fname = os.path.join(smt_dir, 'u_{}_{}'.format(self._solver_str, c))
-
-                self._place_solver.ToSmt2(fname)
-
             self._place_solver.Reset()
             # set options for smt solver
             if self._smt_solver:
@@ -112,14 +111,6 @@ class PNR:
                 self._place_vars = dict()
             return False
 
-        if smt_dir is not None:
-            c = 0
-            fname = os.path.join(smt_dir, 'u_{}_{}'.format(self._solver_str, c))
-            while os.path.isfile(fname):
-                c += 1
-                fname = os.path.join(smt_dir, 'u_{}_{}'.format(self._solver_str, c))
-
-            self._place_solver.ToSmt2(fname)
 
         model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
 
