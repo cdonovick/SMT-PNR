@@ -42,7 +42,7 @@ class PNR:
             self._place_solver.SetOption('random-seed', seed)
 
             # use best settings per solver
-            if solver_str == 'CVC4':
+            if self._solver_str == 'CVC4':
                 self._place_solver.SetOption('bitblast', 'eager')
                 self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
 
@@ -108,6 +108,10 @@ class PNR:
             if self._smt_solver:
                 self._place_solver.SetOption('produce-models', 'true')
                 self._place_solver.SetLogic('QF_BV')
+                # use best settings per solver
+                if self._solver_str == 'CVC4':
+                    self._place_solver.SetOption('bitblast', 'eager')
+                    self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
                 self._place_vars = dict()
             return False
 
