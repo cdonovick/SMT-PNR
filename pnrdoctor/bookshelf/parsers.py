@@ -1,15 +1,19 @@
 from pnrdoctor.util import BiMultiDict
+import os
+
 import sys
 import functools as ft
 
 def parse_all(aux):
     files = parse_aux(aux)
+
     lib_f = None
     nets_f = None
     nodes_f = None
     pl_f = None
     scl_f = None
     wts_f = None
+
 
     for f in files:
         if f.endswith('.lib'):
@@ -39,37 +43,37 @@ def parse_all(aux):
     assert pl_f is not None
     assert scl_f is not None
     assert wts_f is not None
-    
-    site_types, site_resources, resources, site_map, max_x, max_y = parse_scl(scl_f)
-    # site_types     :: site_name -> resource -> capacity
-    # site_resources :: site_name <-> resource
-    # resources :: resource <-> concrete_resource 
-    # site_map :: site_name <-> (x, y)
+
+    site_types, site_kinds, kinds, site_map, max_x, max_y = parse_scl(scl_f)
+    # site_types :: site_name -> kind -> capacity
+    # site_kinds :: site_name <-> kind
+    # kinds      :: kind <-> resource
+    # site_map   :: site_name <-> (x, y)
 
     instances = parse_nodes(nodes_f)
-    # instances :: instance_name <-> concrete_resource 
+    # instances :: instance_name <-> resource
 
     placement = parse_pl(pl_f)
     # placement :: instance_name <-> (x, y, z)
-    
-    cells = parse_lib(lib_f)  
-    # cells :: concrete_resource -> pin_name -> ((INPUT | OUTPUT), (CLOCK | CTRL | SIG))
-    
-    nets = parse_nets(nets_f) 
-    # nets :: net_name -> {(instance_name, pin_name)}
+
+    cells = parse_lib(lib_f)
+    # cells :: resource -> port_name -> ((INPUT | OUTPUT), (CLOCK | CTRL | SIG))
+
+    nets = parse_nets(nets_f)
+    # nets :: net_name -> {(instance_name, port_name)}
 
     # ASSERT SANITY
 
     assert site_map.keys() <= site_types.keys()
-    assert site_resources.keys() == site_types.keys()
-    # site_name[*].values() == site_resources.values()
-    assert set.union(*map(set, site_types.values())) == site_resources.values()
-    assert site_resources.values() == resources.keys()
-            
+    assert site_kinds.keys() == site_types.keys()
+    # site_name[*].values() == site_kinds.values()
+    assert set.union(*map(set, site_types.values())) == site_kinds.values()
+    assert site_kinds.values() == kinds.keys()
 
 
-    assert instances.values() <= resources.values() 
-    assert resources.values() == cells.keys()
+
+    assert instances.values() <= kinds.values()
+    assert kinds.values() == cells.keys()
     assert placement.keys() <= instances.keys()
 
     for (x,y) in site_map.I:
@@ -80,81 +84,82 @@ def parse_all(aux):
     for inst, (x,y,z) in placement.items():
         c_res = instances[inst]
         assert len(c_res) == 1
-        res_l = resources.I[c_res[0]]
+        res_l = kinds.I[c_res[0]]
 
         # the sites that could potentially hold this inst
-        p_sites = ft.reduce(set.union, (site_resources[r] for r in res_l))
+        p_sites = ft.reduce(set.union, (site_kinds[r] for r in res_l))
 
         # the site at (x,y)
         site_name = site_map.I[(x,y)][0]
-        
+
         # the inst can be placed here
         assert site_name in p_sites
         # the inst has valid z
         assert any(z < site_types[site_name][r] for r in res_l if r in site_types[site_name])
-    
+
     for terminal_set in nets.values():
         num_drivers = 0
-        for (inst, pin) in terminal_set:
+        for (inst, port) in terminal_set:
             assert inst in instances
-            assert pin in cells[instances[inst][0]]
-            if cells[instances[inst][0]][pin][0] == 'OUTPUT':
+            assert port in cells[instances[inst][0]]
+            if cells[instances[inst][0]][port][0] == 'OUTPUT':
                 num_drivers += 1
         assert num_drivers == 1, terminal_set
-    
-    for c_res in instances.I:
+
+    for res in instances.I:
         t = False
-        for res in resources.I[c_res]:
-            for site_name in site_resources.I[res]:
+        for kind in kinds.I[res]:
+            for site_name in site_kinds.I[kind]:
                 t = len(site_map[site_name]) > 0
                 if t:
                     break
             if t:
                 break
-        # assert for all conrete_resources in the design there is spot to put them
+        # assert for all resources in the design there is a spot to put them
         assert t
 
     # END SANITY CHECKS
 
-    # Start stripping info we don't care about like sites
+    # Strip info we don't care about, e.g., sites
 
-    resource_map = BiMultiDict()
-    # resource <-> (x, y)
-    resource_cap = dict()
-    # resource -> max_z
-    for site_name, d_res_cap in site_types.items():
-        for res, max_z in d_res_cap.items():
-            if res in resource_cap:
+    kind_map = BiMultiDict()
+    # kind <-> (x, y)
+    kind_cap = dict()
+    # kind -> max_z
+    for site_name, d_kind_cap in site_types.items():
+        for kind, max_z in d_kind_cap.items():
+            if kind in kind_cap:
                 # -- HACK --
                 # assume max_z is the same for all (x,y)
                 # if this assumption is wrong constraint building is going to be rough
-                # this is equivalent to assuming each resource exists in only one site
-                assert resource_cap[res] == max_z
+                # this is equivalent to assuming each kind exists in only one site
+                assert kind_cap[kind] == max_z
             else:
-                resource_cap[res] = max_z
+                kind_cap[kind] = max_z
 
             for (x, y) in site_map[site_name]:
-                resource_map[res] = (x, y)
+                kind_map[kind] = (x, y)
 
     modules = dict()
-    # inst_name -> (resource, concrete_resource)
-    for inst, c_res in instances.items():
+    # inst_name -> (kind, resource, ports)
+    for inst, res in instances.items():
         assert inst not in modules
         # -- HACK --
-        # if more than one resource can hold concrete_resource constraint building is gunna be rough
-        assert len(resources.I[c_res]) == 1
+        # if more than one kind can hold resource constraint building is gunna be rough
+        assert len(kinds.I[res]) == 1
         modules[inst] = {
-                'resource' :  resources.I[c_res][0],
-                'concrete' :  c_res,
-                'pins'     :  cells[c_res]
+                'kind'  :  kinds.I[res][0],
+                'res'   :  res,
+                'ports' :  cells[res]
         }
 
-    return resource_map, resource_cap, modules, nets, placement
+    return kind_map, kind_cap, modules, nets, placement, max_x, max_y
 
-    
+
 
 def parse_aux(aux):
     done = False
+    prefix = os.path.dirname(os.path.join(os.getcwd(), aux))
     with open(aux, 'r') as file:
         for line in file:
             line=line.strip()
@@ -170,13 +175,12 @@ def parse_aux(aux):
             files = words[2:]
             done  = True
 
-    return files
-
+    return map(lambda f : os.path.join(prefix, f), files)
 
 def parse_lib(lib):
     with open(lib, 'r') as file:
         res = None
-        # concrete_resource -> pin_name -> ((INPUT | OUTPUT), (CLOCK | CTRL | SIG))
+        # resource -> port_name -> ((INPUT | OUTPUT), (CLOCK | CTRL | SIG))
         cells = dict()
         for line in file:
             line = line.strip()
@@ -209,7 +213,7 @@ def parse_lib(lib):
 
 def parse_nodes(nodes):
     with open(nodes, 'r') as file:
-        # instance_name <-> concrete_resource 
+        # instance_name <-> resource
         insts = BiMultiDict()
         for line in file:
             line = line.strip()
@@ -228,7 +232,7 @@ def parse_nodes(nodes):
 def parse_nets(nets):
     with open(nets, 'r') as file:
         net = None
-        # net_name -> {(instance, pin)}
+        # net_name -> {(instance, port)}
         nets = dict()
         for line in file:
             line = line.strip()
@@ -252,21 +256,21 @@ def parse_nets(nets):
                 else:
                     assert len(words) == 2
                     inst = words[0]
-                    pin = words[1]
-                    nets[net].add((inst, pin))
+                    port = words[1]
+                    nets[net].add((inst, port))
     return nets
 
 
 def parse_pl(pl):
     with open(pl, 'r') as file:
         #instance_name -> (x, y, z)
-        placement = BiMultiDict() 
+        placement = BiMultiDict()
         for line in file:
             line = line.strip()
             #blank line
             if not line:
                 continue
-            
+
             words = line.split()
             assert len(words) == 4 or len(words) == 5
             inst = words[0]
@@ -282,28 +286,28 @@ def parse_scl(scl):
     with open(scl, 'r') as file:
         in_site = False
         site_name = None
-        # site_name -> resource -> capacity
+        # site_name -> kind -> capacity
         site_types = dict()
-        # site_name <-> resource
-        site_resources = BiMultiDict()
+        # site_name <-> kind
+        site_kinds = BiMultiDict()
 
         in_resources = False
-        # resource <-> concrete_resource 
-        resources = BiMultiDict()
+        # kind <-> resource
+        kinds = BiMultiDict()
 
 
         in_map = False
         max_x = 0
         max_y = 0
         # site_name <-> (x, y)
-        site_map = BiMultiDict() 
+        site_map = BiMultiDict()
 
         for line in file:
             line = line.strip()
             #blank line
             if not line:
                 continue
-            
+
             words = line.split()
             #stateless
             if not any((in_site, in_resources, in_map)):
@@ -337,7 +341,7 @@ def parse_scl(scl):
                     res = words[0]
                     n = int(words[1])
                     site_types[site_name][res] = n
-                    site_resources[site_name] = res
+                    site_kinds[site_name] = res
             # RESOURCES
             elif in_resources:
                 assert not in_map
@@ -350,7 +354,7 @@ def parse_scl(scl):
                     assert len(words) >= 2
                     res = words[0]
                     for r in words[1:]:
-                        resources[res] = r
+                        kinds[res] = r
             # SITEMAP
             else:
                 assert in_map
@@ -366,7 +370,7 @@ def parse_scl(scl):
                     site_type = words[2]
                     site_map[site_type] = (x,y)
 
-    return site_types, site_resources, resources, site_map, max_x, max_y
+    return site_types, site_kinds, kinds, site_map, max_x, max_y
 
 def parse_wts(wts):
     pass

@@ -6,3 +6,4 @@ from . import smt
 from . import ilp
 from . import ice
 from . import util
+from . import bookshelf

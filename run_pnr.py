@@ -28,6 +28,20 @@ design_file = args.design
 fabric_file = args.fabric
 seed = args.seed
 
+def book_flow():
+    from timeit import default_timer as timer
+    from pnrdoctor.bookshelf import parsers
+    from pnrdoctor.bookshelf import design
+    from pnrdoctor.bookshelf import fabric
+
+    kind_map, kind_cap, modules, nets, placement, max_x, max_y = parsers.parse_all(design_file)
+
+    print('building design...', end='')
+    des  = design.Design(modules, nets)
+    fab  = fabric.Fabric(max_x, max_y, kind_map, kind_cap)
+
+
+
 def ice_flow():
     from pnrdoctor.ice import design, blif2graph, fabric, constraints
     from pnrdoctor.ice.pnr import PNR
@@ -241,9 +255,11 @@ def cgra_flow():
 
 
 
+
 FLOWS = {
-    'CGRA'  : cgra_flow,
-    'ICE40' : ice_flow,
+    'CGRA'      : cgra_flow,
+    'ICE40'     : ice_flow,
+    'Bookshelf' : book_flow,
 }
 
 
