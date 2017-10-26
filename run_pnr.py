@@ -21,7 +21,7 @@ parser.add_argument('--seed', help='Seed the randomness in solvers', default=1)
 parser.add_argument('--time', action='store_true', help='Print timing information.')
 parser.add_argument('--target', metavar='<TARGET_ARCH>',  help='target specific arch', default='CGRA')
 parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
-
+parser.add_argument('--dump-smt2', dest='smt_dir' , metavar='<SMT DIR>', help='Dump placement constraints to directory')
 args = parser.parse_args()
 
 design_file = args.design
@@ -139,7 +139,7 @@ def cgra_flow():
         sys.stdout.flush()
 
         start = timer()
-        if tight and p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+        if tight and p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader, args.smt_dir):
             end = timer()
             print("success!")
             if args.time:
@@ -155,7 +155,7 @@ def cgra_flow():
 
             sys.stdout.flush()
 
-            if relaxed and p.place_design(PLACE_RELAXED, pnr.place_model_reader):
+            if relaxed and p.place_design(PLACE_RELAXED, pnr.place_model_reader, args.smt_dir):
                 end_2 = timer()
                 print("success!")
                 if args.time:
@@ -169,7 +169,7 @@ def cgra_flow():
                     print("Unsat after {}s".format(end_2 - end))
 
                 print('relaxing...', end=' ')
-                if p.place_design(PLACE_EXTRA_RELAXED, pnr.place_model_reader):
+                if p.place_design(PLACE_EXTRA_RELAXED, pnr.place_model_reader, args.smt_dir):
                     end_3 = timer()
                     print("success!")
                     if args.time:

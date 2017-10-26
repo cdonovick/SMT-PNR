@@ -8,56 +8,6 @@
           "out":["Array",16,"Bit"]
         }],
         "instances":{
-          "0const0_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],0]}
-          },
-          "11const11_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],11]}
-          },
-          "12const12_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],12]}
-          },
-          "13const13_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],13]}
-          },
-          "14const14_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],14]}
-          },
-          "15const15_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],15]}
-          },
-          "16const16_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],16]}
-          },
-          "17const17_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],17]}
-          },
-          "18const18_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],18]}
-          },
-          "19const19_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],19]}
-          },
           "add_457_460_461_PE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
@@ -103,6 +53,56 @@
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
             "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
           },
+          "const0_0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],0]}
+          },
+          "const11_11":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],11]}
+          },
+          "const12_12":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],12]}
+          },
+          "const13_13$1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],13]}
+          },
+          "const14_14":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],14]}
+          },
+          "const15_15":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],15]}
+          },
+          "const16_16":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],16]}
+          },
+          "const17_17":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],17]}
+          },
+          "const18_18":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],18]}
+          },
+          "const19_19":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],19]}
+          },
           "io16_out":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
@@ -125,27 +125,33 @@
           },
           "lb_p4_clamped_stencil_update_stream$reg_0_1":{
             "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"init":[["BitVector",16],0]}
           },
           "lb_p4_clamped_stencil_update_stream$reg_0_2":{
             "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"init":[["BitVector",16],0]}
           },
           "lb_p4_clamped_stencil_update_stream$reg_1_1":{
             "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"init":[["BitVector",16],0]}
           },
           "lb_p4_clamped_stencil_update_stream$reg_1_2":{
             "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"init":[["BitVector",16],0]}
           },
           "lb_p4_clamped_stencil_update_stream$reg_2_1":{
             "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"init":[["BitVector",16],0]}
           },
           "lb_p4_clamped_stencil_update_stream$reg_2_2":{
             "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
+            "genargs":{"width":["Int",16]},
+            "modargs":{"init":[["BitVector",16],0]}
           },
           "lb_p4_clamped_stencil_update_stream_wen_lut_bitPE":{
             "genref":"cgralib.PE",
@@ -199,16 +205,16 @@
           }
         },
         "connections":[
-          ["0const0_.out","add_457_460_461_PE.data.in.0"],
-          ["11const11_.out","mul_45911_460_PE.data.in.1"],
-          ["12const12_.out","mul_47112_472_PE.data.in.1"],
-          ["13const13_.out","mul_48313_484_PE.data.in.1"],
-          ["14const14_.out","mul_46314_464_PE.data.in.1"],
-          ["15const15_.out","mul_47515_476_PE.data.in.1"],
-          ["16const16_.out","mul_48716_488_PE.data.in.1"],
-          ["17const17_.out","mul_46717_468_PE.data.in.1"],
-          ["18const18_.out","mul_47918_480_PE.data.in.1"],
-          ["19const19_.out","mul_49119_492_PE.data.in.1"],
+          ["const0_0.out","add_457_460_461_PE.data.in.0"],
+          ["const11_11.out","mul_45911_460_PE.data.in.1"],
+          ["const12_12.out","mul_47112_472_PE.data.in.1"],
+          ["const13_13$1.out","mul_48313_484_PE.data.in.1"],
+          ["const14_14.out","mul_46314_464_PE.data.in.1"],
+          ["const15_15.out","mul_47515_476_PE.data.in.1"],
+          ["const16_16.out","mul_48716_488_PE.data.in.1"],
+          ["const17_17.out","mul_46717_468_PE.data.in.1"],
+          ["const18_18.out","mul_47918_480_PE.data.in.1"],
+          ["const19_19.out","mul_49119_492_PE.data.in.1"],
           ["io16_out.in","add_457_492_493_PE.data.out"],
           ["io16in_in_0.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata"],
           ["io16in_in_0.out","lb_p4_clamped_stencil_update_stream$reg_0_1.in"],
@@ -246,70 +252,6 @@
           ["mul_48313_484_PE.data.out","add_457_484_485_PE.data.in.1"],
           ["mul_48716_488_PE.data.out","add_457_488_489_PE.data.in.1"],
           ["mul_49119_492_PE.data.out","add_457_492_493_PE.data.in.1"]
-        ]
-      },
-      "Linebuffer_U0":{
-        "type":["Record",{
-          "in":["Array",16,"BitIn"],
-          "wen":"BitIn",
-          "out":["Array",3,["Array",3,["Array",16,"Bit"]]]
-        }],
-        "instances":{
-          "mem_1$cgramem":{
-            "genref":"cgralib.Mem",
-            "genargs":{"depth":["Int",1024], "width":["Int",16]},
-            "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",64], "mode":["String","linebuffer"]}
-          },
-          "mem_2$cgramem":{
-            "genref":"cgralib.Mem",
-            "genargs":{"depth":["Int",1024], "width":["Int",16]},
-            "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",64], "mode":["String","linebuffer"]}
-          },
-          "reg_0_1":{
-            "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
-          },
-          "reg_0_2":{
-            "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
-          },
-          "reg_1_1":{
-            "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
-          },
-          "reg_1_2":{
-            "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
-          },
-          "reg_2_1":{
-            "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
-          },
-          "reg_2_2":{
-            "genref":"coreir.reg",
-            "genargs":{"clr":["Bool",false], "en":["Bool",false], "rst":["Bool",false], "width":["Int",16]}
-          }
-        },
-        "connections":[
-          ["mem_1$cgramem.rdata","mem_2$cgramem.wdata"],
-          ["mem_1$cgramem.rdata","reg_1_1.in"],
-          ["mem_1$cgramem.rdata","self.out.1.2"],
-          ["mem_1$cgramem.wdata","self.in"],
-          ["mem_1$cgramem.wen","self.wen"],
-          ["mem_2$cgramem.rdata","reg_2_1.in"],
-          ["mem_2$cgramem.rdata","self.out.0.2"],
-          ["mem_2$cgramem.wen","self.wen"],
-          ["reg_0_1.in","self.in"],
-          ["reg_0_1.out","reg_0_2.in"],
-          ["reg_0_1.out","self.out.2.1"],
-          ["reg_0_2.out","self.out.2.0"],
-          ["reg_1_1.out","reg_1_2.in"],
-          ["reg_1_1.out","self.out.1.1"],
-          ["reg_1_2.out","self.out.1.0"],
-          ["reg_2_1.out","reg_2_2.in"],
-          ["reg_2_1.out","self.out.0.1"],
-          ["reg_2_2.out","self.out.0.0"],
-          ["self.in","self.out.2.2"]
         ]
       }
     }

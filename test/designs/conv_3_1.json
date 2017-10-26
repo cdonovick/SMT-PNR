@@ -8,26 +8,6 @@
           "out":["Array",16,"Bit"]
         }],
         "instances":{
-          "0const0_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],0]}
-          },
-          "3const3_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],3]}
-          },
-          "5const5_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],5]}
-          },
-          "7const7_":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],7]}
-          },
           "add_340_343_344_PE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
@@ -42,6 +22,26 @@
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
             "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
+          },
+          "const0_0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],0]}
+          },
+          "const3_3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],3]}
+          },
+          "const5_5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],5]}
+          },
+          "const7_7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],7]}
           },
           "io16_out":{
             "genref":"cgralib.IO",
@@ -85,10 +85,10 @@
           }
         },
         "connections":[
-          ["0const0_.out","add_340_343_344_PE.data.in.0"],
-          ["3const3_.out","mul_3423_343_PE.data.in.1"],
-          ["5const5_.out","mul_3465_347_PE.data.in.1"],
-          ["7const7_.out","mul_3507_351_PE.data.in.1"],
+          ["const0_0.out","add_340_343_344_PE.data.in.0"],
+          ["const3_3.out","mul_3423_343_PE.data.in.1"],
+          ["const5_5.out","mul_3465_347_PE.data.in.1"],
+          ["const7_7.out","mul_3507_351_PE.data.in.1"],
           ["io16_out.in","add_340_351_352_PE.data.out"],
           ["io16in_in_0.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata"],
           ["io16in_in_0.out","mul_3507_351_PE.data.in.0"],
@@ -102,34 +102,6 @@
           ["mul_3423_343_PE.data.out","add_340_343_344_PE.data.in.1"],
           ["mul_3465_347_PE.data.out","add_340_347_348_PE.data.in.1"],
           ["mul_3507_351_PE.data.out","add_340_351_352_PE.data.in.1"]
-        ]
-      },
-      "Linebuffer_U0":{
-        "type":["Record",{
-          "in":["Array",16,"BitIn"],
-          "wen":"BitIn",
-          "out":["Array",3,["Array",1,["Array",16,"Bit"]]]
-        }],
-        "instances":{
-          "mem_1$cgramem":{
-            "genref":"cgralib.Mem",
-            "genargs":{"depth":["Int",1024], "width":["Int",16]},
-            "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",10], "mode":["String","linebuffer"]}
-          },
-          "mem_2$cgramem":{
-            "genref":"cgralib.Mem",
-            "genargs":{"depth":["Int",1024], "width":["Int",16]},
-            "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",10], "mode":["String","linebuffer"]}
-          }
-        },
-        "connections":[
-          ["mem_1$cgramem.rdata","mem_2$cgramem.wdata"],
-          ["mem_1$cgramem.rdata","self.out.1.0"],
-          ["mem_1$cgramem.wdata","self.in"],
-          ["mem_1$cgramem.wen","self.wen"],
-          ["mem_2$cgramem.rdata","self.out.0.0"],
-          ["mem_2$cgramem.wen","self.wen"],
-          ["self.in","self.out.2.0"]
         ]
       }
     }

@@ -8,7 +8,7 @@
           "out":["Array",16,"Bit"]
         }],
         "instances":{
-          "_348const2_":{
+          "const2__348":{
             "genref":"coreir.const",
             "genargs":{"width":["Int",16]},
             "modargs":{"value":[["BitVector",16],2]}
@@ -30,7 +30,7 @@
           }
         },
         "connections":[
-          ["_348const2_.out","mul_347_348_349_PE.data.in.1"],
+          ["const2__348.out","mul_347_348_349_PE.data.in.1"],
           ["io16_out.in","mul_347_348_349_PE.data.out"],
           ["io16in_in_0.out","mul_347_348_349_PE.data.in.0"]
         ]
