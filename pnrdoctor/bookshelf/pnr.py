@@ -1,4 +1,5 @@
 import itertools as it
+import sys
 
 from smt_switch import smt
 
@@ -52,7 +53,7 @@ class PNR:
             # so r.sizes can be safely mutated directly
             r.set_size({d : 0 for d in r.size})
             r.set_position({d : SYMBOLIC for d in r.position})
-            r.set_category({d : SYMBOLIC for d in r.category})
+            r.set_category({fabric.dims[module.kind] : SYMBOLIC})
 
             self._place_state[module] = r
 
@@ -64,9 +65,13 @@ class PNR:
 
     def place_design(self, funcs, model_reader):
         constraints = []
+        print('Builing contstraints...')
         for f in funcs:
             c = f(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.Assert(c)
+
+        print('end...')
+        sys.stdout.flush()
 
         if not self._place_solver.CheckSat():
             self._place_solver.Reset()

@@ -4,7 +4,9 @@ class Fabric:
     def __init__(self, max_x, max_y, kind_map, kind_cap):
         self._max_x = max_x
         self._max_y = max_y
+        # kind <-> (x, y)
         self._locations = kind_map
+        # kind -> max_z
         self._kind_cap = kind_cap
 
 
@@ -14,8 +16,8 @@ class Fabric:
         self._bounds = dict()
         for k, z in kind_cap.items():
             self._bounds[k] = z
-            self._dims[k] = kd = Scalar(k, z)
-            #self._dims[k] = kd = Category(k, z, one_hot=True)
+            #self._dims[k] = kd = Scalar(k, z)
+            self._dims[k] = kd = Category(k, z, one_hot=True)
 
         assert 'x' not in self.dims
         assert 'y' not in self.dims

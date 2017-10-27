@@ -33,12 +33,47 @@ def book_flow():
     from pnrdoctor.bookshelf import parsers
     from pnrdoctor.bookshelf import design
     from pnrdoctor.bookshelf import fabric
+    from pnrdoctor.bookshelf.pnr import PNR
+    from pnrdoctor.bookshelf import constraints
+    from pnrdoctor import pnr
+    from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
+    import math
 
+    print('parsing files...')
     kind_map, kind_cap, modules, nets, placement, max_x, max_y = parsers.parse_all(design_file)
 
-    print('building design...', end='')
+    print('building design...')
     des  = design.Design(modules, nets)
+    print('building fabric...')
     fab  = fabric.Fabric(max_x, max_y, kind_map, kind_cap)
+
+    ns = {n for n in des.nets if n.is_sig}
+    fac = sum(len(n) - 1 for n in ns) / len(ns)
+    nmods = len(des.modules)
+    rmods = math.ceil(fac*nmods**.5)
+    PLACE_CONSTRAINTS = [
+        constraints.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
+        #pnr.distinct,
+        constraints.HPWL(rmods, 2*nmods+2*rmods),
+    ]
+
+    print('building pnr object...')
+    p = PNR(fab, des, args.solver, seed)
+
+    print(sum(len(n) for n in ns)/len(ns))
+    print(max(len(n) for n in ns))
+    print(len(des.modules))
+    print(sum(n.num_dri for n in des.nets)/len(des.nets))
+    print(sum(n.num_rec for n in des.nets)/len(des.nets))
+
+    print('placing design...')
+    start = timer()
+    if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+        print("success!")
+
+    else:
+        print("failure")
+
 
 
 
