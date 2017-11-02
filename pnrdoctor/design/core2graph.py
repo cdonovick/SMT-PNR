@@ -13,7 +13,7 @@ def load_core(file, *libs):
 
     for inst in top_def.instances:
         inst_name = inst.selectpath[0]
-        inst_type = inst.module_name
+        inst_type = inst.module.name
         modules[inst_name] = {
             'type'  : None,
             'res'   : Resource.UNSET,
@@ -25,7 +25,7 @@ def load_core(file, *libs):
             modules[inst_name]['type'] = 'PE'
             modules[inst_name]['res']  = Resource.PE
             modules[inst_name]['conf'] = dict()
-            op_kind = inst.generator_args['op_kind'].value
+            op_kind = inst.module.generator_args['op_kind'].value
 
             if op_kind in ('alu', 'combined'):
                 modules[inst_name]['layer'] |= Layer.Data
