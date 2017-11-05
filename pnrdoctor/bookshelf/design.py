@@ -20,6 +20,8 @@ class Design(NamedIDObject):
 
         self._modules = frozenset(mods.values())
         self._nets = frozenset(_nets)
+        self._kinds = frozenset(m.kind for m in self.modules)
+
 
     @property
     def modules(self):
@@ -29,3 +31,6 @@ class Design(NamedIDObject):
     def nets(self):
         return self._nets
 
+    @property
+    def kinds(self):
+        return self._kinds

@@ -40,6 +40,12 @@ class Net(NamedIDObject):
         
         self.num_dri = sum(b.port_info[0] == 'OUTPUT' for b in self.binds) 
         self.num_rec = sum(b.port_info[0] == 'INPUT' for b in self.binds) 
+        src = None
+        for b in self.binds:
+            if b.port_info[0] == 'OUTPUT':
+                assert src is None
+                src = b.module
+        self._src = src
 
 
     @property
@@ -61,6 +67,10 @@ class Net(NamedIDObject):
     @property
     def is_sig(self):
         return self._is_sig
-
+    
+    @property
+    def src(self):
+        return self._src
+    
     def __len__(self):
         return len(self.binds)

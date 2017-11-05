@@ -7,6 +7,73 @@ from pnrdoctor.smt import smt_util as su
 
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
 
+
+
+#def do_magic(region, fabric, design, state, vars, solver):
+#    #make variables
+#    max_x = fabric.max_x
+#    max_y = fabric.max_y 
+#
+#    masks = dict()
+#    hams = dict()
+#    bits = dict()
+#    ones = dict()
+#
+#    for k in design.kinds:
+#        bits[k] = w = max_x * max_y * fabric.bounds[k]
+#        masks[k] = 0
+#        hams[k] = 0
+#        ones[k] = solver.TheoryConst(solver.BitVec(w), 1)
+#
+#
+#    constraints = []
+#    for module in design.modules:
+#        k = module.kind
+#        b = bits[k]
+#        m = masks[k]
+#
+#        vars[module] = v = solver.DeclareConst(module.name, solver.BitVec(b))
+#        bit_n = solver.DeclareConst(module.name + 'bit_n', solver.BitVec(b))
+#
+#
+#        constraints.append(v == ones[k] << bit_n)
+#        constraints.append(solver.BVUlt(bit_n, b))
+#        masks[k] = m | v
+#        hams[k] += 1
+#
+#
+#    for k,h in hams.items():
+#        constraints.append(su.hamming(masks[k] == h))
+#    
+#    return Solver.And(constraints)
+#
+
+def do_magic(region, fabric, design, state, vars, solver):
+    constraints = []
+    ufs = dict() 
+
+    mod_id = 0
+
+    for module in design.modules:
+        k = module.kind
+        vd = vars[module]
+        if k not in ufs:
+            ufs[k] = solver.DeclareFun(
+                k + '_F', 
+                [vd[fabric.x_dim]._var.sort, vd[fabric.y_dim]._var.sort, vd[fabric.dims[k]]._var.sort],
+                solver.BitVec(len(design.modules).bit_length())
+            )
+        constraints.append(
+                ufs[k](vd[fabric.x_dim]._var, vd[fabric.y_dim]._var, vd[fabric.dims[k]]._var) == mod_id
+        )
+        mod_id += 1
+
+
+    return solver.And(constraints)
+
+
+
+
 def init_regions(one_hot_type, category_type, scalar_type):
     def initializer(region, fabric, design, state, vars, solver):
         constraints = []
@@ -57,6 +124,26 @@ def pin_resource(region, fabric, design, state, vars, solver):
             cx.append(solver.And(cc))
         constraints.append(solver.Or(cx))
     return solver.And(constraints)
+
+def neihborhood(max_dist):
+    return partial(_neihborhood, max_dist)
+
+def _neihborhood(max_dist, region, fabric, design, state, vars, solver):
+    constraints = []
+    for net in design.nets:
+        src = net.src
+        src_v = vars[src]
+        dst_vs = [vars[dst] for dst in net.modules if dst != src]
+        for dst_v in dst_vs:
+            for d in (fabric.x_dim, fabric.y_dim):
+                dist = src_v[d].abs_delta(dst_v[d])
+                constraints.append(solver.BVUle(dist, max_dist)) 
+
+    return solver.And(constraints)
+
+
+    
+
 
 def HPWL(n_max, g_max):
     return partial(_HPWL, n_max, g_max)

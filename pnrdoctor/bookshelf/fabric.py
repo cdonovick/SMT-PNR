@@ -16,8 +16,8 @@ class Fabric:
         self._bounds = dict()
         for k, z in kind_cap.items():
             self._bounds[k] = z
-            #self._dims[k] = kd = Scalar(k, z)
-            self._dims[k] = kd = Category(k, z, one_hot=True)
+            self._dims[k] = kd = Scalar(k, z)
+            #self._dims[k] = kd = Category(k, z, one_hot=True)
 
         assert 'x' not in self.dims
         assert 'y' not in self.dims
@@ -28,6 +28,7 @@ class Fabric:
 
         self._region = Region('FPGA', self.dims.values(), from_space=True)
 
+        self._xy_dims = {'x' : xd, 'y':yd}
 
 
     @property
@@ -61,3 +62,7 @@ class Fabric:
     @property
     def dims(self):
         return self._dims
+
+    @property
+    def xy_dims(self):
+        return self._xy_dims

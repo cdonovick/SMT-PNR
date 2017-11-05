@@ -35,6 +35,7 @@ def book_flow():
     from pnrdoctor.bookshelf import fabric
     from pnrdoctor.bookshelf.pnr import PNR
     from pnrdoctor.bookshelf import constraints
+    from pnrdoctor.bookshelf import backends
     from pnrdoctor import pnr
     from pnrdoctor.smt.handlers import OneHotHandler, CategoryHandler, ScalarHandler
     import math
@@ -54,7 +55,9 @@ def book_flow():
     PLACE_CONSTRAINTS = [
         constraints.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
         #pnr.distinct,
-        constraints.HPWL(rmods, 2*nmods+2*rmods),
+        #constraints.neihborhood(10)
+        #constraints.do_magic
+        #constraints.HPWL(rmods, 2*nmods+2*rmods),
     ]
 
     print('building pnr object...')
@@ -69,6 +72,7 @@ def book_flow():
     print('placing design...')
     start = timer()
     if p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader):
+        p.write_design(backends.write_debug(des))
         print("success!")
 
     else:

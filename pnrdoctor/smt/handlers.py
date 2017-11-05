@@ -51,7 +51,11 @@ class BVHandler(BaseHandler):
 
     def encode(self, value):
         return type(self)('encoded_{}'.format(value), self.solver, self._bits, value)
-
+    
+    @property
+    def bits(self):
+        return self._bits
+    
     @property
     def value(self):
         return self.solver.GetValue(self._var).as_int()
@@ -80,6 +84,7 @@ class ScalarHandler(BVHandler):
 
         #return self.solver.Ite(delta >= 0, delta, -delta)
         return su.abs_ite(self.solver, delta)
+        return su.abs_bit(self.solver, delta)
 
     def distinct(self, other):
         if isinstance(other, type(self)):
@@ -149,4 +154,4 @@ class OneHotHandler(CategoryHandler):
         for i in range(self._bits):
             constraints.append(self.equal(1 << i))
 
-        return self.solver.And([self.solver.Or(constraints), super().invariants])
+        return True #self.solver.And([self.solver.Or(constraints), super().invariants])

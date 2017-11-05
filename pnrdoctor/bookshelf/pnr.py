@@ -51,9 +51,11 @@ class PNR:
             r = self._region.make_subregion(module.name)
             # kinda hackish need to make rules dictionary
             # so r.sizes can be safely mutated directly
-            r.set_size({d : 0 for d in r.size})
-            r.set_position({d : SYMBOLIC for d in r.position})
-            r.set_category({fabric.dims[module.kind] : SYMBOLIC})
+            r.set_size({d : 0 for d in r.position})
+            ds = set(fabric.xy_dims.values()) | { fabric.dims[module.kind] }
+            r.set_position({d : SYMBOLIC for d in ds})
+            r.set_position({d : None for d in r.position.keys() - ds})
+            #r.set_category({fabric.dims[module.kind] : SYMBOLIC})
 
             self._place_state[module] = r
 
