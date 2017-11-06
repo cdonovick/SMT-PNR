@@ -99,6 +99,14 @@ class Region(NamedIDObject):
         return self._space
 
     @property
+    def scalar_space(self):
+        return self._scalar_space
+
+    @property
+    def category_space(self):
+        return self._category_space
+
+    @property
     def subregions(self):
         return self._subregions
 
@@ -106,11 +114,11 @@ class Region(NamedIDObject):
         for d,c in category.items():
             # assert stuff
             assert d in self._category_space
-            if _is_set(c):
-                if self.parent is None:
-                    assert c & ~d.mask == 0
-                elif _is_set(self.parent.category[d]):
-                    assert c & ~self.parent.category[d] == e
+            #if _is_set(c):
+                #if self.parent is None:
+                #    assert c & ~d.mask == 0
+                #elif _is_set(self.parent.category[d]):
+                #    assert c & ~self.parent.category[d] == e
 
             self.category[d] = c
 
@@ -249,12 +257,12 @@ class Category(Dimension):
     def __init__(self, name, n_categories, one_hot=False):
         super().__init__(name)
         self._size = n_categories
-        self._mask = 2**n_categories - 1
+        #self._mask = 2**n_categories - 1
         self._one_hot = one_hot
 
-    @property
-    def mask(self):
-        return self._mask
+    #@property
+    #def mask(self):
+    #    return self._mask
 
     @property
     def size(self):

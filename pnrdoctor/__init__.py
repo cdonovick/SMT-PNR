@@ -5,4 +5,5 @@ from . import pnr
 from . import smt
 from . import ilp
 from . import ice
+from . import synth
 from . import util
