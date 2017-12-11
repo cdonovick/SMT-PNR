@@ -42,9 +42,9 @@ _op_translate = {
     'mulm'      : 0x0c,
     'mulh'      : 0x0d,
     #E
-    'lrsh'      : 0x0f,
-    'arsh'      : 0x10,
-    'alsh'      : 0x11,
+    'lshr'      : 0x0f,
+    'ashr'      : 0x10,
+    'ashl'      : 0x11,
     'or'        : 0x12,
     'and'       : 0x13,
     'xor'       : 0x14,
