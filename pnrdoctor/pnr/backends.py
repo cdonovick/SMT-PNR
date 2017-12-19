@@ -313,7 +313,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         fs = _format_elem(feature, _bit_widths['feature'])
         rs = _format_elem(reg, _bit_widths['reg'])
         ds = _format_elem(data, _bit_widths['data'])
-        return rs+fs+ts+' '+ds+'\n'
+        return ts+fs+rs+' '+ds+'\n'
 
     def _format_elem(elem, elem_bits):
         return '{:0{bits}X}'.format(elem, bits=elem_bits//4)
