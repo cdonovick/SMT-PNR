@@ -93,11 +93,11 @@ def cgra_flow():
 
         PLACE_CONSTRAINTS = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
-            pnr.distinct,
+#            pnr.distinct,
             pnr.register_colors,
             pnr.pin_IO,
             pnr.pin_resource_structured,
-            pnr.HPWL(rmods, nmods + rmods)
+            pnr.HPWL(2*rmods//3, nmods +3*rmods//2)
         ]
         PLACE_RELAXED     = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -105,7 +105,7 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_IO,
             pnr.pin_resource_structured,
-            pnr.HPWL(rmods, 2*nmods + rmods)
+            pnr.HPWL(2*rmods//3, nmods + 9*rmods//4)
         ]
         PLACE_EXTRA_RELAXED = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -113,7 +113,7 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_IO,
             pnr.pin_resource_structured,
-            pnr.HPWL(rmods, 4*nmods + rmods)
+            pnr.HPWL(3*rmods//4, nmods + 81*rmods//16)
         ]
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
@@ -139,7 +139,7 @@ def cgra_flow():
         sys.stdout.flush()
 
         start = timer()
-        if tight and p.place_design(PLACE_CONSTRAINTS, pnr.place_model_reader, args.smt_dir):
+        if tight and p.place_design(PLACE_CONSTRAINTS, pnr.distinct_model_reader, args.smt_dir):
             end = timer()
             print("success!")
             if args.time:
@@ -155,7 +155,7 @@ def cgra_flow():
 
             sys.stdout.flush()
 
-            if relaxed and p.place_design(PLACE_RELAXED, pnr.place_model_reader, args.smt_dir):
+            if relaxed and p.place_design(PLACE_RELAXED, pnr.distinct_model_reader, args.smt_dir):
                 end_2 = timer()
                 print("success!")
                 if args.time:
@@ -169,7 +169,7 @@ def cgra_flow():
                     print("Unsat after {}s".format(end_2 - end))
 
                 print('relaxing...', end=' ')
-                if p.place_design(PLACE_EXTRA_RELAXED, pnr.place_model_reader, args.smt_dir):
+                if p.place_design(PLACE_EXTRA_RELAXED, pnr.distinct_model_reader, args.smt_dir):
                     end_3 = timer()
                     print("success!")
                     if args.time:

@@ -1,5 +1,6 @@
 import itertools as it
 import os
+import sys
 
 from smt_switch import smt
 
@@ -14,9 +15,23 @@ from collections import defaultdict, namedtuple
 
 ''' Class for handling place & route '''
 class PNR:
+
+    def _set_smt_options(self):
+        self._place_solver.SetOption('produce-models', 'true')
+        self._place_solver.SetLogic('QF_UFBV')
+        self._place_solver.SetOption('random-seed', self._seed)
+
+        # use best settings per solver
+        if self._solver_str == 'CVC4':
+        #    self._place_solver.SetOption('bitblast', 'eager')
+            self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+        self._place_solver.SetOption('incremental', "true")
+
+
     def __init__(self, fabric, design, solver_str, seed=1):
         self._fabric = fabric
         self._design = design
+        self._seed = seed
 
         assert design.layers <= fabric.layers, \
           "The layers in the design should be a subset of the layers available in the fabric."
@@ -37,14 +52,7 @@ class PNR:
         else:
             self._place_solver = smt(solver_str)
             # set options
-            self._place_solver.SetOption('produce-models', 'true')
-            self._place_solver.SetLogic('QF_UFBV')
-            self._place_solver.SetOption('random-seed', seed)
-
-            # use best settings per solver
-            if self._solver_str == 'CVC4':
-                self._place_solver.SetOption('bitblast', 'eager')
-                self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+            self._set_smt_options()
 
         self._route_solver = Solver_monosat()
         self._route_solver.set_option('random-seed', seed)
@@ -89,36 +97,40 @@ class PNR:
         raise NotImplementedError()
 
     def place_design(self, funcs, model_reader, smt_dir=None):
-        constraints = []
         for f in funcs:
             c = f(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.Assert(c)
 
-        if smt_dir is not None:
-            c = 0
-            fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
-            while os.path.isfile(fname):
-                c += 1
-                fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
-            self._place_solver.ToSmt2(fname)
+        c_count = 0
 
-        if not self._place_solver.CheckSat():
-            self._place_solver.Reset()
-            # set options for smt solver
-            if self._smt_solver:
-                self._place_solver.SetOption('produce-models', 'true')
-                self._place_solver.SetLogic('QF_BV')
-                # use best settings per solver
-                if self._solver_str == 'CVC4':
-                    self._place_solver.SetOption('bitblast', 'eager')
-                    self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+        while True:
+            print('.', end='')
+            sys.stdout.flush()
+
+            if not self._place_solver.CheckSat():
+                self._place_solver.Reset()
+                # set options for smt solver
+                if self._smt_solver:
+                    self._set_smt_options()
                 self._place_vars = dict()
-            return False
+                return False
 
 
-        model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
+            c = model_reader(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
+            if c is None:
+                if smt_dir is not None:
+                    c = 0
+                    fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
+                    while os.path.isfile(fname):
+                        c += 1
+                        fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
+                    self._place_solver.ToSmt2(fname)
+                print(f'valid placement after {c_count} asserts')
+                return True
+            else:
+                c_count += 1
+                self._place_solver.Assert(c)
 
-        return True
 
 
     def route_design(self, funcs, model_reader):

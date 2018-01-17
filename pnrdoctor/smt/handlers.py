@@ -22,6 +22,14 @@ class BaseHandler(NamedIDObject, metaclass=ABCMeta):
     def equal(self, other):
         pass
 
+    @abstractmethod
+    def value_distinct(self, other):
+        pass
+
+    @abstractmethod
+    def value_equal(self, other):
+        pass
+
     def __eq__(self, other):
         return self.equal(other)
 
@@ -84,12 +92,22 @@ class ScalarHandler(BVHandler):
     def distinct(self, other):
         if isinstance(other, type(self)):
             return self._var != other._var
-        return self != self.encode(other)
+        return self.distinct(self.encode(other))
 
     def equal(self, other):
         if isinstance(other, type(self)):
             return self._var == other._var
         return self.equal(self.encode(other))
+
+    def value_distinct(self, other):
+        if isinstance(other, type(self)):
+            return self.value != other.value
+        return self.value_distinct(self.encode(other))
+
+    def value_equal(self, other):
+        if isinstance(other, type(self)):
+            return self.value == other.value
+        return self.value_equal(self.encode(other))
 
     def encode(self, value):
         assert 0 <= int(value) < self._upper_bound, 'Cannot encode given value'
@@ -119,12 +137,22 @@ class CategoryHandler(BVHandler):
     def distinct(self, other):
         if isinstance(other, type(self)):
             return self._var & other._var == 0
-        return self & self.encode(other) == 0
+        return self.distinct(self.encode(other))
 
     def equal(self, other):
         if isinstance(other, type(self)):
             return self._var == other._var
         return self.equal(self.encode(other))
+
+    def value_distinct(self, other):
+        if isinstance(other, type(self)):
+            return self.value & other.value == 0
+        return self.value_distinct(self.encode(other))
+
+    def value_equal(self, other):
+        if isinstance(other, type(self)):
+            return self.value == other.value
+        return self.value_equal(self.encode(other))
 
     def encode(self, value):
         assert 0 <= int(value) < 2**self._bits, 'Cannot enode given value'

@@ -72,9 +72,14 @@ def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
 
 
 def distinct(region, fabric, design, state, vars, solver):
+    seen = set()
     constraints = []
     for m1 in design.modules:
+        seen.add(m1)
         for m2 in design.modules:
+            if m2 in seen:
+                continue
+
             if state[m1].parent == state[m2].parent and m1.resource == m2.resource and m1 != m2:
                 v1,v2 = vars[m1],vars[m2]
                 s = v1.keys() & v2.keys()
@@ -241,6 +246,7 @@ def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
 
         if total_i is not None:
             constraints.append(solver.BVUle(total_i, n_max))
+            #constraints.append(solver.BVUge(total_i, 1))
             if total is None:
                 total = total_i
             else:
@@ -248,6 +254,7 @@ def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
 
     if total is not None:
         constraints.append(solver.BVUle(total, g_max))
+        #constraints.append(solver.BVUge(total, 1))
 
     return solver.And(constraints)
 

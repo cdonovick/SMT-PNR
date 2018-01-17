@@ -1,4 +1,6 @@
-from pnrdoctor.design.module import Resource
+from collections import Counter
+
+from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.fabric.fabricutils import trackindex
 
 
@@ -9,6 +11,32 @@ def place_model_reader(region, fabric, design, state, vars, solver):
         r.set_position(pos)
         cat = {d : v.value for d,v in var_d.items() if d in r.category}
         r.set_category(cat)
+
+def distinct_model_reader(region, fabric, design, state, vars, solver):
+    total = 0
+    seen = set()
+    for m1 in design.modules:
+        seen.add(m1)
+
+        for m2 in design.modules:
+            if m2 in seen:
+                continue
+            if m1 != m2 and state[m1].parent == state[m2].parent and m1.resource == m2.resource:
+                total += 1
+
+                v1,v2 = vars[m1],vars[m2]
+                s = v1.keys() & v2.keys()
+                if all(not v1[d].value_distinct(v2[d]) for d in s):
+                    return solver.Or([v1[d].distinct(v2[d]) for d in s])
+
+    for module, var_d in vars.items():
+        r = state[module]
+        pos = {d : v.value for d,v in var_d.items() if d in r.position}
+        r.set_position(pos)
+        cat = {d : v.value for d,v in var_d.items() if d in r.category}
+        r.set_category(cat)
+
+    print(f'Total possible distinct constraints {total}')
 
 def route_model_reader(simultaneous=False):
     def _route_model_reader(fabric, design, p_state, r_state, vars, solver):
