@@ -451,6 +451,38 @@ def _get_index_regular(ps, name, resource, bw):
             raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
 
 
+def _get_index_io(ps, name, resource, direc, bw, tile_row):
+
+    # io tiles have all the necessary information in the name and ps (position)
+    assert direc is None, "direc unused for io tiles"
+    assert bw is None, "bw is not needed for io tiles"
+    assert tile_row is None, "tile_row is not needed"
+
+    assert resource == Resource.IO, "Expecting an io tile"
+
+    row, col = ps
+    p = re.compile('(?P<direc>in|out)'
+                   '_(P<bus>\d+)BIT_'
+                   'S?(?P<side>\d+)_'
+                   'T?(?P<track>\d+)')
+    m = p.search(name)
+
+    _direc = m.group('direc')
+    _bus = m.group('bus')
+    _side = m.group('side')
+    _track = m.group('track')
+
+    # retrieve neighbor location
+    rown, coln, _ = mapSide(row, col, _side)
+
+    if _direc == 'out':
+        return muxindex(resource=Resource.IO, ps=ps, po=(rown, coln), bw=_bus, track=_track)
+    elif _direc == 'in':
+        # pself and pother swapped for in wires
+        return muxindex(resource=Resource.IO, ps=(rown, coln), po=ps, bw=_bus, track=_track)
+    else:
+        raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
+
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
     row, col = ps
