@@ -270,11 +270,11 @@ def pin_IO(region, fabric, design, state, vars, solver):
         if module.config == 'i':
             assert not seen_i, 'Current IO hack requires single input'
             seen_i = True
-            constraints.append(solver.And([r == 0, c == 0]))
+            constraints.append(solver.And([r == 2, c == 2]))
         else:
             assert not seen_o, 'Current iO hack requires single output'
             seen_o = True
-            constraints.append(solver.And([r == 1, c == 0]))
+            constraints.append(solver.And([r == 3, c == 2]))
 
     return solver.And(constraints)
 
@@ -292,7 +292,7 @@ def pin_resource(region, fabric, design, state, vars, solver):
 
             cc = [r == p[0], c == p[1]]
             if len(p) == 3:
-                cc.append(v[fabric.tracks_dim] == p[2])
+                cc.append(v[fabric.tracks_dim].var == p[2])
             cx.append(solver.And(cc))
         constraints.append(solver.Or(cx))
     return solver.And(constraints)
