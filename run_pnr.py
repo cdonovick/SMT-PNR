@@ -43,7 +43,7 @@ def ice_flow():
     PLACE_CONSTRAINTS = [
         constraints.init_regions(OneHotHandler, CategoryHandler, ScalarHandler),
         pnr.distinct,
-        constraints.pin_resource_structured,
+        constraints.pin_resource,
         constraints.HPWL(1, 4),
     ]
     p = PNR(fab, des, args.solver, seed)
@@ -96,7 +96,7 @@ def cgra_flow():
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_IO,
-            pnr.pin_resource_structured,
+            pnr.pin_resource,
             pnr.HPWL(rmods, nmods + rmods)
         ]
         PLACE_RELAXED     = [
@@ -104,7 +104,7 @@ def cgra_flow():
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_IO,
-            pnr.pin_resource_structured,
+            pnr.pin_resource,
             pnr.HPWL(rmods, 2*nmods + rmods)
         ]
         PLACE_EXTRA_RELAXED = [
@@ -112,7 +112,7 @@ def cgra_flow():
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_IO,
-            pnr.pin_resource_structured,
+            pnr.pin_resource,
             pnr.HPWL(rmods, 4*nmods + rmods)
         ]
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)

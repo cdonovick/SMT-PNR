@@ -21,6 +21,9 @@ resourcedict = {'pe_tile_new': Resource.PE,
                 'pe': Resource.PE,
                 'mem': Resource.Mem}
 
+# HACK
+ignore_types = {"empty", "io1bit", "io16bit", "gst"}
+
 
 def parse_xml(filepath, config_engine):
 
@@ -88,7 +91,7 @@ def _scan_ports(root, params):
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
         if sb.get('row'):
-            _ps = (row + int(sb.get("row")), col)
+            _ps = (row + int(sb.get("row"), 0), col)
         else:
             _ps = (row, col)
 
@@ -112,7 +115,7 @@ def _scan_ports(root, params):
 
 
     def _scan_cb(cb):
-        _bw = int(cb.get('bus').replace('BUS', ''))
+        _bw = int(cb.get('bus').replace('BUS', ''), 0)
         _ps = (row, col)
 
         params['layers'].add(_bw)
@@ -134,14 +137,14 @@ def _scan_ports(root, params):
     def _scan_resource(res):
         # TODO: handle attributes
         d = dict()
-        d['feature_address'] = int(res.get('feature_address'))
+        d['feature_address'] = int(res.get('feature_address'), 0)
         for tag in res:
             if not isinstance(tag.tag, str):
                 # skip comments in the xml
                 continue
 
             try:
-                dv = int(tag.text)
+                dv = int(tag.text, 0)
             except Exception:
                 dv = tag.text
 
@@ -149,7 +152,7 @@ def _scan_ports(root, params):
 
             for k, v in tag.items():
                 try:
-                    v = int(v)
+                    v = int(v, 0)
                 except Exception:
                     pass
 
@@ -176,12 +179,15 @@ def _scan_ports(root, params):
 
     for tile in root:
         if tile.get("type"):
+            #HACK
+            if tile.get("type") in ignore_types:
+                continue
             _resource = resourcedict[tile.get("type")]
         else:
             _resource = Resource.PE
 
-        col = int(tile.get('col'))
-        row = int(tile.get('row'))
+        col = int(tile.get('col'), 0)
+        row = int(tile.get('row'), 0)
         # note, memory tiles will add the sb row to y
 
         if col > numcols:
@@ -197,8 +203,8 @@ def _scan_ports(root, params):
         trackparams = tile.get('tracks').split()
         for t in trackparams:
             tr = t.split(':')
-            bw = int(tr[0].replace('BUS', ''))
-            num_tracks[(row, col, bw)] = int(tr[1])
+            bw = int(tr[0].replace('BUS', ''), 0)
+            num_tracks[(row, col, bw)] = int(tr[1], 0)
 
         for element, processor in fabelements.items():
             for tag in tile.findall(element):
@@ -227,31 +233,31 @@ def _connect_ports(root, params):
     def _connect_sb(sb):
         # memory tiles have multiple rows of switch boxes
         if sb.get('row'):
-            _ps = (row + int(sb.get("row")), col)
+            _ps = (row + int(sb.get("row"), 0), col)
         else:
             _ps = (row, col)
 
-        tile_addr = int(tile.get('tile_addr'))
+        tile_addr = int(tile.get('tile_addr'), 0)
         tile_type = tile.get('type')
 
         config_engine[_ps] = config(tile_addr=tile_addr,
                                     tile_type=tile_type)
 
-        fa = int(sb.get('feature_address'))
-        sel_w = int(sb.find('sel_width').text)
+        fa = int(sb.get('feature_address'), 0)
+        sel_w = int(sb.find('sel_width').text, 0)
 
 
         for mux in sb.findall("mux"):
             snk_name = mux.get('snk')
             snkindex = _get_index(_ps, snk_name, _resource)
 
-            ch = int(mux.get('configh'))
-            cl = int(mux.get('configl'))
+            ch = int(mux.get('configh'), 0)
+            cl = int(mux.get('configl'), 0)
 
             if mux.get('reg') == '1':
                 locations[Resource.Reg].add(_ps + (snkindex.track,))
-                assert int(mux.get('configr')) is not None, mux.get('configr')
-                cr = int(mux.get('configr'))
+                assert int(mux.get('configr'), 0) is not None, mux.get('configr')
+                cr = int(mux.get('configr'), 0)
             else:
                 cr = None
 
@@ -259,7 +265,7 @@ def _connect_ports(root, params):
                 src_name = src.text
                 srcindex = _get_index(_ps, src_name, _resource, 'i', snkindex.bw, row)
 
-                sel = int(src.get('sel'))
+                sel = int(src.get('sel'), 0)
 
                 # handle ports off the edge
                 # but if it's a nonterminal feedthrough port, do nothing
@@ -359,20 +365,20 @@ def _connect_ports(root, params):
 
 
     def _connect_cb(cb):
-        _bw = int(cb.get('bus').replace('BUS', ''))
+        _bw = int(cb.get('bus').replace('BUS', ''), 0)
         _ps = (row, col)
 
-        fa = int(cb.get('feature_address'))
-        sel_w = int(cb.find('sel_width').text)
+        fa = int(cb.get('feature_address'), 0)
+        sel_w = int(cb.find('sel_width').text, 0)
 
         for mux in cb.findall("mux"):
             _port = mux.get('snk')
-            snkindex = _get_index(_ps, _port, _resource, bw=_bw)
+            snkindex = _get_index(_ps, _port, _resource, bw=_bw, tile_row=row)
 
             for src in mux.findall("src"):
-                sel = int(src.get('sel'))
+                sel = int(src.get('sel'), 0)
                 src_name = src.text
-                srcindex = _get_index(_ps, src_name, _resource, 'i', _bw)
+                srcindex = _get_index(_ps, src_name, _resource, 'i', _bw, row)
 
                 # handle ports off the edge
                 if srcindex not in fabric:
@@ -395,8 +401,12 @@ def _connect_ports(root, params):
                       'cb': _connect_cb}
 
     for tile in root:
-        col = int(tile.get('col'))
-        row = int(tile.get('row'))
+        # HACK
+        if tile.get("type") in ignore_types:
+            continue
+
+        col = int(tile.get('col'), 0)
+        row = int(tile.get('row'), 0)
         # note, memory tiles will add the sb row to y
 
         if tile.get("type"):
@@ -432,9 +442,9 @@ def _get_index_regular(ps, name, resource, bw):
         return muxindex(resource=resource, ps=ps, bw=bw, port=name)
     else:
         signal_direc = m.group('direc')
-        _side = Side(int(m.group('side')))
-        _track = int(m.group('track'))
-        _bus = int(m.group('bus'))
+        _side = Side(int(m.group('side'), 0))
+        _track = int(m.group('track'), 0)
+        _bus = int(m.group('bus'), 0)
 
         if bw is not None:
             assert _bus == bw, 'Expected bus width to be '
@@ -450,6 +460,38 @@ def _get_index_regular(ps, name, resource, bw):
         else:
             raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
 
+
+def _get_index_io(ps, name, resource, direc, bw, tile_row):
+
+    # io tiles have all the necessary information in the name and ps (position)
+    assert direc is None, "direc unused for io tiles"
+    assert bw is None, "bw is not needed for io tiles"
+    assert tile_row is None, "tile_row is not needed"
+
+    assert resource == Resource.IO, "Expecting an io tile"
+
+    row, col = ps
+    p = re.compile('(?P<direc>in|out)'
+                   '_(P<bus>\d+)BIT_'
+                   'S?(?P<side>\d+)_'
+                   'T?(?P<track>\d+)')
+    m = p.search(name)
+
+    _direc = m.group('direc')
+    _bus = m.group('bus')
+    _side = m.group('side')
+    _track = m.group('track')
+
+    # retrieve neighbor location
+    rown, coln, _ = mapSide(row, col, _side)
+
+    if _direc == 'out':
+        return muxindex(resource=Resource.IO, ps=ps, po=(rown, coln), bw=_bus, track=_track)
+    elif _direc == 'in':
+        # pself and pother swapped for in wires
+        return muxindex(resource=Resource.IO, ps=(rown, coln), po=ps, bw=_bus, track=_track)
+    else:
+        raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
 
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
@@ -472,9 +514,9 @@ def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
     else:
         signal_direc = m.group('direc')
-        _side = Side(int(m.group('side')))
-        _track = int(m.group('track'))
-        _bus = int(m.group('bus'))
+        _side = Side(int(m.group('side'), 0))
+        _track = int(m.group('track'), 0)
+        _bus = int(m.group('bus'), 0)
 
         if bw is not None:
             assert _bus == bw, 'Expected bus width to be '
