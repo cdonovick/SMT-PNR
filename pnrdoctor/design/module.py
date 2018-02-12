@@ -109,7 +109,7 @@ class Resource(Enum):
     UNSET = 0
     PE    = 1
     Mem   = 2
-    IO    = 1 #HACK: IO uses PE
+    IO    = 3
     Reg   = 4
     Fused = 5
     # For fabric actually

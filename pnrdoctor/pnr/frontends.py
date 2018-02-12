@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 
 from pnrdoctor.config import config
-from pnrdoctor.design.module import Resource
+from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.fabric.fabricutils import Side, mapSide, parse_mem_sb_wire
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_container
 from pnrdoctor.fabric import Port, Track, Fabric
@@ -19,10 +19,12 @@ CB = Resource.CB
 resourcedict = {'pe_tile_new': Resource.PE,
                 'memory_tile': Resource.Mem,
                 'pe': Resource.PE,
-                'mem': Resource.Mem}
+                'mem': Resource.Mem,
+                'io1bit': Resource.IO,
+                'io16bit': Resource.IO}
 
 # HACK
-ignore_types = {"empty", "io1bit", "io16bit", "gst"}
+ignore_types = {"empty", "gst"}
 
 
 def parse_xml(filepath, config_engine):
@@ -84,9 +86,25 @@ def _scan_ports(root, params):
     port_names = defaultdict(port_names_container)
     params['port_names'] = port_names
 
+    io_groups = defaultdict(list)
+    params['io_groups'] = io_groups
+
     numrows = 0
     numcols = 0
     params['layers'] = set()
+
+    def _proc_io(io_tile):
+        _ps = (row, col)
+        tile_addr = int(tile.get("tile_addr"), 0)
+        tile_type = tile.get("type")
+        config_engine[_ps] = config(tile_addr=tile_addr,
+                                    tile_type=tile_type)
+        ig = tile.find("io_group")
+        if tile_type == "io1bit":
+            layer = Layer.Bit
+        else:
+            layer = Layer.Data
+        io_groups[(int(ig.text), layer)].append(_ps)
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -209,6 +227,9 @@ def _scan_ports(root, params):
         for element, processor in fabelements.items():
             for tag in tile.findall(element):
                 processor(tag)
+
+        if _resource == Resource.IO:
+            _proc_io(tile)
 
     # want the number of rows not the value
     # i.e. 0-7 means 8
@@ -423,6 +444,8 @@ def _connect_ports(root, params):
 def _get_index(ps, name, resource, direc='o', bw=None, tile_row=None):
     if resource == Resource.Mem:
         idx = _get_index_mem(ps, name, resource, direc, bw, tile_row)
+    elif resource == Resource.IO:
+        idx = _get_index_io(ps, name, resource, None, None, tile_row)
     else:
         idx = _get_index_regular(ps, name, resource, bw)
     return idx
@@ -475,6 +498,7 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
                    '_(P<bus>\d+)BIT_'
                    'S?(?P<side>\d+)_'
                    'T?(?P<track>\d+)')
+
     m = p.search(name)
 
     _direc = m.group('direc')

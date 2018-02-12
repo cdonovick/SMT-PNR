@@ -154,6 +154,7 @@ class Fabric:
         self._config = parsed_params['config_engine']
         self._fab = parsed_params['fabric']
         self._port_names = parsed_params['port_names']
+        self._io_groups = parsed_params['io_groups']
 
         # Hacky hardcoding register port names
         # because they're not provided by cgra_info
@@ -216,6 +217,13 @@ class Fabric:
     @property
     def port_names(self):
         return self._port_names
+
+    @property
+    def io_groups(self):
+        '''
+        Returns a dictionary (io_group:int, layer:Layer) --> list( pos:tuple(int, int))
+        '''
+        return self._io_groups
 
     @property
     def locations(self):
