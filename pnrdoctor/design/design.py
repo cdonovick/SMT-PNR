@@ -20,7 +20,7 @@ class Design(NamedIDObject):
         # HACK to make only one wire leave input
         # modules: dict representation --> dict representation
         # ties: tuple representation --> tuple representation
-        modules, ties = _io_hack(modules, ties)
+        # modules, ties = _io_hack(modules, ties)
 
         modules, ties = _split_registers(modules, ties)
 

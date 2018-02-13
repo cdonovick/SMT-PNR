@@ -31,6 +31,11 @@ class SetList(MutableSet, Sequence):
             self._s.discard(val)
             self._l.remove(val)
 
+    def pop(self):
+        val = self._l.pop()
+        self._s.remove(val)
+        return val
+
     def __getitem__(self, key):
         return self._l[key]
 
