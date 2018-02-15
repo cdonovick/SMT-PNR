@@ -463,30 +463,45 @@ def _connect_ports(root, params):
         # location to connect to should be embedded in it's index,
         # then just query fabric for that index to make a trackindex/track
         # inputs were already connected in _connect_sb
-        _ps = (row, col)
+        dst_ps = (row, col)
         output_name = io_tile.find('output').text
-        output_index = _get_index(_ps, output_name, _resource)
-        if output_index.bw == 1:
-            # 16 bit IOs were already connected -- don't need special treatment
-            other_ps = output_index.po
-            assert other_ps in ioempty_positions, "Expecting IO or empty tile"
+        output_index = _get_index(dst_ps, output_name, _resource)
+        p = re.compile(r'(?P<direc>in|out)_'
+                       '(?P<bus>\d+)BIT_'
+                       'S?(?P<side>\d+)_'
+                       'T?(?P<track>\d+)')
+        m = p.search(output_name)
 
-            src_ps = _bypass(_ps, other_ps)
-            srcindex = muxindex(ps=src_ps, po=other_ps,
-                                resource=Resource.SB,
-                                bw=1, track=output_index.track,
-                                port=None)
+        _direc = m.group('direc')
+        _bus = int(m.group('bus'), 0)
+        _side = Side(int(m.group('side')))
+        _track = int(m.group('track'), 0)
 
-            assert srcindex is not None, "Expect a valid index"
+        rown, coln, _ = mapSide(row, col, _side)
+        src_ps = (rown, coln)
 
-            assert output_index.bw == srcindex.bw, "Bus Widths should match"
-            tindex = trackindex(snk=output_index, src=srcindex, bw=1)
-            if tindex not in processed_tracks:
-                processed_tracks.add(tindex)
-                track = Track(fabric[srcindex].source, fabric[output_index].sink,
-                              srcindex.bw)
-                fabric[tindex] = track
-                # TODO: Figure out what to put in config engine
+        if _bus == 1:
+            # 1 bit IO bypass empty or IO16 tiles
+            assert src_ps in ioempty_positions, "Expecting IO or empty tile"
+            # shifts the positions
+            src_ps = _bypass(dst_ps, src_ps)
+            dst_ps = (rown, coln)
+
+        srcindex = muxindex(ps=src_ps, po=dst_ps,
+                            resource=Resource.SB,
+                            bw=_bus, track=output_index.track,
+                            port=None)
+
+        assert srcindex is not None, "Expect a valid index"
+
+        assert output_index.bw == srcindex.bw, "Bus Widths should match"
+        tindex = trackindex(snk=output_index, src=srcindex, bw=1)
+        if tindex not in processed_tracks:
+            processed_tracks.add(tindex)
+            track = Track(fabric[srcindex].source, fabric[output_index].sink,
+                          srcindex.bw)
+            fabric[tindex] = track
+            # TODO: Figure out what to put in config engine
 
 
 
@@ -589,7 +604,7 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
     # retrieve neighbor location
     rown, coln, _ = mapSide(row, col, _side)
 
-    return muxindex(resource=Resource.IO, ps=ps, po=(rown, coln), bw=_bus, track=_track, port=_direc)
+    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=_track, port=_direc)
 
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
@@ -681,13 +696,11 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
     # 16 bit IOs don't
     if srcindex.ps in ioempty_positions and check_io(srcindex, 1):
 
-        other_ps = srcindex.ps
-
         # 1 bit IO bypasses empty or IO16 Bit tiles
         io_ps = _bypass(ps, srcindex.ps)
         # construct IO's srcindex
         # uses some parameters from initial srcindex guess
-        srcindex = muxindex(ps=io_ps, po=other_ps,
+        srcindex = muxindex(ps=io_ps, po=None,
                             resource=Resource.IO,
                             bw=srcindex.bw,
                             track=srcindex.track,
@@ -696,13 +709,11 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
 
     elif srcindex.ps in io16_positions and check_io(srcindex, 16):
         io_ps = srcindex.ps
-        other_ps = ps
-        srcindex = muxindex(ps=io_ps, po=other_ps,
+        srcindex = muxindex(ps=io_ps, po=None,
                             resource=Resource.IO,
                             bw=srcindex.bw,
                             track=srcindex.track,
                             port="in")
-        print("srcindex", srcindex)
         assert srcindex in fabric, "Expect IO tile exists"
 
     elif srcindex not in ftdata.muxindices:
