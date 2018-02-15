@@ -28,12 +28,20 @@ ftindex = namedtuple_with_defaults('ftindex', 'snk src bw')
 #    bw:       int           :: the bus width -- Note this is redundant information, but is useful
 #                                                for situations where you want to select all tracks
 #                                                at a given layer, because you can set bw=STAR
-# PE/Mem/IO use muxindex with
+# PE/Mem use muxindex with
 #                        resource: the resource type
 #                        ps:       the position of this resource
 #                        bw:       the layer i.e. 16 bit, 1 bit, etc...
 #                        port:     the port name
 #                        po and track set to None
+#
+# IO use muxindex with
+#                        resource: the resource type
+#                        ps:       the position of this resource
+#                        bw:       the layer i.e. 16 bit, 1 bit, etc...
+#                        track:    the track
+#                        port:     the port name
+#                        po:       None
 #
 # SB mux use muxindex with
 #                        resource: Resource.SB

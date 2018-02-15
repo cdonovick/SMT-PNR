@@ -128,8 +128,8 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'data0',
-        'out' : 'pe_out_res',
+        'in'  : 'in',
+        'out' : 'out',
     },
 
     'BitIO' : {

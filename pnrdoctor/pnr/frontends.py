@@ -5,10 +5,10 @@ import xml.etree.ElementTree as ET
 
 from pnrdoctor.config import config
 from pnrdoctor.design.module import Resource, Layer
-from pnrdoctor.fabric.fabricutils import Side, mapSide, parse_mem_sb_wire
+from pnrdoctor.fabric.fabricutils import Side, mapSide, parse_mem_sb_wire, pos_to_side
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_container
 from pnrdoctor.fabric import Port, Track, Fabric
-from pnrdoctor.util import SelectDict
+from pnrdoctor.util import SelectDict, STAR
 from .pnrutils import configindex
 
 __all__ = ['parse_xml']
@@ -21,10 +21,20 @@ resourcedict = {'pe_tile_new': Resource.PE,
                 'pe': Resource.PE,
                 'mem': Resource.Mem,
                 'io1bit': Resource.IO,
-                'io16bit': Resource.IO}
+                'io16bit': Resource.IO,
+                'empty': Resource.EMPTY}
+
+# The only types of tiles which can be bypassed
+# i.e. 1 bit IO tile tracks can skip over these
+bypass_resources = {Resource.IO, Resource.EMPTY}
+ioempty_positions = set()
+
+# record available IO tracks
+# Assuming it's homogeneous
+io_tracks = set()
 
 # HACK
-ignore_types = {"empty", "gst"}
+ignore_types = {"gst"}
 
 
 def parse_xml(filepath, config_engine):
@@ -38,7 +48,7 @@ def parse_xml(filepath, config_engine):
     _scan_ports(root, params)
     _connect_ports(root, params)
 
-    # overwrite dicts with SelectDicts
+    # replace with a SelectDict
     params['fabric'] = SelectDict(params['fabric'])
     fab = Fabric(params)
     config_engine.fabric = fab
@@ -105,6 +115,20 @@ def _scan_ports(root, params):
         else:
             layer = Layer.Data
         io_groups[(int(ig.text), layer)].append(_ps)
+
+        output_name = tile.find('output').text
+        output_index = _get_index(_ps, output_name, Resource.IO)
+
+        input_name = tile.find('input').text
+        input_index = _get_index(_ps, input_name, Resource.IO)
+
+        assert output_index.track == input_index.track, \
+          "Assuming homogeneous tracks"
+
+        io_tracks.add(output_index.track)
+
+        fabric[output_index] = port_wrapper(Port(output_index))
+        fabric[input_index]  = port_wrapper(Port(input_index, 'i'))
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -193,7 +217,8 @@ def _scan_ports(root, params):
     fabelements = {'sb': _scan_sb,
                    'cb': _scan_cb,
                    'pe': _scan_resource,
-                   'mem': _scan_resource}
+                   'mem': _scan_resource,
+                   'empty': lambda x: 0}  # no op for empty tile
 
     for tile in root:
         if tile.get("type"):
@@ -231,6 +256,10 @@ def _scan_ports(root, params):
         if _resource == Resource.IO:
             _proc_io(tile)
 
+        # keep track of potential bypass locations
+        if _resource in bypass_resources:
+            ioempty_positions.add((row, col))
+
     # want the number of rows not the value
     # i.e. 0-7 means 8
     params['numrows'] = numrows + 1
@@ -250,6 +279,13 @@ def _connect_ports(root, params):
     config_engine = params['config_engine']
     ftdata = params['ftdata']
     muxindex_locations = params['muxindex_locations']
+    io_groups = params["io_groups"]
+
+    # needed for _infer_src
+    io16_positions = list()
+    for t, l in io_groups.items():
+        if t[1] == Layer.Data:
+            io16_positions += l
 
     def _connect_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -292,7 +328,7 @@ def _connect_ports(root, params):
                 # but if it's a nonterminal feedthrough port, do nothing
 
                 if srcindex not in fabric:
-                    fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                    srcindex = _infer_src(_ps, srcindex, ftdata, fabric, io16_positions)
 
                     # add to sources if it has a port name
                     if srcindex.port is not None:
@@ -328,7 +364,10 @@ def _connect_ports(root, params):
 
                 # handle ports off the edge
                 if srcindex not in fabric and srcindex not in ftdata.muxindices:
-                    fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                    srcindex = _infer_src(_ps, srcindex, ftdata, fabric, io16_positions)
+                    assert srcindex in fabric, \
+                      "Should be an existing IO, or a just added off-the-edge node"
+
                     muxindex_locations[srcindex.resource].add(srcindex)
 
                 assert srcindex.bw == snkindex.bw, \
@@ -378,11 +417,11 @@ def _connect_ports(root, params):
                     del ftdata.terminals[oldsnkpath]
 
 
-    for path, terminals in ftdata.terminals:
-        # make path from beginning of feedthrough to end
-        tindex = trackindex(src=terminals['H'], snk=terminals['T'], bw=next(iter(path)).bw)
+        for path, terminals in ftdata.terminals:
+            # make path from beginning of feedthrough to end
+            tindex = trackindex(src=terminals['H'], snk=terminals['T'], bw=next(iter(path)).bw)
 
-        fabric[tindex] = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
+            fabric[tindex] = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
 
 
     def _connect_cb(cb):
@@ -403,7 +442,9 @@ def _connect_ports(root, params):
 
                 # handle ports off the edge
                 if srcindex not in fabric:
-                    fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
+                    srcindex = _infer_src(_ps, srcindex, ftdata, fabric, io16_positions)
+                    assert srcindex in fabric, \
+                      "Should be an existing IO, or a just added off-the-edge node"
 
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
@@ -418,11 +459,42 @@ def _connect_ports(root, params):
                 config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
                                                src_name=src_name, snk_name=_port)
 
+    def _connect_io(io_tile):
+        # location to connect to should be embedded in it's index,
+        # then just query fabric for that index to make a trackindex/track
+        # inputs were already connected in _connect_sb
+        _ps = (row, col)
+        output_name = io_tile.find('output').text
+        output_index = _get_index(_ps, output_name, _resource)
+        if output_index.bw == 1:
+            # 16 bit IOs were already connected -- don't need special treatment
+            other_ps = output_index.po
+            assert other_ps in ioempty_positions, "Expecting IO or empty tile"
+
+            src_ps = _bypass(_ps, other_ps)
+            srcindex = muxindex(ps=src_ps, po=other_ps,
+                                resource=Resource.SB,
+                                bw=1, track=output_index.track,
+                                port=None)
+
+            assert srcindex is not None, "Expect a valid index"
+
+            assert output_index.bw == srcindex.bw, "Bus Widths should match"
+            tindex = trackindex(snk=output_index, src=srcindex, bw=1)
+            if tindex not in processed_tracks:
+                processed_tracks.add(tindex)
+                track = Track(fabric[srcindex].source, fabric[output_index].sink,
+                              srcindex.bw)
+                fabric[tindex] = track
+                # TODO: Figure out what to put in config engine
+
+
+
     elem2connector = {'sb': _connect_sb,
                       'cb': _connect_cb}
 
     for tile in root:
-        # HACK
+        # HACK -- currently doing nothing with global stalls
         if tile.get("type") in ignore_types:
             continue
 
@@ -438,6 +510,9 @@ def _connect_ports(root, params):
         for elem, connector in elem2connector.items():
             for tag in tile.findall(elem):
                 connector(tag)
+
+        if _resource == Resource.IO:
+            _connect_io(tile)
 
 
 # Helper Functions
@@ -462,8 +537,10 @@ def _get_index_regular(ps, name, resource, bw):
     m = p.search(name)
 
     if not m:
+        # This is a PE or Mem with a port
         return muxindex(resource=resource, ps=ps, bw=bw, port=name)
     else:
+        # Switch Box
         signal_direc = m.group('direc')
         _side = Side(int(m.group('side'), 0))
         _track = int(m.group('track'), 0)
@@ -474,6 +551,8 @@ def _get_index_regular(ps, name, resource, bw):
             '{} but it is {}'.format(bw, _bus)
 
         rown, coln, _ = mapSide(row, col, _side)
+
+        # Handle the edges and IOs
 
         if signal_direc == 'out':
             return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
@@ -495,27 +574,22 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
 
     row, col = ps
     p = re.compile('(?P<direc>in|out)'
-                   '_(P<bus>\d+)BIT_'
+                   '_(?P<bus>\d+)BIT_'
                    'S?(?P<side>\d+)_'
                    'T?(?P<track>\d+)')
 
     m = p.search(name)
 
     _direc = m.group('direc')
-    _bus = m.group('bus')
-    _side = m.group('side')
-    _track = m.group('track')
+    _bus = int(m.group('bus'))
+    _side = Side(int(m.group('side'), 0))
+    _track = int(m.group('track'))
+
 
     # retrieve neighbor location
     rown, coln, _ = mapSide(row, col, _side)
 
-    if _direc == 'out':
-        return muxindex(resource=Resource.IO, ps=ps, po=(rown, coln), bw=_bus, track=_track)
-    elif _direc == 'in':
-        # pself and pother swapped for in wires
-        return muxindex(resource=Resource.IO, ps=(rown, coln), po=ps, bw=_bus, track=_track)
-    else:
-        raise RuntimeError("Parsed unhandled direction: {}".format(signal_direc))
+    return muxindex(resource=Resource.IO, ps=ps, po=(rown, coln), bw=_bus, track=_track, port=_direc)
 
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
@@ -571,3 +645,71 @@ def _get_index_mem(ps, name, resource, direc, bw, tile_row):
             ps = (rown, coln)
 
         return muxindex(resource=Resource.SB, ps=ps, po=po, bw=_bus, track=_track)
+
+
+def _bypass(ps, other_ps):
+    '''
+    Given a current position and a bypass tile (i.e. one that is skipped)
+    position, returns the IO position, which is just one further in the
+    same direction
+    '''
+    _side = pos_to_side(ps, other_ps)
+    if _side == Side.N:
+        io_ps = other_ps
+        io_ps = (io_ps[0] - 1, io_ps[1])
+    elif _side == Side.S:
+        io_ps = other_ps
+        io_ps = (io_ps[0] + 1, io_ps[1])
+    elif _side == Side.E:
+        io_ps = other_ps
+        io_ps = (io_ps[0], io_ps[1] + 1)
+    elif _side == Side.W:
+        io_ps = other_ps
+        io_ps = (io_ps[0], io_ps[1] - 1)
+    else:
+        raise RuntimeError("Unhandled side")
+
+    return io_ps
+
+def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
+    def check_io(index, width):
+        # io_tracks defined at top of file
+        return index.track in io_tracks and srcindex.bw == width
+
+    # Special IO handling
+    # 1 bit IOs skip a tile
+    # 16 bit IOs don't
+    if srcindex.ps in ioempty_positions and check_io(srcindex, 1):
+
+        other_ps = srcindex.ps
+
+        # 1 bit IO bypasses empty or IO16 Bit tiles
+        io_ps = _bypass(ps, srcindex.ps)
+        # construct IO's srcindex
+        # uses some parameters from initial srcindex guess
+        srcindex = muxindex(ps=io_ps, po=other_ps,
+                            resource=Resource.IO,
+                            bw=srcindex.bw,
+                            track=srcindex.track,
+                            port="in")
+        assert srcindex in fabric, "Expect IO tile exists"
+
+    elif srcindex.ps in io16_positions and check_io(srcindex, 16):
+        io_ps = srcindex.ps
+        other_ps = ps
+        srcindex = muxindex(ps=io_ps, po=other_ps,
+                            resource=Resource.IO,
+                            bw=srcindex.bw,
+                            track=srcindex.track,
+                            port="in")
+        print("srcindex", srcindex)
+        assert srcindex in fabric, "Expect IO tile exists"
+
+    elif srcindex not in ftdata.muxindices:
+        # create a new port
+        fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
+
+    else:
+        raise Warning("Feedthroughs in design. These have NOT been tested thoroughly.")
+
+    return srcindex

@@ -116,6 +116,7 @@ class Resource(Enum):
     # Eventually we should move this
     SB    = 6
     CB    = 7
+    EMPTY = 8
 
 class Layer(Flag):
     UNSET    = 0
