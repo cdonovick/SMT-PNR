@@ -160,9 +160,14 @@ class Fabric:
         # because they're not provided by cgra_info
         self._port_names[(Resource.Reg, Layer.Data.width)].sources.add('out')
         self._port_names[(Resource.Reg, Layer.Data.width)].sinks.add('in')
-
         self._port_names[(Resource.Reg, Layer.Bit.width)].sources.add('out')
         self._port_names[(Resource.Reg, Layer.Bit.width)].sinks.add('in')
+
+        self._port_names[(Resource.IO, Layer.Data.width)].sources.add('in')
+        self._port_names[(Resource.IO, Layer.Data.width)].sinks.add('out')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sources.add('in')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sinks.add('out')
+
         # Dimensions for region building
         self._rows_dim = Scalar('row', self.rows)
         self._cols_dim = Scalar('col', self.cols)

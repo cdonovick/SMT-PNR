@@ -286,7 +286,7 @@ def pin_resource(region, fabric, design, state, vars, solver):
         r,c = v[fabric.rows_dim], v[fabric.cols_dim],
 
         cx = []
-        for p in fabric.locations[module.resource]:
+        for p in fabric.locations[module.resource, module.layer]:
             if len(p) > 3 or len(p) < 2:
                 raise NotImplementedError("Can't haldle dimension other than 2 / 3")
 
@@ -392,6 +392,7 @@ def _get_nonreg_input(reg):
 
 ################################ Graph Building/Modifying Functions #############################
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):
+
     node_inedges = defaultdict(list)
 
     for layer in design.layers:
@@ -403,12 +404,14 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
             for _type in {'sources', 'sinks'}:
                 for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
                     index = get_muxindex(fabric, mod, p_state, layer, port_name)
+
                     p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                     vars[p] = graph.addNode(p.name)
                     vars[(mod, port_name)] = vars[p]
 
         tindex = trackindex(src=STAR, snk=STAR, bw=layer)
         for track in fabric[tindex]:
+            print(track)
             src = track.src
             dst = track.dst
             # naming scheme is (x, y)Side_direction[track]
@@ -477,12 +480,19 @@ def build_spnr(region=0):
             # register locations include the track, so remove track using map
             pos = p_state[mod].position
             orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
-            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
+            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource, mod.layer])):
                 if mod.resource != Resource.Reg:
                     eqedges = list()
                     for _type, width in itertools.product({'sources', 'sinks'}, widths):
                         for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
-                            mindex = muxindex(resource=mod.resource, ps=loc, bw=width, port=port_name)
+                            d = {'resource': mod.resource, 'ps': loc, 'bw': width, 'port': port_name}
+                            if mod.resource == Resource.IO:
+                                # HACK Assuming all IO tracks are 0
+                                # Need to talk to hardware guys about whether track should be None
+                                # even though it's included in cgra_info.txt
+                                d['track'] = 0
+
+                            mindex = muxindex(**d)
                             e = solver.graphs[width].addUndirectedEdge(vars[(mod, port_name)],
                                                             vars[getattr(fabric[mindex], _type[:-1])])
                                                             # source/sink instead of sources/sinks
@@ -529,6 +539,7 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
     reaches = []
 
     for tie in design.ties:
+        print("tie", tie)
         graph = solver.graphs[tie.width]
         reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
                                      vars[(tie.dst, tie.dst_port)]))

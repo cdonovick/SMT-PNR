@@ -36,6 +36,14 @@ io_tracks = set()
 # HACK
 ignore_types = {"gst"}
 
+def width2layer(w):
+    if w == 16:
+        return Layer.Data
+    elif w == 1:
+        return Layer.Bit
+    else:
+        raise RuntimeError("Unhandled width={}".format(w))
+
 
 def parse_xml(filepath, config_engine):
 
@@ -239,15 +247,21 @@ def _scan_ports(root, params):
         if row > numrows:
             numrows = row
 
-        # add to the set of locations for that resource
-        locations[_resource].add((row, col))
-
+        bus_widths = list()
         # get the number of tracks
         trackparams = tile.get('tracks').split()
         for t in trackparams:
             tr = t.split(':')
             bw = int(tr[0].replace('BUS', ''), 0)
-            num_tracks[(row, col, bw)] = int(tr[1], 0)
+            count = int(tr[1], 0)
+            if count > 0:
+                bus_widths.append(bw)
+            num_tracks[(row, col, bw)] = count
+
+        for bw in bus_widths:
+            # add to the set of locations for that resource
+            locations[_resource, width2layer(bw)].add((row, col))
+
 
         for element, processor in fabelements.items():
             for tag in tile.findall(element):
@@ -294,6 +308,8 @@ def _connect_ports(root, params):
         else:
             _ps = (row, col)
 
+        _bw = int(sb.get('bus').replace('BUS', ''), 0)
+
         tile_addr = int(tile.get('tile_addr'), 0)
         tile_type = tile.get('type')
 
@@ -312,7 +328,7 @@ def _connect_ports(root, params):
             cl = int(mux.get('configl'), 0)
 
             if mux.get('reg') == '1':
-                locations[Resource.Reg].add(_ps + (snkindex.track,))
+                locations[Resource.Reg, width2layer(_bw)].add(_ps + (snkindex.track,))
                 assert int(mux.get('configr'), 0) is not None, mux.get('configr')
                 cr = int(mux.get('configr'), 0)
             else:
@@ -344,6 +360,7 @@ def _connect_ports(root, params):
 
                 # see fabric.fabricutils for trackindex documentation
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+
                 if tindex not in processed_tracks:
                     processed_tracks.add(tindex)
                     track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
@@ -492,10 +509,10 @@ def _connect_ports(root, params):
                             bw=_bus, track=output_index.track,
                             port=None)
 
-        assert srcindex is not None, "Expect a valid index"
+        assert srcindex in fabric, "Expecting valid port"
 
         assert output_index.bw == srcindex.bw, "Bus Widths should match"
-        tindex = trackindex(snk=output_index, src=srcindex, bw=1)
+        tindex = trackindex(snk=output_index, src=srcindex, bw=_bus)
         if tindex not in processed_tracks:
             processed_tracks.add(tindex)
             track = Track(fabric[srcindex].source, fabric[output_index].sink,

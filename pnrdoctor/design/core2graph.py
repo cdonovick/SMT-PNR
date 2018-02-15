@@ -75,12 +75,12 @@ def load_core(file, *libs):
         elif inst_type == 'IO':
             modules[inst_name]['type']  = 'IO'
             modules[inst_name]['res']   = Resource.IO
-            modules[inst_name]['layer'] = Layer.Combined
+            modules[inst_name]['layer'] = Layer.Data
             modules[inst_name]['conf']  = inst.config['mode'].value
         elif inst_type == 'BitIO':
             modules[inst_name]['type']  = 'BitIO'
             modules[inst_name]['res']   = Resource.IO
-            modules[inst_name]['layer'] = Layer.Combined
+            modules[inst_name]['layer'] = Layer.Bit
             modules[inst_name]['conf']  = inst.config['mode'].value
 
         else:
@@ -128,8 +128,8 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'in',
-        'out' : 'out',
+        'in'  : 'out',
+        'out' : 'in',
     },
 
     'BitIO' : {

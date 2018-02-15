@@ -124,7 +124,6 @@ def cgra_flow():
         seed += 1
         random.seed(seed)
         fab = pnr.parse_xml(fabric_file, ce)
-
         try:
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
@@ -187,6 +186,11 @@ def cgra_flow():
             elif relaxed:
                 relaxed = False
 
+        if args.print or args.print_place:
+            print("\nplacement info:")
+            p.write_design(pnr.write_debug(des))
+                
+
         if not args.noroute:
     #        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
             print("Routing design...", end=' ')
@@ -219,10 +223,6 @@ def cgra_flow():
     print('Loading configuration engine with placement and route info\n')
 
     ce.load_state(p._place_state, p._route_state)
-
-    if args.print or args.print_place:
-        print("\nplacement info:")
-        p.write_design(pnr.write_debug(des))
 
     if (args.print or args.print_route) and not args.noroute:
         print("\nRouting info:")
