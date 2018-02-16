@@ -360,24 +360,22 @@ def _connect_ports(root, params):
                         port_names[(srcindex.resource, snkindex.bw)].sources.add(srcindex.port)
                         muxindex_locations[srcindex.resource].add(srcindex)
 
-                if srcindex.resource != Resource.IO:
-                    # don't want to add IOs here
-                    assert srcindex.bw == snkindex.bw, \
-                        'Attempting to connect ports with different bus widths. {}, {}'.format(srcindex, snkindex)
+                assert srcindex.bw == snkindex.bw, \
+                    'Attempting to connect ports with different bus widths. {}, {}'.format(srcindex, snkindex)
 
-                    # if it connects to a feedthrough, don't make the connection yet. Want only one
-                    # track connecting endpoints of feedthrough path
+                # if it connects to a feedthrough, don't make the connection yet. Want only one
+                # track connecting endpoints of feedthrough path
 
-                    # see fabric.fabricutils for trackindex documentation
-                    tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+                # see fabric.fabricutils for trackindex documentation
+                tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
 
-                    if tindex not in processed_tracks:
-                        processed_tracks.add(tindex)
-                        track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
-                        fabric[tindex] = track
-                        config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
-                                                       configl=cl, configr=cr, sel=sel,
-                                                       src_name=src_name, snk_name=snk_name)
+                if tindex not in processed_tracks:
+                    processed_tracks.add(tindex)
+                    track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
+                    fabric[tindex] = track
+                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
+                                                   configl=cl, configr=cr, sel=sel,
+                                                   src_name=src_name, snk_name=snk_name)
 
         # connect feed throughs
         for ft in sb.findall('ft'):
@@ -541,35 +539,6 @@ def _connect_ports(root, params):
         _create_track(srcindex, output_index)
 
         # TODO: Figure out what to put in config engine
-
-        input_name = io_tile.find('input').text
-        input_index, in_bus, in_side, in_track, snk_ps = _match_name(input_name)
-
-        if in_side in input_special_case_sides:
-            in_ps = (row, col)
-            if in_bus == 1:
-                # 1 bit IO bypass empty or IO16 tiles
-                assert snk_ps in ioempty_positions, "Expecting IO or empty tile"
-                #shifts the positions
-                temp = snk_ps
-                snk_ps = _bypass(in_ps, snk_ps)
-                in_ps = temp
-                del temp
-
-            # connecting output --> out_BUS[1|16]_S{side}_T0
-            # because that's only way to reach CB for these tiles
-            # when coming from Side.S or Side.W
-            # Need the "other" position for the index
-            po_row, po_col, _ = mapSide(*snk_ps, in_side)
-            snkindex = muxindex(ps=snk_ps, po=(po_row, po_col),
-                                resource=Resource.SB,
-                                bw=in_bus, track=in_track,
-                                port=None)
-
-            assert snkindex in fabric, "Expecting a valid port, got {}".format(snkindex)
-            _create_track(input_index, snkindex)
-            # TODO: Figure out what to put in config_engine
-
 
     elem2connector = {'sb': _connect_sb,
                       'cb': _connect_cb}
