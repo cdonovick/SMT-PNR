@@ -404,14 +404,12 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
             for _type in {'sources', 'sinks'}:
                 for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
                     index = get_muxindex(fabric, mod, p_state, layer, port_name)
-
                     p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                     vars[p] = graph.addNode(p.name)
                     vars[(mod, port_name)] = vars[p]
 
         tindex = trackindex(src=STAR, snk=STAR, bw=layer)
         for track in fabric[tindex]:
-            print(track)
             src = track.src
             dst = track.dst
             # naming scheme is (x, y)Side_direction[track]
@@ -539,7 +537,6 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
     reaches = []
 
     for tie in design.ties:
-        print("tie", tie)
         graph = solver.graphs[tie.width]
         reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
                                      vars[(tie.dst, tie.dst_port)]))
