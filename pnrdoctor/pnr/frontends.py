@@ -126,12 +126,12 @@ def _scan_ports(root, params):
         tile_type = tile.get("type")
         config_engine[_ps] = config(tile_addr=tile_addr,
                                     tile_type=tile_type)
-        ig = tile.find("io_group")
+        ig = int(tile.find("io_group").text, 0)
         if tile_type == "io1bit":
             layer = Layer.Bit
         else:
             layer = Layer.Data
-        io_groups[(int(ig.text), layer)].append(_ps)
+        io_groups[(ig, layer)].append(_ps)
 
         output_name = tile.find('output').text
         output_index = _get_index(_ps, output_name, Resource.IO)
@@ -146,6 +146,13 @@ def _scan_ports(root, params):
 
         fabric[output_index] = port_wrapper(Port(output_index))
         fabric[input_index]  = port_wrapper(Port(input_index, 'i'))
+
+        # add to config engine
+        ci = configindex(ps=_ps, resource=Resource.IO)
+        _dirxml = tile.find('direction')
+        _dir = {'in': int(_dirxml.get('in')), 'out': int(_dirxml.get('out'))}
+        config_engine[ci] = config(io_group=ig, direction=_dir)
+
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
