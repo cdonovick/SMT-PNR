@@ -395,19 +395,27 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
 
     node_inedges = defaultdict(list)
 
+    # create a graph for each layer
     for layer in design.layers:
-        graph = solver.add_graph(layer)
-        # add nodes for modules
-        for mod in design.modules:
-            if mod.resource == Resource.Reg:
-                continue
-            for _type in {'sources', 'sinks'}:
-                for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                    index = get_muxindex(fabric, mod, p_state, layer, port_name)
+        solver.add_graph(layer)
+
+    # add nodes for modules
+    for mod in design.modules:
+        # get widths that are used in design and needed for this module
+        widths = layer2widths[mod.layer] & design.layers
+
+        if mod.resource != Resource.Reg:
+            for _type, width in itertools.product({'sources', 'sinks'}, widths):
+                graph = solver.graphs[width]
+                for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
+                    index = get_muxindex(fabric, mod, p_state, width, port_name)
                     p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                     vars[p] = graph.addNode(p.name)
                     vars[(mod, port_name)] = vars[p]
 
+    # add constraints per layer -- routing is completely decomposable between layers
+    for layer in design.layers:
+        graph = solver.graphs[layer]
         tindex = trackindex(src=STAR, snk=STAR, bw=layer)
         for track in fabric[tindex]:
             src = track.src

@@ -45,6 +45,16 @@ io_tracks = set()
 # HACK
 ignore_types = {"gst"}
 
+def widths2layer(w):
+    if w == {1, 16}:
+        return Layer.Combined
+    elif w == {16}:
+        return Layer.Data
+    elif w == {1}:
+        return Layer.Bit
+    else:
+        raise RuntimeError("Unhandled width={}".format(w))
+
 def width2layer(w):
     if w == 16:
         return Layer.Data
@@ -52,7 +62,6 @@ def width2layer(w):
         return Layer.Bit
     else:
         raise RuntimeError("Unhandled width={}".format(w))
-
 
 def parse_xml(filepath, config_engine):
 
@@ -263,7 +272,7 @@ def _scan_ports(root, params):
         if row > numrows:
             numrows = row
 
-        bus_widths = list()
+        bus_widths = set()
         # get the number of tracks
         trackparams = tile.get('tracks').split()
         for t in trackparams:
@@ -271,13 +280,14 @@ def _scan_ports(root, params):
             bw = int(tr[0].replace('BUS', ''), 0)
             count = int(tr[1], 0)
             if count > 0:
-                bus_widths.append(bw)
+                bus_widths.add(bw)
             num_tracks[(row, col, bw)] = count
 
-        for bw in bus_widths:
-            # add to the set of locations for that resource
-            locations[_resource, width2layer(bw)].add((row, col))
-
+        if _resource == Resource.PE:
+            for w in bus_widths:
+                locations[_resource, width2layer(w)].add((row, col))
+        else:
+            locations[_resource, widths2layer(bus_widths)].add((row, col))
 
         for element, processor in fabelements.items():
             for tag in tile.findall(element):
