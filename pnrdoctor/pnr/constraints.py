@@ -294,6 +294,7 @@ def pin_resource(region, fabric, design, state, vars, solver):
             if len(p) == 3:
                 cc.append(v[fabric.tracks_dim].var == p[2])
             cx.append(solver.And(cc))
+        assert len(cx) > 0, "Expecting at least one possible location"
         constraints.append(solver.Or(cx))
     return solver.And(constraints)
 

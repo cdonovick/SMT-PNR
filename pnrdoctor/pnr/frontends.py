@@ -55,14 +55,6 @@ def widths2layer(w):
     else:
         raise RuntimeError("Unhandled width={}".format(w))
 
-def width2layer(w):
-    if w == 16:
-        return Layer.Data
-    elif w == 1:
-        return Layer.Bit
-    else:
-        raise RuntimeError("Unhandled width={}".format(w))
-
 def parse_xml(filepath, config_engine):
 
     tree = ET.parse(filepath)
@@ -279,13 +271,13 @@ def _scan_ports(root, params):
             tr = t.split(':')
             bw = int(tr[0].replace('BUS', ''), 0)
             count = int(tr[1], 0)
+            num_tracks[(row, col, bw)] = count
             if count > 0:
                 bus_widths.add(bw)
-            num_tracks[(row, col, bw)] = count
 
         if _resource == Resource.PE:
             for w in bus_widths:
-                locations[_resource, width2layer(w)].add((row, col))
+                locations[_resource, Layer.width_to_layer(w)].add((row, col))
         else:
             locations[_resource, widths2layer(bus_widths)].add((row, col))
 
@@ -354,7 +346,7 @@ def _connect_ports(root, params):
             cl = int(mux.get('configl'), 0)
 
             if mux.get('reg') == '1':
-                locations[Resource.Reg, width2layer(_bw)].add(_ps + (snkindex.track,))
+                locations[Resource.Reg, Layer.width_to_layer(_bw)].add(_ps + (snkindex.track,))
                 assert int(mux.get('configr'), 0) is not None, mux.get('configr')
                 cr = int(mux.get('configr'), 0)
             else:
