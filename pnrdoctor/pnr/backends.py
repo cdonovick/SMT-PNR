@@ -344,7 +344,11 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             # index by position (.ps) and bus width (.bw)
             processed_r_state[(tindex.snk.ps, tindex.bw)].add(tindex)
 
-        pos_map = BiMultiDict(default=True)
+
+        # add prologue
+        if annotate:
+            bs.write('#ADDRESS FORMAT TTTTFFRR\n')
+
         id_fmt = ''
         if debug:
             id_len = max(
@@ -368,6 +372,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
 
 
+        pos_map = BiMultiDict(default=True)
         for module,reg in p_state.items():
             if module.resource != Resource.Reg:
                 pos_map[module] = reg.position[fabric.rows_dim], reg.position[fabric.cols_dim]
