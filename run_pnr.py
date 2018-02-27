@@ -203,7 +203,8 @@ def cgra_flow():
                     print("routing took {}s".format(end-start))
                 break
             else:
-                print("\nfailed with dist_factor=1, relaxing...", end=' ')
+                print("\nfailed with dist_factor=1", end=' ')
+                raise RuntimeError("Routing failed -- most likely due to IO track 0 issue.")
                 if p.route_design(ROUTE_RELAXED, pnr.route_model_reader(simultaneous)):
                     end = timer()
                     print("success!")
