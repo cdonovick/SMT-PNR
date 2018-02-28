@@ -15,8 +15,11 @@ def route_model_reader(simultaneous=False):
 
         # make sure there are never two drivers of the same port
         invariant_check = dict()
-
         processed_mods = set()
+
+        rd = fabric.rows_dim
+        cd = fabric.cols_dim
+        td = fabric.tracks_dim
 
         for tie in design.ties:
             graph = solver.graphs[tie.width]
@@ -34,27 +37,35 @@ def route_model_reader(simultaneous=False):
             if simultaneous:
                 l = l[1:-1]
 
-                # TODO: Re-enable this -- update place state with monosat's adjustments
-                # ftrack = vars[graph.getEdge(l[0], l[1])]
-                # ltrack = vars[graph.getEdge(l[-2], l[-1])]
+                # update p_state with Monosat's re-placement decisions
+                ftrack = vars[graph.getEdge(l[0], l[1])]
+                ltrack = vars[graph.getEdge(l[-2], l[-1])]
 
-                # newsrcpos = ftrack.src.loc + ((ftrack.src.track,) if ftrack.src.track is not None else tuple())
-                # newdstpos = ltrack.dst.loc + ((ltrack.dst.track,) if ltrack.dst.track is not None else tuple())
+                newsrcpos = {rd: ftrack.src.loc[0], cd: ftrack.src.loc[1]}
+                newdstpos = {rd: ltrack.dst.loc[0], cd: ltrack.dst.loc[1]}
 
-                # # make sure modules were not placed in more than one location
-                # if tie.src in processed_mods:
-                #     assert p_state[tie.src][0] == newsrcpos, "Module {} appears to be placed in multiple locations".format(tie.src)
-                # else:
-                #     del p_state[tie.src]
-                #     p_state[tie.src] = newsrcpos
-                #     processed_mods.add(tie.src)
+                newsrctracknum = ftrack.src.track
+                newdsttracknum = ltrack.dst.track
 
-                # if tie.dst in processed_mods:
-                #     assert p_state[tie.dst][0] == newdstpos, "Module {} appears to be placed in multiple locations".format(tie.dst)
-                # else:
-                #     del p_state[tie.dst]
-                #     p_state[tie.dst] = newdstpos
-                #     processed_mods.add(tie.dst)
+                # re-place and make sure modules were not placed in more than one location
+                # Memories are strange because they have ports over multiple grid locations -- leave them alone
+                if tie.src.resource != Resource.Mem:
+                    if tie.src in processed_mods:
+                        assert p_state[tie.src].position == newsrcpos, "Module {} appears to be placed in multiple locations".format(tie.src.name)
+                    else:
+                        p_state[tie.src].set_position(newsrcpos)
+                        if newsrctracknum is not None:
+                            p_state[tie.src].set_category({td: newsrctracknum})
+                        processed_mods.add(tie.src)
+
+                if tie.dst.resource != Resource.Mem:
+                    if tie.dst in processed_mods:
+                        assert p_state[tie.dst].position == newdstpos, "Module {} appears to be placed in multiple locations".format(tie.dst.name)
+                    else:
+                        p_state[tie.dst].set_position(newdstpos)
+                        if newdsttracknum is not None:
+                            p_state[tie.dst].set_category({td: newdsttracknum})
+                        processed_mods.add(tie.dst)
 
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
