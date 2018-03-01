@@ -259,7 +259,7 @@ def _fuse_regs(mods, ties):
             # create new tie
             new_tie = Tie(input_tie.src, input_tie.src_port, output_tie.dst, output_tie.dst_port, output_tie.width)
             # mark the port as registered
-            output_tie.dst.add_registered_input(output_tie.dst_port)
+            output_tie.dst.add_registered_input(output_tie)
 
     _p_modules = set([mod for mod in mods.values() if mod.resource != Resource.Fused])
 

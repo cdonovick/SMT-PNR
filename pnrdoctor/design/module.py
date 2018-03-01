@@ -9,7 +9,7 @@ class Module(NamedIDObject):
         # outputs should be a BiMultiDict to support fanout
         self._outputs = BiMultiDict()
         self._resource = Resource.UNSET
-        self._registered_ports = set()
+        self._reg_map = {}  # keeps track of registered input modules
         self._layer = Layer.UNSET
 
     @property
@@ -35,13 +35,17 @@ class Module(NamedIDObject):
     def _add_output(self, dst, port):
         self._outputs[port] = dst
 
-    def add_registered_input(self, port):
-        assert port in self._inputs
-        self._registered_ports.add(port)
+    def add_registered_input(self, tie):
+        assert tie.dst_port in self._inputs
+        self._reg_map[tie.src] = tie.dst_port
 
     @property
     def registered_ports(self):
-        return self._registered_ports
+        return self._reg_map.values()
+
+    @property
+    def reg_map(self):
+        return self._reg_map
 
     @property
     def resource(self):
