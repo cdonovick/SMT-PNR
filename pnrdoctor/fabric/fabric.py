@@ -146,6 +146,21 @@ class Fabric:
         self._num_tracks = min(parsed_params['num_tracks'].values())
         self._layers = frozenset(parsed_params['layers'])
         self._locations = parsed_params['locations']
+        # want reverse look up, could use BiMultiDict but would require
+        # some behavior changes that could potentially be confusing
+        self._loc2res = {}
+        for res, locs in self._locations.items():
+            for loc in locs:
+                assert loc not in self._loc2res, \
+                        "Locations should not show up twice"
+                self._loc2res[loc] = res
+                if res == Resource.Mem:
+                    # HACK breaks for memories that are not two rows deep
+                    # add the lower tile as well
+                    row1loc = (loc[0] + 1, loc[1])
+                    assert row1loc not in self._loc2res, \
+                        "Locations should not show up twice"
+                    self._loc2res[row1loc] = Resource.Mem
         # temporarily limiting register locations
         if Resource.Reg in self._locations:
             self._locations[Resource.Reg] = self._locations[Resource.Reg] - \
@@ -223,6 +238,13 @@ class Fabric:
             Returns a dictionary of resource type --> set of (x, y, [track]) locations
         '''
         return self._locations
+
+    @property
+    def loc2res(self):
+        '''
+            Returns a dictionary of (x, y, [track]) locations
+        '''
+        return self._loc2res
 
     @property
     def muxindex_locations(self):
