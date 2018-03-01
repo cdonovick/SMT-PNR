@@ -1,5 +1,5 @@
 from pnrdoctor.design.module import Resource
-from pnrdoctor.fabric.fabricutils import trackindex
+from pnrdoctor.fabric.fabricutils import trackindex, pos_to_side
 
 
 def place_model_reader(region, fabric, design, state, vars, solver):
@@ -41,31 +41,39 @@ def route_model_reader(simultaneous=False):
                 ftrack = vars[graph.getEdge(l[0], l[1])]
                 ltrack = vars[graph.getEdge(l[-2], l[-1])]
 
+                def _get_side(mod, mnodes):
+                    if mod.resource == Resource.Reg:
+                        t = vars[graph.getEdge(mnodes[0], mnodes[1])]
+                        return pos_to_side(t.src.loc, t.dst.loc)
+                    else:
+                        return None
+
                 newsrcpos = {rd: ftrack.src.loc[0], cd: ftrack.src.loc[1]}
                 newdstpos = {rd: ltrack.dst.loc[0], cd: ltrack.dst.loc[1]}
 
                 newsrctracknum = ftrack.src.track
                 newdsttracknum = ltrack.dst.track
 
+                newsrcside = _get_side(tie.src, l[:2])
+                newdstside = _get_side(tie.dst, l[-2:])
+
+                def _replace(mod, newpos, newtrack, newside):
+                    # Memories are strange because they have ports over multiple grid locations -- leave them alone
+                    if mod.resource != Resource.Mem:
+                        if mod in processed_mods:
+                            assert p_state[mod].position == newpos, "Module {} appears to be placed in multiple locations".format(mod.name)
+                        else:
+                            p_state[mod].set_position(newpos)
+                            if newtrack is not None:
+                                p_state[mod].set_category({td: newtrack})
+                            if newside is not None:
+                                p_state[mod].side = newside
+                            processed_mods.add(mod)
+
                 # re-place and make sure modules were not placed in more than one location
                 # Memories are strange because they have ports over multiple grid locations -- leave them alone
-                if tie.src.resource != Resource.Mem:
-                    if tie.src in processed_mods:
-                        assert p_state[tie.src].position == newsrcpos, "Module {} appears to be placed in multiple locations".format(tie.src.name)
-                    else:
-                        p_state[tie.src].set_position(newsrcpos)
-                        if newsrctracknum is not None:
-                            p_state[tie.src].set_category({td: newsrctracknum})
-                        processed_mods.add(tie.src)
-
-                if tie.dst.resource != Resource.Mem:
-                    if tie.dst in processed_mods:
-                        assert p_state[tie.dst].position == newdstpos, "Module {} appears to be placed in multiple locations".format(tie.dst.name)
-                    else:
-                        p_state[tie.dst].set_position(newdstpos)
-                        if newdsttracknum is not None:
-                            p_state[tie.dst].set_category({td: newdsttracknum})
-                        processed_mods.add(tie.dst)
+                _replace(tie.src, newsrcpos, newsrctracknum, newsrcside)
+                _replace(tie.dst, newdstpos, newdsttracknum, newdstside)
 
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
