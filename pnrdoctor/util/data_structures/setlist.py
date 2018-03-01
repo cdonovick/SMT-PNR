@@ -15,6 +15,9 @@ class SetList(MutableSet, Sequence):
     def __contains__(self, val):
         return val in self._s
 
+    def __hash__(self):
+        return self._l.__hash__()
+
     def __iter__(self):
         yield from self._l
 

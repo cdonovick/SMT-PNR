@@ -2,6 +2,7 @@ from collections import defaultdict
 from functools import partial
 import sys
 import itertools
+import re
 
 from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
@@ -9,7 +10,8 @@ from pnrdoctor.config import Annotations
 from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList, BiMultiDict, SortedDict
 from .pnrutils import configindex
 
-__all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
+__all__ = ['write_debug', 'write_route_debug', 'write_bitstream',
+           'write_state_mapping']
 
 # -------------------------------------------------
 # write_bitsream consants
@@ -452,3 +454,55 @@ def _write_route_debug(design, output, p_state, r_state):
             f.write('{} -> {}:\n'.format(tie.src.name, tie.dst.name))
             f.write(str(r_state[(tie, 'debug')]))
             f.write("\n")
+
+def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_state):
+    rd = fabric.rows_dim
+    cd = fabric.cols_dim
+    td = fabric.tracks_dim
+    sb_map = {Layer.Data: "sb_unq1", Layer.Bit: "sb_unq2"}
+    port_map = {'data0': 'a',
+                'data1': 'b',
+                'bit0' : 'd',
+                'bit1' : 'e',
+                'bit2' : 'f'
+               }
+
+    pe_name = "top$pe_0x{}$test_opt_reg_{}$data_in_reg"
+    sb_name = {(Resource.PE, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_wide$out_{}_{}_i".format(tn, s, t),
+               (Resource.PE, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_1bit$out_{}_{}_i".format(tn, s, t),
+               (Resource.Mem, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_inst_busBUS16_row{}$out_{}_{}_i".format(tn, row%2, s, t),
+               (Resource.Mem, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_inst_busBUS1_row{}$out_{}_{}_i".format(tn, row%2, s, t)
+              }
+    sb_type = {(Resource.PE, Layer.Data): "sb_unq1",
+               (Resource.PE, Layer.Bit): "sb_unq2",
+               (Resource.Mem, Layer.Data): "sb_unq1",
+               (Resource.Mem, Layer.Bit): "sb_unq3"
+              }
+
+    pe_in_fstr = '{}: {}\n'
+
+    with open(state_map_file, "w") as f:
+        h='State Map File For {}x{} (Including IOs) Fabric and Design = {}\n'
+        f.write(h.format(fabric.rows, fabric.cols, design_name))
+        for m in design.modules:
+            region = p_state[m]
+            row, col = region.position[rd], region.position[cd]
+            tile_num = row*fabric.cols + col
+            track = region.category[td]
+
+            if m.resource == Resource.PE:
+                for reg, p in m.reg_map.items():
+                    rname = re.sub('__FUSED__(\d)+_', '', reg.name)
+                    f.write(pe_in_fstr.format(rname, pe_name.format(tile_num, port_map[p])))
+            else:
+                assert len(m.registered_ports) == 0
+
+            if m.resource == Resource.Reg:
+                assert hasattr(region, 'side'), 'Expecting register region to have side'
+                side = region.side.value
+                tile_res = fabric.loc2res[(row, col)]
+                sb_reg_name_f = sb_name[(tile_res, m.layer)]
+                sb_reg_name = sb_reg_name_f(tile_num, row, side, track)
+                sb_mod_name = sb_type[(tile_res, m.layer)]
+                f.write("{}: {} SBMOD: {}\n".format(m.name, sb_reg_name, sb_mod_name))
+        f.close()

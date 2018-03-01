@@ -127,7 +127,7 @@ def pos_to_side(ps, po, direc='o'):
     delcol = ps[1] - po[1]
 
     # there should only be a change of 1 in L1 norm
-    assert abs(delcol) + abs(delrow) == 1
+    assert abs(delcol) + abs(delrow) == 1, "Expecting delta=1, but positions are {}, {}".format(ps, po)
 
     col2side = {-1: Side.E, 1: Side.W}
     row2side = {-1: Side.S, 1: Side.N}

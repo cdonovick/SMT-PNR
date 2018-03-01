@@ -22,6 +22,7 @@ parser.add_argument('--time', action='store_true', help='Print timing informatio
 parser.add_argument('--target', metavar='<TARGET_ARCH>',  help='target specific arch', default='CGRA')
 parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
 parser.add_argument('--dump-smt2', dest='smt_dir' , metavar='<SMT DIR>', help='Dump placement constraints to directory')
+parser.add_argument('--state-map', dest='state_map' , metavar='<STATE_MAP_FILE>', help='Dump a mapping from coreir input names to names in coreir description of the fabric for all placed state elements.')
 args = parser.parse_args()
 
 design_file = args.design
@@ -238,6 +239,11 @@ def cgra_flow():
         bit_file = args.annotate
         print("Writing bitsream to: {}".format(bit_file))
         pnr.write_bitstream(fab, bit_file, ce, True, args.debug)
+
+    if args.state_map:
+        state_map_file = args.state_map
+        print("Writing state mapping to: {}".format(state_map_file))
+        pnr.write_state_mapping(des, design_file, fab, state_map_file, p._place_state, p._route_state)
 
 
 
