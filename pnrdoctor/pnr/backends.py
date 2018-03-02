@@ -468,8 +468,8 @@ def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_
                }
 
     pe_name = "top$pe_0x{}$test_opt_reg_{}$data_in_reg"
-    sb_name = {(Resource.PE, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_wide$out_{}_{}_i".format(tn, s, t),
-               (Resource.PE, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_1bit$out_{}_{}_i".format(tn, s, t),
+    sb_name = {(Resource.PE, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_wide$out_{}_{}_id1".format(tn, s, t),
+               (Resource.PE, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_1bit$out_{}_{}_id1".format(tn, s, t),
                (Resource.Mem, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_inst_busBUS16_row{}$out_{}_{}_i".format(tn, row%2, s, t),
                (Resource.Mem, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_inst_busBUS1_row{}$out_{}_{}_i".format(tn, row%2, s, t)
               }
