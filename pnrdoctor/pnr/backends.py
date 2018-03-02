@@ -482,7 +482,7 @@ def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_
     pe_in_fstr = '{}: {}\n'
 
     with open(state_map_file, "w") as f:
-        h='State Map File For {}x{} (Including IOs) Fabric and Design = {}\n'
+        h='State Map File For {}x{} (Including IOs) Fabric and Design = {}\n\n'
         f.write(h.format(fabric.rows, fabric.cols, design_name))
         for m in design.modules:
             region = p_state[m]

@@ -38,15 +38,8 @@ def route_model_reader(simultaneous=False):
                 l = l[1:-1]
 
                 # update p_state with Monosat's re-placement decisions
-                ftrack = vars[graph.getEdge(l[0], l[1])]
-                ltrack = vars[graph.getEdge(l[-2], l[-1])]
-
-                def _get_side(mod, mnodes):
-                    if mod.resource == Resource.Reg:
-                        t = vars[graph.getEdge(mnodes[0], mnodes[1])]
-                        return pos_to_side(t.src.loc, t.dst.loc)
-                    else:
-                        return None
+                ftrack = vars[graph.getEdge(*l[:2])]
+                ltrack = vars[graph.getEdge(*l[-2:])]
 
                 newsrcpos = {rd: ftrack.src.loc[0], cd: ftrack.src.loc[1]}
                 newdstpos = {rd: ltrack.dst.loc[0], cd: ltrack.dst.loc[1]}
@@ -54,8 +47,9 @@ def route_model_reader(simultaneous=False):
                 newsrctracknum = ftrack.src.track
                 newdsttracknum = ltrack.dst.track
 
-                newsrcside = _get_side(tie.src, l[:2])
-                newdstside = _get_side(tie.dst, l[-2:])
+                 # recover sides from beginning/end of the path for registers
+                newsrcside = ftrack.src.side if tie.src.resource == Resource.Reg else None
+                newdstside = ltrack.dst.side if tie.dst.resource == Resource.Reg else None
 
                 def _replace(mod, newpos, newtrack, newside):
                     # Memories are strange because they have ports over multiple grid locations -- leave them alone
