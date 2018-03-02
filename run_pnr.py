@@ -243,7 +243,8 @@ def cgra_flow():
     if args.state_map:
         state_map_file = args.state_map
         print("Writing state mapping to: {}".format(state_map_file))
-        pnr.write_state_mapping(des, design_file, fab, state_map_file, p._place_state, p._route_state)
+        pnr.write_state_mapping(des, design_file, fab, state_map_file,
+                                p._place_state, p._route_state, ce)
 
 
 

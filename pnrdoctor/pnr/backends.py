@@ -455,7 +455,7 @@ def _write_route_debug(design, output, p_state, r_state):
             f.write(str(r_state[(tie, 'debug')]))
             f.write("\n")
 
-def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_state):
+def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_state, config_engine):
     rd = fabric.rows_dim
     cd = fabric.cols_dim
     td = fabric.tracks_dim
@@ -467,11 +467,11 @@ def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_
                 'bit2' : 'f'
                }
 
-    pe_name = "top$pe_0x{}$test_opt_reg_{}$data_in_reg"
-    sb_name = {(Resource.PE, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_wide$out_{}_{}_id1".format(tn, s, t),
-               (Resource.PE, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_1bit$out_{}_{}_id1".format(tn, s, t),
-               (Resource.Mem, Layer.Data): lambda tn, row, s, t: "top$pe_0x{}$sb_inst_busBUS16_row{}$out_{}_{}_i".format(tn, row%2, s, t),
-               (Resource.Mem, Layer.Bit): lambda tn, row, s, t: "top$pe_0x{}$sb_inst_busBUS1_row{}$out_{}_{}_i".format(tn, row%2, s, t)
+    pe_name = "top$pe_{}$test_opt_reg_{}$data_in_reg"
+    sb_name = {(Resource.PE, Layer.Data): lambda tn, row, s, t: "top$pe_{}$sb_wide$out_{}_{}_id1".format(tn, s, t),
+               (Resource.PE, Layer.Bit): lambda tn, row, s, t: "top$pe_{}$sb_1bit$out_{}_{}_id1".format(tn, s, t),
+               (Resource.Mem, Layer.Data): lambda tn, row, s, t: "top$pe_{}$sb_inst_busBUS16_row{}$out_{}_{}_i".format(tn, row%2, s, t),
+               (Resource.Mem, Layer.Bit): lambda tn, row, s, t: "top$pe_{}$sb_inst_busBUS1_row{}$out_{}_{}_i".format(tn, row%2, s, t)
               }
     sb_type = {(Resource.PE, Layer.Data): "sb_unq1",
                (Resource.PE, Layer.Bit): "sb_unq2",
@@ -487,13 +487,13 @@ def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_
         for m in design.modules:
             region = p_state[m]
             row, col = region.position[rd], region.position[cd]
-            tile_num = row*fabric.cols + col
+            tile_addr = str(hex(config_engine[(row, col)].tile_addr)).upper()
             track = region.category[td]
 
             if m.resource == Resource.PE:
                 for reg, p in m.reg_map.items():
                     rname = re.sub('__FUSED__(\d)+_', '', reg.name)
-                    f.write(pe_in_fstr.format(rname, pe_name.format(tile_num, port_map[p])))
+                    f.write(pe_in_fstr.format(rname, pe_name.format(tile_addr, port_map[p])))
             else:
                 assert len(m.registered_ports) == 0
 
@@ -502,7 +502,7 @@ def write_state_mapping(design, design_name, fabric, state_map_file, p_state, r_
                 side = region.side.value
                 tile_res = fabric.loc2res[(row, col)]
                 sb_reg_name_f = sb_name[(tile_res, m.layer)]
-                sb_reg_name = sb_reg_name_f(tile_num, row, side, track)
+                sb_reg_name = sb_reg_name_f(tile_addr, row, side, track)
                 sb_mod_name = sb_type[(tile_res, m.layer)]
                 f.write("{}: {} SBMOD: {}\n".format(m.name, sb_reg_name, sb_mod_name))
         f.close()
