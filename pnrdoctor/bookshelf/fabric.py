@@ -66,3 +66,8 @@ class Fabric:
     @property
     def xy_dims(self):
         return self._xy_dims
+
+    @property
+    def kinds(self):
+        return self._kind_cap.keys()
+
