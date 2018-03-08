@@ -62,6 +62,18 @@ install:
     # install pnrdoctor
     - pip install -e package
 
+    - git clone https://github.com/StanfordAHA/CGRAMapper.git
+    - cd CGRAMapper
+    - sudo make install
+    - cd ..
+    - pip install delegator.py
+    - pip install git+git://github.com/phanrahan/magma.git
+    - pip install git+git://github.com/phanrahan/mantle.git
+
 script:
     - echo Running tests with $SOLVER
     - ./test/test.sh
+
+    # Run mantle->mapper->pnr tests
+    - cd test/test_mantle
+    - pytest

@@ -72,6 +72,8 @@ def parse_xml(filepath, config_engine):
     config_engine.fabric = fab
     return fab
 
+def get_tiles(root):
+    return (tile for tile in root if tile.tag == "tile")
 
 def _scan_ports(root, params):
 
@@ -245,7 +247,7 @@ def _scan_ports(root, params):
                    'mem': _scan_resource,
                    'empty': lambda x: 0}  # no op for empty tile
 
-    for tile in root:
+    for tile in get_tiles(root):
         if tile.get("type"):
             #HACK
             if tile.get("type") in ignore_types:
@@ -552,7 +554,7 @@ def _connect_ports(root, params):
     elem2connector = {'sb': _connect_sb,
                       'cb': _connect_cb}
 
-    for tile in root:
+    for tile in get_tiles(root):
         # HACK -- currently doing nothing with global stalls
         if tile.get("type") in ignore_types:
             continue
