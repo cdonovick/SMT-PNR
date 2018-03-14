@@ -1,3 +1,4 @@
+
 from collections import defaultdict
 import re
 import xml.etree.ElementTree as ET
@@ -37,10 +38,6 @@ input_special_case_sides = {Side.S, Side.W}
 # i.e. 1 bit IO tile tracks can skip over these
 bypass_resources = {Resource.IO, Resource.EMPTY}
 ioempty_positions = set()
-
-# record available IO tracks
-# Assuming it's homogeneous
-io_tracks = set()
 
 # HACK
 ignore_types = {"gst"}
@@ -134,26 +131,21 @@ def _scan_ports(root, params):
             layer = Layer.Data
         io_groups[(ig, layer)].append(_ps)
 
-        output_name = tile.find('output').text
-        output_index = _get_index(_ps, output_name, Resource.IO)
-
         input_name = tile.find('input').text
         input_index = _get_index(_ps, input_name, Resource.IO)
-
-        assert output_index.track == input_index.track, \
-          "Assuming homogeneous tracks"
-
-        io_tracks.add(output_index.track)
-
-        fabric[output_index] = port_wrapper(Port(output_index))
         fabric[input_index]  = port_wrapper(Port(input_index, 'i'))
+
+        for o in tile.findall('output'):
+            output_name = o.text
+            output_index = _get_index(_ps, output_name, Resource.IO)
+
+            fabric[output_index] = port_wrapper(Port(output_index))
 
         # add to config engine
         ci = configindex(ps=_ps, resource=Resource.IO)
         _dirxml = tile.find('direction')
         _dir = {'in': int(_dirxml.get('in')), 'out': int(_dirxml.get('out'))}
         config_engine[ci] = config(io_group=ig, direction=_dir)
-
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
@@ -526,26 +518,27 @@ def _connect_ports(root, params):
                 fabric[tindex] = track
 
         # attach output tiles
-        output_name = io_tile.find('output').text
-        output_index, out_bus, out_side, out_track, src_ps = _match_name(output_name)
+        for out in io_tile.findall('output'):
+            output_name = out.text
+            output_index, out_bus, out_side, out_track, src_ps = _match_name(output_name)
 
-        dst_ps = (row, col)
-        if out_bus == 1:
-            # 1 bit IO bypass empty or IO16 tiles
-            assert src_ps in ioempty_positions, "Expecting IO or empty tile"
-            # shifts the positions
-            temp = src_ps
-            src_ps = _bypass(dst_ps, src_ps)
-            dst_ps = temp
-            del temp
+            dst_ps = (row, col)
+            if out_bus == 1:
+                # 1 bit IO bypass empty or IO16 tiles
+                assert src_ps in ioempty_positions, "Expecting IO or empty tile"
+                # shifts the positions
+                temp = src_ps
+                src_ps = _bypass(dst_ps, src_ps)
+                dst_ps = temp
+                del temp
 
-        srcindex = muxindex(ps=src_ps, po=dst_ps,
-                            resource=Resource.SB,
-                            bw=out_bus, track=out_track,
-                            port=None)
+            srcindex = muxindex(ps=src_ps, po=dst_ps,
+                                resource=Resource.SB,
+                                bw=out_bus, track=out_track,
+                                port=None)
 
-        assert srcindex in fabric, "Expecting valid port, got {}".format(srcindex)
-        _create_track(srcindex, output_index)
+            assert srcindex in fabric, "Expecting valid port, got {}".format(srcindex)
+            _create_track(srcindex, output_index)
 
         # TODO: Figure out what to put in config engine
 
@@ -730,34 +723,30 @@ def _bypass(ps, other_ps):
     return io_ps
 
 def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
-    def check_io(index, width):
-        # io_tracks defined at top of file
-        return index.track in io_tracks and srcindex.bw == width
 
     # Special IO handling
     # 1 bit IOs skip a tile
     # 16 bit IOs don't
-    if srcindex.ps in ioempty_positions and check_io(srcindex, 1):
-
+    if srcindex.ps in ioempty_positions:
+        io_ps = srcindex.ps
         # 1 bit IO bypasses empty or IO16 Bit tiles
-        io_ps = _bypass(ps, srcindex.ps)
+        if srcindex.bw == 1:
+            io_ps = _bypass(ps, srcindex.ps)
+
         # construct IO's srcindex
         # uses some parameters from initial srcindex guess
-        srcindex = muxindex(ps=io_ps, po=None,
+        io_index = muxindex(ps=io_ps, po=None,
                             resource=Resource.IO,
                             bw=srcindex.bw,
                             track=srcindex.track,
                             port="in")
-        assert srcindex in fabric, "Expect IO tile exists"
-
-    elif srcindex.ps in io16_positions and check_io(srcindex, 16):
-        io_ps = srcindex.ps
-        srcindex = muxindex(ps=io_ps, po=None,
-                            resource=Resource.IO,
-                            bw=srcindex.bw,
-                            track=srcindex.track,
-                            port="in")
-        assert srcindex in fabric, "Expect IO tile exists"
+        # If the IO exists
+        # Counting on IOs being added correctly in proc_io
+        if io_index in fabric:
+            srcindex = io_index
+        else:
+            # create a new port
+            fabric[srcindex] = port_wrapper(Port(srcindex, 'i'))
 
     elif srcindex not in ftdata.muxindices:
         # create a new port
