@@ -124,12 +124,10 @@ def _scan_ports(root, params):
         tile_type = tile.get("type")
         config_engine[_ps] = config(tile_addr=tile_addr,
                                     tile_type=tile_type)
-        ig = int(tile.find("io_group").text, 0)
         if tile_type == "io1bit":
             layer = Layer.Bit
         else:
             layer = Layer.Data
-        io_groups[(ig, layer)].append(_ps)
 
         input_name = tile.find('input').text
         input_index = _get_index(_ps, input_name, Resource.IO)
@@ -141,11 +139,23 @@ def _scan_ports(root, params):
 
             fabric[output_index] = port_wrapper(Port(output_index))
 
+        ig = int(tile.find("io_group").text, 0)
+        io_groups[(ig, layer)].append(_ps)
+        tri = tile.find("tri")
+        fa = int(tri.get("feature_address"))
+        ra = int(tri.get("reg_address"))
+        bith = int(tri.get("bith"))
+        bitl = int(tri.get("bitl"))
+        directions = {}
+        for d in tri.findall("direction"):
+            sel = int(d.get("sel"))
+            directions[d.text] = sel
+
         # add to config engine
         ci = configindex(ps=_ps, resource=Resource.IO)
-        _dirxml = tile.find('direction')
-        _dir = {'in': int(_dirxml.get('in')), 'out': int(_dirxml.get('out'))}
-        config_engine[ci] = config(io_group=ig, direction=_dir)
+        config_engine[ci] = config(io_group=ig, feature_address=fa,
+                                   reg_address=ra, bith=bith, bitl=bitl,
+                                   direction=config(directions))
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
