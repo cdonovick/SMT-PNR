@@ -122,11 +122,13 @@ def cgra_flow():
 
     tight = True
     relaxed = True
+    seed -= 1
     for iterations in range(10):
+        seed += 1
+        random.seed(seed)
         fab = pnr.parse_xml(fabric_file, ce)
 
         try:
-            seed = random.randint(0, 100)
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
             print('Not enough resources')
