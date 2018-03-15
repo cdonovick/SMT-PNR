@@ -1,24 +1,27 @@
 {"top":"global.DesignTop",
 "namespaces":{
+  "commonlib":{
+    
+  },
   "global":{
     "modules":{
       "DesignTop":{
-        "type":["Record",{
-          "in":["Array",1,["Array",16,"BitIn"]],
-          "out":["Array",16,"Bit"]
-        }],
+        "type":["Record",[
+          ["in",["Record",[["arg_1",["Array",1,["Array",1,["Array",16,"BitIn"]]]]]]],
+          ["out",["Array",1,["Array",1,["Array",16,"Bit"]]]]
+        ]],
         "instances":{
           "const2__348":{
             "genref":"coreir.const",
             "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],2]}
+            "modargs":{"value":[["BitVector",16],"16'h0002"]}
           },
-          "io16_out":{
+          "io16_out_0_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
             "modargs":{"mode":["String","o"]}
           },
-          "io16in_in_0":{
+          "io16in_in_arg_1_0_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
             "modargs":{"mode":["String","i"]}
@@ -26,16 +29,19 @@
           "mul_347_348_349_PE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
-            "modargs":{"alu_op":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],0], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],0]}
+            "modargs":{"alu_op":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"]}
           }
         },
         "connections":[
           ["const2__348.out","mul_347_348_349_PE.data.in.1"],
-          ["io16_out.in","mul_347_348_349_PE.data.out"],
-          ["io16in_in_0.out","mul_347_348_349_PE.data.in.0"]
+          ["io16_out_0_0.in","mul_347_348_349_PE.data.out"],
+          ["io16in_in_arg_1_0_0.out","mul_347_348_349_PE.data.in.0"]
         ]
       }
     }
+  },
+  "mantle":{
+    
   }
 }
 }

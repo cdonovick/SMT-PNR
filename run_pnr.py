@@ -26,7 +26,6 @@ args = parser.parse_args()
 
 design_file = args.design
 fabric_file = args.fabric
-seed = args.seed
 
 def ice_flow():
     from pnrdoctor.ice import design, blif2graph, fabric, constraints
@@ -122,7 +121,8 @@ def cgra_flow():
 
     tight = True
     relaxed = True
-    seed -= 1
+
+    seed = args.seed - 1
     for iterations in range(10):
         seed += 1
         random.seed(seed)
