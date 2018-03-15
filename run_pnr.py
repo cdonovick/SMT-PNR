@@ -173,7 +173,7 @@ def cgra_flow():
                         print("placement took {}s".format(end_3 - start))
                 else:
                     end_3 = timer()
-                    if args.timer():
+                    if args.time:
                         print("Unsat after {}s".format(end_3 - end_2))
                     print("!!!failure!!!")
                     sys.exit(1)
