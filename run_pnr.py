@@ -26,7 +26,6 @@ args = parser.parse_args()
 
 design_file = args.design
 fabric_file = args.fabric
-seed = args.seed
 
 def ice_flow():
     from pnrdoctor.ice import design, blif2graph, fabric, constraints
@@ -122,11 +121,14 @@ def cgra_flow():
 
     tight = True
     relaxed = True
+
+    seed = args.seed - 1
     for iterations in range(10):
+        seed += 1
+        random.seed(seed)
         fab = pnr.parse_xml(fabric_file, ce)
 
         try:
-            seed = random.randint(0, 100)
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
             print('Not enough resources')
