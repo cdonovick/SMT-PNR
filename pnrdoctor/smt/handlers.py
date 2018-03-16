@@ -39,30 +39,35 @@ class BaseHandler(NamedIDObject, metaclass=ABCMeta):
     def value(self):
         pass
 
+    @property
+    @abstractmethod
+    def lit(self):
+        pass
+
 
 class BVHandler(BaseHandler):
     def __init__(self, name, solver, bits, const_value):
         super().__init__(name, solver)
         self._bits = bits
         if const_value is None:
-            self._var = solver.DeclareConst(self.name, solver.BitVec(bits))
+            self._lit = solver.DeclareConst(self.name, solver.BitVec(bits))
         else:
-            self._var = self.solver.TheoryConst(self.solver.BitVec(bits), const_value)
+            self._lit = self.solver.TheoryConst(self.solver.BitVec(bits), const_value)
 
     def encode(self, value):
         return type(self)('encoded_{}'.format(value), self.solver, self._bits, value)
 
     @property
     def value(self):
-        return self.solver.GetValue(self._var).as_int()
+        return self.solver.GetValue(self.lit).as_int()
 
     @property
     def invariants(self):
         return super().invariants
 
     @property
-    def var(self):
-        return self._var
+    def lit(self):
+        return self._lit
 
 class ScalarHandler(BVHandler):
     def __init__(self, name, solver, upper_bound, const_value=None):
@@ -72,7 +77,7 @@ class ScalarHandler(BVHandler):
 
     def delta(self, other):
         if isinstance(other, type(self)):
-            return self.var - other.var
+            return self.lit - other.lit
         return self - self.encode(other)
 
     def abs_delta(self, other):
@@ -83,12 +88,12 @@ class ScalarHandler(BVHandler):
 
     def distinct(self, other):
         if isinstance(other, type(self)):
-            return self._var != other._var
+            return self.lit != other.lit
         return self != self.encode(other)
 
     def equal(self, other):
         if isinstance(other, type(self)):
-            return self._var == other._var
+            return self.lit == other.lit
         return self.equal(self.encode(other))
 
     def encode(self, value):
@@ -97,7 +102,7 @@ class ScalarHandler(BVHandler):
 
     @property
     def value(self):
-        return self.solver.GetValue(self._var).as_int()
+        return self.solver.GetValue(self.lit).as_int()
 
     @property
     def invariants(self):
@@ -106,9 +111,9 @@ class ScalarHandler(BVHandler):
             # can use slices with latest version of smt-switch
             # one index means Extract(ix, ix)
 
-            c = self._var[ix] == 0
+            c = self.lit[ix] == 0
         else:
-            c = self.solver.BVUlt(self._var, self._upper_bound)
+            c = self.solver.BVUlt(self.lit, self._upper_bound)
 
         return self.solver.And([c, super().invariants])
 
@@ -118,12 +123,12 @@ class CategoryHandler(BVHandler):
 
     def distinct(self, other):
         if isinstance(other, type(self)):
-            return self._var & other._var == 0
+            return self.lit & other.lit == 0
         return self & self.encode(other) == 0
 
     def equal(self, other):
         if isinstance(other, type(self)):
-            return self._var == other._var
+            return self.lit == other.lit
         return self.equal(self.encode(other))
 
     def encode(self, value):
@@ -132,7 +137,7 @@ class CategoryHandler(BVHandler):
 
     @property
     def value(self):
-        return self.solver.GetValue(self._var).as_int()
+        return self.solver.GetValue(self.lit).as_int()
 
     @property
     def invariants(self):

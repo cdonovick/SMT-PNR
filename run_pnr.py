@@ -95,21 +95,24 @@ def cgra_flow():
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_resource,
-            pnr.HPWL(rmods, nmods + rmods)
+            pnr.pin_IO,
+#            pnr.HPWL(rmods, nmods + rmods)
         ]
         PLACE_RELAXED     = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_resource,
-            pnr.HPWL(rmods, 2*nmods + rmods)
+            pnr.pin_IO,
+#            pnr.HPWL(rmods, 2*nmods + rmods)
         ]
         PLACE_EXTRA_RELAXED = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_resource,
-            pnr.HPWL(rmods, 4*nmods + rmods)
+            pnr.pin_IO,
+ #           pnr.HPWL(rmods, 4*nmods + rmods)
         ]
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)

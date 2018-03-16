@@ -60,8 +60,12 @@ class PNR:
             for d in r.category:
                 if d == fabric.layers_dim:
                     r.set_category({d : module.layer.value})
-                elif module.resource == Resource.Reg or d != fabric.tracks_dim:
+                elif module.resource == Resource.Reg and d == fabric.tracks_dim:
                     r.set_category({d : SYMBOLIC})
+                elif module.resource == Resource.IO  and d == fabric.io_groups_dim:
+                    r.set_category({d : SYMBOLIC})
+                else:
+                    r.set_category({d : None})
 
             self._place_state[module] = r
 

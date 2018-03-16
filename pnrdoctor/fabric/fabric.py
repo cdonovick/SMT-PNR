@@ -1,5 +1,5 @@
 from pnrdoctor.design.module import Resource, Layer
-from pnrdoctor.util import IDObject
+from pnrdoctor.util import IDObject, BiDict
 from pnrdoctor.smt.region import Scalar, Category
 from .fabricutils import Side, pos_to_side
 
@@ -157,6 +157,10 @@ class Fabric:
         self._port_names = parsed_params['port_names']
         self._io_groups = parsed_params['io_groups']
 
+        # create mapping 1-hot <-> group number
+        group_numbers = {g for g, _ in self._io_groups.keys()}
+        self._group_map = BiDict({1 << k : g for k,g in enumerate(group_numbers)})
+
         # Hacky hardcoding register port names
         # because they're not provided by cgra_info
         self._port_names[(Resource.Reg, Layer.Data.width)].sources.add('out')
@@ -174,6 +178,8 @@ class Fabric:
         self._cols_dim = Scalar('col', self.cols)
         self._tracks_dim = Category('track', self.num_tracks, one_hot=True)
         self._layers_dim = Category('layer', len(self.layers))
+        self._io_groups_dim = Category('io_group', len(group_numbers), one_hot=True)
+
 
     @property
     def rows(self):
@@ -230,6 +236,14 @@ class Fabric:
         Returns a dictionary (io_group:int, layer:Layer) --> list( pos:tuple(int, int))
         '''
         return self._io_groups
+
+    @property
+    def io_groups_dim(self):
+        return self._io_groups_dim
+
+    @property
+    def group_map(self):
+        return self._group_map
 
     @property
     def locations(self):
