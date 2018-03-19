@@ -2,7 +2,7 @@
 from collections import defaultdict
 import re
 import xml.etree.ElementTree as ET
-
+import json
 
 from pnrdoctor.config import config
 from pnrdoctor.design.module import Resource, Layer
@@ -12,7 +12,7 @@ from pnrdoctor.fabric import Port, Track, Fabric
 from pnrdoctor.util import SelectDict, STAR
 from .pnrutils import configindex
 
-__all__ = ['parse_xml']
+__all__ = ['parse_xml', 'parse_board_info']
 
 SB = Resource.SB
 CB = Resource.CB
@@ -766,3 +766,12 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
         raise Warning("Feedthroughs in design. These have NOT been tested thoroughly.")
 
     return srcindex
+
+def parse_board_info(f, fabric):
+    '''
+    Parses the board info file and adds to the fabric
+    Needs to be called after parse_xml, and passed the constructed fabric
+    '''
+
+    board = json.load(f)
+    fabric.board = {int(k) : v for k, v in board.items()}
