@@ -136,7 +136,7 @@ def cgra_flow():
     tight = True
     relaxed = True
 
-    seed = args.seed - 1
+    seed = int(args.seed) - 1
     for iterations in range(10):
         seed += 1
         random.seed(seed)

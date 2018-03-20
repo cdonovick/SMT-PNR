@@ -66,7 +66,7 @@ class Module(NamedIDObject):
             raise TypeError('Expected Layer not {}'.format(type(layer)))
 
     def __str__(self):
-        return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
+        return '{}<{}>'.format(self.name, self.resource)
 
     def fuse_reg(self, port):
         '''
