@@ -260,11 +260,13 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         layer = mod.layer
         if layer == Layer.Bit:
             assert row,col in fabric.io_groups[group, layer]
-            Cs = [config_engine[configindex(resource=Resource.IO, ps=(row, col))]]
+            rcs = [(row, col)]
         else:
-            Cs = [config_engine[configindex(resource=Resource.IO, ps=(r, c))] for r,c in fabric.io_groups[group, layer]]
+            rcs = list(fabric.io_groups[group, Layer.Bit])
+        for rx,cx in rcs:
+            c = config_engine[configindex(resource=Resource.IO, ps=(rx,cx))]
+            t = config_engine[rx, cx].tile_addr
 
-        for c in Cs:
             assert c.io_group == group
             val = c.direction[mod.config]
             bitl = c.bitl
@@ -273,13 +275,10 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             offset = bitl % 32
 
             assert val.bit_length() <= sel_w
-            idx = (tile_addr, c.feature_address, reg)
-
+            idx = (t, c.feature_address, reg)
             b_dict[idx] |= val << offset
-            c_dict[idx][(sel_w + offset - 1, offset)] = f'IO Mode = {mod.config}'
+            c_dict[idx][(sel_w + offset - 1, offset)] = f'@ tile ({rx}, {cx}) IO Mode = {mod.config}'
             d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
-
-
 
     def _proc_mem(mod, tile_addr, b_dict, c_dict, d_dict):
         assert mod.resource == Resource.Mem
