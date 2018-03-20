@@ -22,7 +22,7 @@ parser.add_argument('--time', action='store_true', help='Print timing informatio
 parser.add_argument('--target', metavar='<TARGET_ARCH>',  help='target specific arch', default='CGRA')
 parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
 parser.add_argument('--dump-smt2', dest='smt_dir' , metavar='<SMT DIR>', help='Dump placement constraints to directory')
-parser.add_argument('--board-info', dest='board_info', metavar='<BOARD INFO FILE', help='Board info file with additional constraints on IOs')
+parser.add_argument('--board-info', dest='board_info', metavar='<BOARD INFO FILE>', help='Board info file with additional constraints on IOs')
 args = parser.parse_args()
 
 design_file = args.design
