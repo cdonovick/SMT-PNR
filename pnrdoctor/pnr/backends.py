@@ -276,7 +276,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             idx = (tile_addr, c.feature_address, reg)
 
             b_dict[idx] |= val << offset
-            c_dict[idx][(sel_w + offset - 1, offset)] = ""
+            c_dict[idx][(sel_w + offset - 1, offset)] = f'IO Mode = {mod.config}'
             d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
 
 
@@ -394,7 +394,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                         _proc_cb(port, tile_addr, b_dict, c_dict, d_dict)
                         #_write(data, tile_addr, feature_address, bs, comment)
 
-            res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
+                res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
             #_write(data, tile_addr, feature_address, bs, comment)
 
         assert b_dict.keys() >= c_dict.keys()
