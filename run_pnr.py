@@ -107,7 +107,6 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-            pnr.board_constraint,
             #pnr.HPWL(rmods, nmods + rmods)
         ]
         PLACE_RELAXED     = [
@@ -116,7 +115,6 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-            pnr.board_constraint,
             #pnr.HPWL(rmods, 2*nmods + rmods)
         ]
         PLACE_EXTRA_RELAXED = [
@@ -125,9 +123,12 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-            pnr.board_constraint,
             #pnr.HPWL(rmods, 4*nmods + rmods)
         ]
+        if board_info_file:
+            for c in (PLACE_CONSTRAINTS, PLACE_RELAXED, PLACE_EXTRA_RELAXED):
+                c.append(pnr.board_constraint)
+
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
 
