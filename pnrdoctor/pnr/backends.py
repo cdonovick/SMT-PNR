@@ -371,13 +371,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             else:
                 id_fmt = ' # ' + id_fmt
 
-
-
         for module,region in p_state.items():
             if module.resource != Resource.Reg:
                 pos_map[module] = region.position[fabric.rows_dim], region.position[fabric.cols_dim]
-
-
 
         #(tile_addr, feature_addres, reg) -> data
         b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
@@ -385,8 +381,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         #(tile_addr, feature_addres, reg) -> (bith, bitl) -> comment
         c_dict = defaultdict(lambda : defaultdict(str))
         d_dict = defaultdict(lambda : defaultdict(str))
-        
-        # Process modules other than registers 
+
+        # Process modules other than registers
         for mod,pos in pos_map.items():
             tile_addr = config_engine[pos].tile_addr
             row, col = pos
@@ -396,9 +392,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         for pos, layer in sorted(processed_r_state):
             tile_addr = config_engine[pos].tile_addr
             row, col = pos
-
             t_indices = processed_r_state[(pos, layer)]
-
             _proc_sb(t_indices, tile_addr, b_dict, c_dict, d_dict)
 
             #_write(data, tile_addr, feature_address, bs, comment)
