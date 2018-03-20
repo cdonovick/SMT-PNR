@@ -256,7 +256,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         assert mod.layer != Layer.Combined
 
         io_groups_dim = fabric.io_groups_dim
-        group = fabric.group_map[p_state[mod].category[io_groups_dim]]
+        group = p_state[mod].category[io_groups_dim]
 
         assert row,col in fabric.io_groups[group, layer]
 
@@ -265,6 +265,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             rcs = [(row, col)]
         else:
             rcs = list(fabric.io_groups[group, Layer.Bit])
+
         for rx,cx in rcs:
             c = config_engine[configindex(resource=Resource.IO, ps=(rx,cx))]
             t = config_engine[rx, cx].tile_addr
@@ -316,6 +317,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         rs = _format_elem(reg, _bit_widths['reg'])
         ds = _format_elem(data, _bit_widths['data'])
         return rs+fs+ts+' '+ds+'\n'
+
 
     def _format_elem(elem, elem_bits):
         return '{:0{bits}X}'.format(elem, bits=elem_bits//4)
@@ -375,19 +377,30 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             if module.resource != Resource.Reg:
                 pos_map[module] = region.position[fabric.rows_dim], region.position[fabric.cols_dim]
 
+
+
         #(tile_addr, feature_addres, reg) -> data
         b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
 
         #(tile_addr, feature_addres, reg) -> (bith, bitl) -> comment
         c_dict = defaultdict(lambda : defaultdict(str))
         d_dict = defaultdict(lambda : defaultdict(str))
-        # for each position and layer, process all the tracks and modules
+        
+        # Process modules other than registers 
+        for mod,pos in pos_map.items():
+            tile_addr = config_engine[pos].tile_addr
+            row, col = pos
+            res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
+
+        # for each position and layer, process all the tracks and registers
         for pos, layer in sorted(processed_r_state):
             tile_addr = config_engine[pos].tile_addr
             row, col = pos
+
             t_indices = processed_r_state[(pos, layer)]
 
             _proc_sb(t_indices, tile_addr, b_dict, c_dict, d_dict)
+
             #_write(data, tile_addr, feature_address, bs, comment)
             for mod in pos_map.I[pos]:
                 if mod.resource != Resource.IO:
@@ -395,7 +408,6 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                         _proc_cb(port, tile_addr, b_dict, c_dict, d_dict)
                         #_write(data, tile_addr, feature_address, bs, comment)
 
-                res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
             #_write(data, tile_addr, feature_address, bs, comment)
 
         assert b_dict.keys() >= c_dict.keys()
