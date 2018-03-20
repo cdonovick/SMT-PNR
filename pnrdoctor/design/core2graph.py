@@ -76,12 +76,12 @@ def load_core(file, *libs):
             modules[inst_name]['type']  = 'IO'
             modules[inst_name]['res']   = Resource.IO
             modules[inst_name]['layer'] = Layer.Data
-            modules[inst_name]['conf']  = inst.config['mode'].value
+            modules[inst_name]['conf']  = _IO_TRANSLATE[inst.config['mode'].value]
         elif inst_type == 'BitIO':
             modules[inst_name]['type']  = 'BitIO'
             modules[inst_name]['res']   = Resource.IO
             modules[inst_name]['layer'] = Layer.Bit
-            modules[inst_name]['conf']  = inst.config['mode'].value
+            modules[inst_name]['conf']  = _IO_TRANSLATE[inst.config['mode'].value]
 
         else:
             raise ValueError("Unknown module_name `{}' in `{}' expected <`PE', `[bit]const', `[Bit]IO',  `[bit]reg', `Mem'>".format(inst_type, file))
@@ -150,3 +150,7 @@ _PORT_TRANSLATION = {
     'Mem' : IdentDict(),
 }
 
+_IO_TRANSLATE = {
+    'i' : 'in',
+    'o' : 'out'
+}

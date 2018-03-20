@@ -83,22 +83,32 @@ def cgra_flow():
     modules, ties = design.core2graph.load_core(design_file, *args.libs)
     des = design.Design(modules, ties)
 
+    print("Loading fabric: {}".format(fabric_file))
+    fab = pnr.parse_xml(fabric_file, ce)
+    if board_info_file:
+        with open(board_info_file, 'r') as f:
+            pnr.parse_board_info(f, fab)
+
     if args.solver in ilp_solvers.keys():
         # ILP solvers use scalar handlers for scalar and category type
         PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
         PLACE_RELAXED = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(8)
     else:
         fac = sum(len(n.terminals) - 1 for n in des.nets) / len(des.nets)
+        fs = (fab.rows**2 + fab.cols**2)**(1/2)
         nmods = len(des.modules)
         rmods = math.ceil(fac*nmods**.5)
 
+        rmods = max(math.ceil(fs/nmods), rmods)
+
         PLACE_CONSTRAINTS = [
-            pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
+            pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, False),
             pnr.distinct,
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-#            pnr.HPWL(rmods, nmods + rmods)
+            pnr.board_constraint,
+            #pnr.HPWL(rmods, nmods + rmods)
         ]
         PLACE_RELAXED     = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -106,7 +116,8 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-#            pnr.HPWL(rmods, 2*nmods + rmods)
+            pnr.board_constraint,
+            #pnr.HPWL(rmods, 2*nmods + rmods)
         ]
         PLACE_EXTRA_RELAXED = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -114,12 +125,12 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
- #           pnr.HPWL(rmods, 4*nmods + rmods)
+            pnr.board_constraint,
+            #pnr.HPWL(rmods, 4*nmods + rmods)
         ]
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
 
-    print("Loading fabric: {}".format(fabric_file))
 
     tight = True
     relaxed = True
@@ -128,10 +139,6 @@ def cgra_flow():
     for iterations in range(10):
         seed += 1
         random.seed(seed)
-        fab = pnr.parse_xml(fabric_file, ce)
-        if board_info_file:
-            with open(board_info_file, 'r') as f:
-                pnr.parse_board_info(f, fab)
         try:
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
@@ -156,7 +163,7 @@ def cgra_flow():
             end = timer()
             if args.time:
                 print("Unsat after {}s".format(end - start))
-                
+
             print('relaxing...', end=' ')
 
             sys.stdout.flush()
@@ -165,7 +172,7 @@ def cgra_flow():
                 end_2 = timer()
                 print("success!")
                 if args.time:
-                    print("Sat after {}s".format(end_2 - end)) 
+                    print("Sat after {}s".format(end_2 - end))
                     print("placement took {}s".format(end_2 - start))
                 sys.stdout.flush()
             else:
@@ -179,7 +186,7 @@ def cgra_flow():
                     end_3 = timer()
                     print("success!")
                     if args.time:
-                        print("Sat after {}s".format(end_3 - end_2)) 
+                        print("Sat after {}s".format(end_3 - end_2))
                         print("placement took {}s".format(end_3 - start))
                 else:
                     end_3 = timer()
@@ -197,7 +204,7 @@ def cgra_flow():
         if args.print or args.print_place:
             print("\nplacement info:")
             p.write_design(pnr.write_debug(des))
-                
+
 
         if not args.noroute:
     #        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
@@ -223,6 +230,11 @@ def cgra_flow():
                     print("!!!failure!!!")
         else:
             break
+
+        fab = pnr.parse_xml(fabric_file, ce)
+        if board_info_file:
+            with open(board_info_file, 'r') as f:
+                pnr.parse_board_info(f, fab)
     else:
         print('Failed to place and route in 10 iterations')
         sys.exit(1)

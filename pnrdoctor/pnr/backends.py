@@ -66,7 +66,7 @@ _const_reg = {
     'bit2'    : (0xf5,  1,),
 }
 
-#[(reg, (bith, bitll), value)] 
+#[(reg, (bith, bitll), value)]
 #_op_reg = {
 #    'alu_op'    : [(0xff, (5,0), None),]
 #    'lut_value' : [(0x00, (8,0), None), (0xff, (9,9), 1),]
@@ -179,106 +179,107 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         assert mod.resource == Resource.PE
         feature_address = config_engine[configindex(resource=Resource.PE, ps=(row, col))].feature_address
 
-        if mod.type_ == 'PE':
-            for k in mod.config:
-                if k == 'alu_op':
-                    reg = _ALU_REG
-                    d = _op_translate[mod.config[k]]
-                elif k == 'lut_value':
-                    idx = (tile_addr, feature_address, _ALU_REG)
-                    b_dict[idx][_LUT_ENABLE] |= 1
-                    c_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
-                    d_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = id_fmt.format(mod.id)
-                    reg = _LUT_REG
-                    d = mod.config[k]
-                else:
-                    print(k)
+        if mod.type_ != 'PE':
+            raise ValueError("Unkown mod.type_ : `{}'".format(mod.type_))
 
-                if d.bit_length() > _bit_widths[k]:
-                    raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
-                        k,
-                        _bit_widths[k],
+        for k in mod.config:
+            if k == 'alu_op':
+                reg = _ALU_REG
+                d = _op_translate[mod.config[k]]
+            elif k == 'lut_value':
+                idx = (tile_addr, feature_address, _ALU_REG)
+                b_dict[idx][_LUT_ENABLE] |= 1
+                c_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
+                d_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = id_fmt.format(mod.id)
+                reg = _LUT_REG
+                d = mod.config[k]
+            else:
+                print(f'Unkown PE config option {k}')
+
+            if d.bit_length() > _bit_widths[k]:
+                raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
+                    k,
+                    _bit_widths[k],
+                    d,
+                    d.bit_length()
+                    ))
+
+            idx = (tile_addr, feature_address, reg)
+            b_dict[idx] |= d
+            c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
+            d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
+
+        for port in mod.inputs:
+            tie = mod.inputs[port]
+            src = tie.src
+
+            if port not in _port_offsets:
+                assert src.type_ != 'Const'
+                assert port not in mod.registered_ports
+                print(f'Unkown PE port {port}')
+                continue
+
+            if src.type_ == 'Const':
+                reg, width = _const_reg[port]
+                idx = (tile_addr, feature_address, reg)
+                d = src.config
+                if d.bit_length() > width:
+                    raise ValueError("Const on port `{}' should be {} bits. Given value `{}' requires {} bits".format(
+                        port,
+                        width,
                         d,
                         d.bit_length()
                         ))
 
-                idx = (tile_addr, feature_address, reg)
-                b_dict[idx] |= d
-                c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
-                d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
+                b_dict[idx] |= d # load 'data0' reg with const
+                c_dict[idx][(width-1,0)] = Annotations.init_reg(port, src.config)
+                d_dict[idx][(width-1,0)] = id_fmt.format(mod.id)
+                mode = 'CONST'
 
+            elif port in mod.registered_ports:
+                mode = 'DELAY'
 
+            else:
+                mode = 'BYPASS'
 
-            for port in mod.inputs:
-                tie = mod.inputs[port]
-                src = tie.src
-
-                if port not in _port_offsets:
-                    assert src.type_ != 'Const'
-                    assert port not in mod.registered_ports
-                    continue
-
-                if src.type_ == 'Const':
-                    reg, width = _const_reg[port]
-                    idx = (tile_addr, feature_address, reg)
-                    d = src.config
-                    if d.bit_length() > width:
-                        raise ValueError("Const on port `{}' should be {} bits. Given value `{}' requires {} bits".format(
-                            port,
-                            widt,
-                            d,
-                            d.bit_length()
-                            ))
-
-                    b_dict[idx] |= d # load 'data0' reg with const
-                    c_dict[idx][(width-1,0)] = Annotations.init_reg(port, src.config)
-                    d_dict[idx][(width-1,0)] = id_fmt.format(mod.id)
-                    mode = 'CONST'
-
-                elif port in mod.registered_ports:
-                    mode = 'DELAY'
-
-                else:
-                    mode = 'BYPASS'
-
-                reg = _ALU_REG
-                idx = (tile_addr, feature_address, reg)
-                offset =  _port_offsets[port]
-
-                b_dict[idx] |=  _reg_mode[mode] << offset
-                c_dict[idx][(offset+1, offset)] = '{}: REG_{}'.format(port, mode)
-                d_dict[idx][(offset+1, offset)] = id_fmt.format(mod.id)
-
-
-        elif mod.type_ == 'IO':
             reg = _ALU_REG
             idx = (tile_addr, feature_address, reg)
+            offset =  _port_offsets[port]
 
-            b_dict[idx] |= _op_translate[mod.config]
-
-
-            if mod.config == 'i':
-                c_dict[idx][(5, 0)] = Annotations.op_config('alu_op', 'input')
-                d_dict[idx][(5, 0)] = id_fmt.format(mod.id)
-
-                reg, _ = _const_reg['data0']
-                idx = (tile_addr, feature_address, reg)
-                b_dict[idx]  = 0xffffffff
-
-                reg, _ = _const_reg['data1']
-                idx = (tile_addr, feature_address, reg)
-                b_dict[idx]  = 0xffffffff
-            else:
-                c_dict[idx][(5, 0)] = Annotations.op_config('alu_op', 'output')
-                d_dict[idx][(5, 0)] = id_fmt.format(mod.id)
-
-                reg, _ = _const_reg['data1']
-                idx = (tile_addr, feature_address, reg)
-                b_dict[idx]  = 0xffffffff
+            b_dict[idx] |=  _reg_mode[mode] << offset
+            c_dict[idx][(offset+1, offset)] = '{}: REG_{}'.format(port, mode)
+            d_dict[idx][(offset+1, offset)] = id_fmt.format(mod.id)
 
 
+    def _proc_io(mod, tile_addr, b_dict, c_dict, d_dict):
+        assert mod.resource == Resource.IO
+        assert mod.layer != Layer.Combined
+
+        io_groups_dim = fabric.io_groups_dim
+        group = fabric.group_map[p_state[mod].category[io_groups_dim]]
+        layer = mod.layer
+        if layer == Layer.Bit:
+            assert row,col in fabric.io_groups[group, layer]
+            Cs = [config_engine[configindex(resource=Resource.IO, ps=(row, col))]]
         else:
-            raise ValueError("Unkown mod.type_ : `{}'".format(mod.type_))
+            Cs = [config_engine[configindex(resource=Resource.IO, ps=(r, c))] for r,c in fabric.io_groups[group, layer]]
+
+        for c in Cs:
+            assert c.io_group == group
+            val = c.direction[mod.config]
+            bitl = c.bitl
+            sel_w = c.bith - bitl + 1
+            reg =  c.reg_address + bitl//32
+            offset = bitl % 32
+
+            assert val.bit_length() <= sel_w
+            idx = (tile_addr, c.feature_address, reg)
+
+            b_dict[idx] |= val << offset
+            c_dict[idx][(sel_w + offset - 1, offset)] = ""
+            d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
+
+
 
     def _proc_mem(mod, tile_addr, b_dict, c_dict, d_dict):
         assert mod.resource == Resource.Mem
@@ -304,7 +305,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
     def _write(bs, idx, data, comments):
         tile_address, feature_address, reg = idx
-        suffix =  Annotations.format_comment(comments) 
+        suffix =  Annotations.format_comment(comments)
 
         bs.write(_format_line(tile_address, feature_address, reg, int(data)) + suffix)
 
@@ -327,7 +328,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
     # -------------------------------------------------
     res2fun = {
             Resource.Mem : _proc_mem,
-            Resource.PE  : _proc_pe
+            Resource.PE  : _proc_pe,
+            Resource.IO  : _proc_io,
     }
 
     # open bit stream then loop
@@ -368,9 +370,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
 
 
-        for module,reg in p_state.items():
+        for module,region in p_state.items():
             if module.resource != Resource.Reg:
-                pos_map[module] = reg.position[fabric.rows_dim], reg.position[fabric.cols_dim]
+                pos_map[module] = region.position[fabric.rows_dim], region.position[fabric.cols_dim]
 
         #(tile_addr, feature_addres, reg) -> data
         b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
@@ -387,12 +389,13 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             _proc_sb(t_indices, tile_addr, b_dict, c_dict, d_dict)
             #_write(data, tile_addr, feature_address, bs, comment)
             for mod in pos_map.I[pos]:
-                for port in fabric.port_names[(mod.resource, layer)].sinks:
-                    _proc_cb(port, tile_addr, b_dict, c_dict, d_dict)
-                    #_write(data, tile_addr, feature_address, bs, comment)
+                if mod.resource != Resource.IO:
+                    for port in fabric.port_names[(mod.resource, layer)].sinks:
+                        _proc_cb(port, tile_addr, b_dict, c_dict, d_dict)
+                        #_write(data, tile_addr, feature_address, bs, comment)
 
-                res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
-                #_write(data, tile_addr, feature_address, bs, comment)
+            res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
+            #_write(data, tile_addr, feature_address, bs, comment)
 
         assert b_dict.keys() >= c_dict.keys()
         assert c_dict.keys() == d_dict.keys(), c_dict
@@ -427,7 +430,6 @@ def _write_debug(design, output, p_state, r_state):
                 pos.update({d.name : v for d,v in p_state[module].category.items() if v is not None} )
                 if 'layer' in pos:
                     pos['layer'] = Layer(pos['layer']).name
-
                 f.write("module: {} @ {})\n".format(module.name, pos))
             except (KeyError, IndexError):
                 f.write("module: {} is not placed\n".format(module.name))

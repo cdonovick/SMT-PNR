@@ -9,7 +9,7 @@ from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.fabric.fabricutils import Side, mapSide, parse_mem_sb_wire, pos_to_side
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex, port_wrapper, port_names_container
 from pnrdoctor.fabric import Port, Track, Fabric
-from pnrdoctor.util import SelectDict, STAR
+from pnrdoctor.util import SelectDict, STAR, BiMultiDict
 from .pnrutils import configindex
 
 __all__ = ['parse_xml', 'parse_board_info']
@@ -774,4 +774,5 @@ def parse_board_info(f, fabric):
     '''
 
     board = json.load(f)
-    fabric.board = {int(k) : v for k, v in board.items()}
+    fabric.board = BiMultiDict({int(k) : v for k, v in board.items()})
+

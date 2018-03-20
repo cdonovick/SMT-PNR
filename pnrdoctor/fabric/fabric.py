@@ -157,9 +157,9 @@ class Fabric:
         self._port_names = parsed_params['port_names']
         self._io_groups = parsed_params['io_groups']
 
-        # create mapping 1-hot <-> group number
+        # create mapping group number <-> 1-hot
         group_numbers = {g for g, _ in self._io_groups.keys()}
-        self._group_map = BiDict({1 << k : g for k,g in enumerate(group_numbers)})
+        self._group_map = BiDict({g : 1 << k for k,g in enumerate(group_numbers)})
 
         # Hacky hardcoding register port names
         # because they're not provided by cgra_info

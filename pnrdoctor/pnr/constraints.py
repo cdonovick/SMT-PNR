@@ -286,6 +286,7 @@ def pin_IO(region, fabric, design, state, vars, solver):
     '''
     rows_dim, cols_dim, layers_dim, io_groups_dim = fabric.rows_dim, fabric.cols_dim, fabric.layers_dim, fabric.io_groups_dim
     constraints = []
+    group_map = fabric.group_map
     ios = list(design.modules_with_attr_val('resource', Resource.IO))
 
     r_sort, c_sort, l_sort, g_sort = [region.sorts[d] for d in (rows_dim, cols_dim, layers_dim, io_groups_dim)]
@@ -301,7 +302,7 @@ def pin_IO(region, fabric, design, state, vars, solver):
                 solver.TheoryConst(r_sort, row),
                 solver.TheoryConst(c_sort, col),
                 solver.TheoryConst(l_sort, layer.value)
-                ) == solver.TheoryConst(g_sort, group))
+                ) == solver.TheoryConst(g_sort, group_map[group]))
 
 
     #assert group association
@@ -320,6 +321,18 @@ def pin_IO(region, fabric, design, state, vars, solver):
 
     return solver.And(constraints)
 
+def board_constraint(region, fabric, design, state, vars, solver):
+    io_groups_dim = fabric.io_groups_dim
+    board = fabric.board.I
+    group_map = fabric.group_map
+    constraints = []
+    for module in design.modules_with_attr_val('resource', Resource.IO):
+        cc = []
+        g = vars[module][io_groups_dim]
+        for n in board[module.config]:
+            cc.append(g == group_map[n])
+        constraints.append(solver.Or(cc))
+    return solver.And(constraints)
 
 def pin_resource(region, fabric, design, state, vars, solver):
     rows_dim, cols_dim, tracks_dim = fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim

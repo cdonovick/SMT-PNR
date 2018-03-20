@@ -8,6 +8,8 @@ def place_model_reader(region, fabric, design, state, vars, solver):
         pos = {d : v.value for d,v in var_d.items() if d in r.position}
         r.set_position(pos)
         cat = {d : v.value for d,v in var_d.items() if d in r.category}
+        if fabric.io_groups_dim in cat:
+            cat[fabric.io_groups_dim] = fabric.group_map.I[cat[fabric.io_groups_dim]]
         r.set_category(cat)
 
 def route_model_reader(simultaneous=False):
