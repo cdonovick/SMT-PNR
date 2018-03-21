@@ -685,9 +685,9 @@ def _get_index_mem(ps, name, resource, direc, bw, tile_row):
         if m.group('mem_int'):
             # internal memory wires have non-standard sides
             # need to do a mapping, overwriting _side
-            _, b, _side, t = parse_mem_sb_wire(name, direc)
+            b, _side, t = parse_mem_sb_wire(signal_direc, _side, _track, _bus, direc)
             # everything except for the side should stay the same
-            assert b == 'BUS' + str(_bus)
+            assert b == _bus
             assert int(t) == _track
 
         rown, coln, _ = mapSide(row, col, _side)
