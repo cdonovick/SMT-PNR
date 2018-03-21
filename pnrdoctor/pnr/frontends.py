@@ -774,5 +774,5 @@ def parse_board_info(f, fabric):
     '''
 
     board = json.load(f)
-    fabric.board = BiMultiDict({int(k) : v for k, v in board.items()})
+    fabric.board = BiMultiDict({int(k) : v for k, v in board.items() if k != 'C'})
 
