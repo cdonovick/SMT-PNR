@@ -97,8 +97,8 @@ _mem_translate = {
         'fifo'       : 1,
         'ram'        : 2, #sram in the CGRA
     },
-    'fifo_depth' : IdentDict(),
-    'almost_full_count' : IdentDict(),
+    'depth' : IdentDict(),
+    'almost_count' : IdentDict(),
     'chain_enable' : IdentDict(),
     'tile_en' : IdentDict(),
 }
