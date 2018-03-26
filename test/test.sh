@@ -1,7 +1,7 @@
 #!/bin/bash
 PREFIX=$(dirname $0)
 TESTS=$PREFIX/designs/*
-FABRICS=$PREFIX/fabrics/*.xml
+FABRICS=$PREFIX/fabrics/cgra_info_io.xml
 BOARDS=$PREFIX/boards/*
 
 LIBS="cgralib"

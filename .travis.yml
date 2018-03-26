@@ -36,8 +36,8 @@ before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
     - export COREIRCONFIG="g++-4.9"
-    - export COREIR_b=master
-    - export PYCORE_b=master
+    - export COREIR_b=dev
+    - export PYCORE_b=dev
     - export SWITCH_b=master
 
 install:

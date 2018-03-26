@@ -19,12 +19,12 @@
           "io16_out_0_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
-            "modargs":{"mode":["String","o"]}
+            "modargs":{"mode":["String","out"]}
           },
           "io16in_in_arg_1_0_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
-            "modargs":{"mode":["String","i"]}
+            "modargs":{"mode":["String","in"]}
           },
           "mul_347_348_349_PE":{
             "genref":"cgralib.PE",

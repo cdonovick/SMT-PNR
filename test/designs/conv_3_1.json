@@ -34,27 +34,35 @@
           "io16_out_0_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
-            "modargs":{"mode":["String","o"]}
+            "modargs":{"mode":["String","out"]}
           },
           "io16in_in_arg_1_0_0":{
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
-            "modargs":{"mode":["String","i"]}
+            "modargs":{"mode":["String","in"]}
+          },
+          "lb_p4_clamped_stencil_update_stream$mem_1$c1":{
+            "modref":"corebit.const",
+            "modargs":{"value":["Bool",true]}
           },
           "lb_p4_clamped_stencil_update_stream$mem_1$cgramem":{
             "genref":"cgralib.Mem",
-            "genargs":{"depth":["Int",1024], "width":["Int",16]},
-            "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",10], "mode":["String","linebuffer"]}
+            "genargs":{"total_depth":["Int",1024], "width":["Int",16]},
+            "modargs":{"almost_count":["Int",0], "chain_enable":["Bool",false], "depth":["Int",10], "mode":["String","linebuffer"], "tile_en":["Bool",true]}
+          },
+          "lb_p4_clamped_stencil_update_stream$mem_2$c1":{
+            "modref":"corebit.const",
+            "modargs":{"value":["Bool",true]}
           },
           "lb_p4_clamped_stencil_update_stream$mem_2$cgramem":{
             "genref":"cgralib.Mem",
-            "genargs":{"depth":["Int",1024], "width":["Int",16]},
-            "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",10], "mode":["String","linebuffer"]}
+            "genargs":{"total_depth":["Int",1024], "width":["Int",16]},
+            "modargs":{"almost_count":["Int",0], "chain_enable":["Bool",false], "depth":["Int",10], "mode":["String","linebuffer"], "tile_en":["Bool",true]}
           },
           "lb_p4_clamped_stencil_update_stream_wen_lut_bitPE":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
-            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],"8'h01"]}
+            "modargs":{"bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "lut_value":[["BitVector",8],"8'hff"]}
           }
         },
         "connections":[
@@ -62,9 +70,13 @@
           ["io16_out_0_0.in","add_345_347_348_PE.data.out"],
           ["io16in_in_arg_1_0_0.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata"],
           ["io16in_in_arg_1_0_0.out","add_345_347_348_PE.data.in.1"],
+          ["lb_p4_clamped_stencil_update_stream$mem_1$c1.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.cg_en"],
+          ["lb_p4_clamped_stencil_update_stream$mem_1$c1.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.ren"],
           ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.wdata"],
           ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata","add_341_343_344_PE.data.in.1"],
           ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wen","lb_p4_clamped_stencil_update_stream_wen_lut_bitPE.bit.out"],
+          ["lb_p4_clamped_stencil_update_stream$mem_2$c1.out","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.cg_en"],
+          ["lb_p4_clamped_stencil_update_stream$mem_2$c1.out","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.ren"],
           ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.rdata","add_337_339_340_PE.data.in.1"],
           ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.wen","lb_p4_clamped_stencil_update_stream_wen_lut_bitPE.bit.out"],
           ["add_337_339_340_PE.data.out","add_341_343_344_PE.data.in.0"],
