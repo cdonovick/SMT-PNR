@@ -28,6 +28,11 @@ _ALU_REG = 0xFF
 _LUT_REG = 0x00
 _LUT_ENABLE = 9
 
+_FLAG_SEL_REG  = 0xFF
+_FLAG_SEL_LUT  = 0xE
+_FLAG_SEL_BITL = 12
+_FLAG_SEL_BITH = 15
+
 _op_translate = {
     'add'       : 0x00,
     'sub'       : 0x01,
@@ -191,6 +196,13 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 b_dict[idx][_LUT_ENABLE] |= 1
                 c_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
                 d_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = id_fmt.format(mod.id)
+
+                idx = (tile_addr, feature_address, _FLAG_SEL_REG)
+                # HACK FLAG_SEL_* should come from cgra info / coreir
+                b_dict[idx] |= _FLAG_SEL_LUT << _FLAG_SEL_BITL
+                c_dict[idx][(_FLAG_SEL_BITL, _FLAG_SEL_BITL)] = "Select LUT"
+                d_dict[idx][(_FLAG_SEL_BITL, _FLAG_SEL_BITL)] = id_fmt.format(mod.id)
+
                 reg = _LUT_REG
                 d = mod.config[k]
             else:
@@ -282,6 +294,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             b_dict[idx] |= val << offset
             c_dict[idx][(sel_w + offset - 1, offset)] = f'@ tile ({rx}, {cx}) IO Mode = {mod.config}'
             d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
+
+            #NEED to also set the mux
 
     def _proc_mem(mod, tile_addr, b_dict, c_dict, d_dict):
         assert mod.resource == Resource.Mem
