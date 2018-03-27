@@ -200,8 +200,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 idx = (tile_addr, feature_address, _FLAG_SEL_REG)
                 # HACK FLAG_SEL_* should come from cgra info / coreir
                 b_dict[idx] |= _FLAG_SEL_LUT << _FLAG_SEL_BITL
-                c_dict[idx][(_FLAG_SEL_BITL, _FLAG_SEL_BITL)] = "Select LUT"
-                d_dict[idx][(_FLAG_SEL_BITL, _FLAG_SEL_BITL)] = id_fmt.format(mod.id)
+                c_dict[idx][(_FLAG_SEL_BITH, _FLAG_SEL_BITL)] = "Select LUT"
+                d_dict[idx][(_FLAG_SEL_BITH, _FLAG_SEL_BITL)] = id_fmt.format(mod.id)
 
                 reg = _LUT_REG
                 d = mod.config[k]
@@ -298,12 +298,11 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
             #handle mux
             if layer == Layer.Bit:
+                assert True
                 #set mux src to 1
-                pass
             else:
                 assert layer == Layer.Data
                 #set mux src to 16
-                pass
 
 
 
