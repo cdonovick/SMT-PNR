@@ -282,6 +282,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             c = config_engine[configindex(resource=Resource.IO, ps=(rx,cx))]
             t = config_engine[rx, cx].tile_addr
 
+            #handle tri
             assert c.io_group == group
             val = c.direction[mod.config]
             bitl = c.bitl
@@ -295,7 +296,16 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             c_dict[idx][(sel_w + offset - 1, offset)] = f'@ tile ({rx}, {cx}) IO Mode = {mod.config}'
             d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
 
-            #NEED to also set the mux
+            #handle mux
+            if layer == Layer.Bit:
+                #set mux src to 1
+                pass
+            else:
+                assert layer == Layer.Data
+                #set mux src to 16
+                pass
+
+
 
     def _proc_mem(mod, tile_addr, b_dict, c_dict, d_dict):
         assert mod.resource == Resource.Mem
