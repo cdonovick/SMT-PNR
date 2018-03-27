@@ -97,9 +97,9 @@ def cgra_flow():
         fac = sum(len(n.terminals) - 1 for n in des.nets) / len(des.nets)
         nmods = len(des.modules)
         rmods = math.ceil(fac*nmods**.5)
-        slack = math.ceil((fab.rows**2 + fab.cols**2)**(1/2) / max(nmods - 1, 1))
+        slack = math.ceil((fab.rows + fab.cols) / ((nmods-1)**(1/2)))
 
-        n_max = rmods + math.ceil(slack/nmods)
+        n_max = rmods + math.ceil(slack/((nmods-1)**(1/2)))
         g_slack = rmods + slack
 
         PLACE_CONSTRAINTS = [
@@ -116,7 +116,7 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-            pnr.HPWL(n_max, 2*nmods + g_slack)
+            pnr.HPWL(n_max + 1, 2*nmods + g_slack)
         ]
         PLACE_EXTRA_RELAXED = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
@@ -124,7 +124,7 @@ def cgra_flow():
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,
-            pnr.HPWL(n_max, 4*nmods + g_slack)
+            pnr.HPWL(n_max + 3, 4*nmods + g_slack)
         ]
         if board_info_file:
             for c in (PLACE_CONSTRAINTS, PLACE_RELAXED, PLACE_EXTRA_RELAXED):
