@@ -44,7 +44,7 @@ class PNR:
             # use best settings per solver
             if self._solver_str == 'CVC4':
                 self._place_solver.SetOption('bitblast', 'eager')
-                self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
+                self._place_solver.SetOption('bv-sat-solver', 'cadical')
 
         self._route_solver = Solver_monosat()
         self._route_solver.set_option('random-seed', seed)
