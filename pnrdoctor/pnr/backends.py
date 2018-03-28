@@ -26,7 +26,6 @@ _bit_widths = {
 
 _ALU_REG = 0xFF
 _LUT_REG = 0x00
-_LUT_ENABLE = 9
 
 _FLAG_SEL_REG  = 0xFF
 _FLAG_SEL_LUT  = 0xE
@@ -193,9 +192,6 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 d = _op_translate[mod.config[k]]
             elif k == 'lut_value':
                 idx = (tile_addr, feature_address, _ALU_REG)
-                b_dict[idx][_LUT_ENABLE] |= 1
-                c_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = 'Enable Lut'
-                d_dict[idx][(_LUT_ENABLE, _LUT_ENABLE)] = id_fmt.format(mod.id)
 
                 idx = (tile_addr, feature_address, _FLAG_SEL_REG)
                 # HACK FLAG_SEL_* should come from cgra info / coreir
