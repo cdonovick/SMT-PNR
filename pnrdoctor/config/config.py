@@ -50,3 +50,7 @@ class config:
 
     def __getitem__(self, k):
         return getattr(self, k)
+
+    def __setitem__(self, k, v):
+        assert k not in self.__dict__
+        setattr(self, k, v)

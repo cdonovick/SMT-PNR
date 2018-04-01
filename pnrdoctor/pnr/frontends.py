@@ -204,26 +204,34 @@ def _scan_ports(root, params):
             fabric[mindex] = port_wrapper(Port(mindex))
 
     def _scan_resource(res):
+        def _try_int(v):
+            try:
+                return int(v, 0)
+            except:
+                return v
+
         # TODO: handle attributes
         d = dict()
         d['feature_address'] = int(res.get('feature_address'), 0)
+
+        counts = dict()
         for tag in res:
             if not isinstance(tag.tag, str):
                 # skip comments in the xml
                 continue
 
+            if tag.tag not in counts:
+                counts[tag.tag] = len(res.findall(tag.tag))
+
             try:
                 dv = int(tag.text, 0)
             except Exception:
-                dv = tag.text
+                dv = tag.text.strip()
 
-            tag_d = {'val': dv}
+            tag_d = dict()
 
             for k, v in tag.items():
-                try:
-                    v = int(v, 0)
-                except Exception:
-                    pass
+                v = _try_int(v)
 
                 # for memories, standardize bit to bith/bitl
                 if k == 'bit':
@@ -233,10 +241,44 @@ def _scan_ports(root, params):
                 else:
                     tag_d[k] = v
 
-            if len(tag.keys()) > 0:
-                d[tag.tag] = config(tag_d)
+            # This is intended for opcodes and muxes but works with anything following the same pattern
+            # <repeated tag: useful attributes> unique str </repeated tag>
+            for t in tag:
+                if not dv:
+                    # mux uses snk as key
+                    if tag.get('snk'):
+                        dv = tag.get('snk')
+                    # opcode uses tag name, "op", as key
+                    else:
+                        dv = t.tag
+                # opcodes use name attribute
+                if t.get("name"):
+                    key = t.get("name")
+                else:
+                    key = t.text
+                tag_d[key] = config({k: _try_int(v) for k, v in t.items()})
+
+            # when there are multiple tags, differentiate with text content
+            if counts[tag.tag] > 1:
+                if tag.tag not in d:
+                    d[tag.tag] = dict()
+                if dv:
+                    assert isinstance(dv, str), dv
+                    assert dv not in d[tag.tag]
+                    assert len(tag_d) > 0, "Need some kind of data"
+                    d[tag.tag][dv] = config(tag_d)
             else:
-                d[tag.tag] = dv
+                if dv:
+                    tag_d['val'] = dv
+                if len(tag.keys()) > 1:
+                    data = config(tag_d)
+                else:
+                    data = dv
+                d[tag.tag] = data
+
+        for k in d:
+            if isinstance(d[k], dict):
+                d[k] = config(d[k])
 
         ci = configindex(ps=(row, col), resource=resourcedict[res.tag])
         config_engine[ci] = config(d)

@@ -24,13 +24,7 @@ _bit_widths = {
     'lut_value' : 8,
 }
 
-_ALU_REG = 0xFF
-_LUT_REG = 0x00
-
-_FLAG_SEL_REG  = 0xFF
-_FLAG_SEL_LUT  = 0xE
-_FLAG_SEL_BITL = 12
-_FLAG_SEL_BITH = 15
+_ONE_BIT_PORT = "res_p"
 
 _op_translate = {
     'add'       : 0x00,
@@ -181,25 +175,34 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
     def _proc_pe(mod, tile_addr, b_dict, c_dict, d_dict):
         assert mod.resource == Resource.PE
-        feature_address = config_engine[configindex(resource=Resource.PE, ps=(row, col))].feature_address
+        config = config_engine[configindex(resource=Resource.PE, ps=(row, col))]
+        feature_address = config.feature_address
+        fs = config.opcode.flag_sel
+        flag_sel_reg = fs.reg_address
+        flag_sel_bith = fs.bith
+        flag_sel_bitl = fs.bitl
+        flag_sel_lut = config.mux[_ONE_BIT_PORT]['lut code'].sel
+
+        # Reg Address currently the same for all ops
+        # Might change when using signed, acc_en, irq_en or flag_sel
+        # See cgra_info
+        alu_reg = config.opcode.op.reg_address
 
         if mod.type_ != 'PE':
             raise ValueError("Unkown mod.type_ : `{}'".format(mod.type_))
 
         for k in mod.config:
             if k == 'alu_op':
-                reg = _ALU_REG
                 d = _op_translate[mod.config[k]]
             elif k == 'lut_value':
-                idx = (tile_addr, feature_address, _ALU_REG)
+                idx = (tile_addr, feature_address, alu_reg)
 
-                idx = (tile_addr, feature_address, _FLAG_SEL_REG)
+                idx = (tile_addr, feature_address, flag_sel_reg)
                 # HACK FLAG_SEL_* should come from cgra info / coreir
-                b_dict[idx] |= _FLAG_SEL_LUT << _FLAG_SEL_BITL
-                c_dict[idx][(_FLAG_SEL_BITH, _FLAG_SEL_BITL)] = "Select LUT"
-                d_dict[idx][(_FLAG_SEL_BITH, _FLAG_SEL_BITL)] = id_fmt.format(mod.id)
+                b_dict[idx] |= flag_sel_lut << flag_sel_bitl
+                c_dict[idx][(flag_sel_bith, flag_sel_bitl)] = "Select LUT"
+                d_dict[idx][(flag_sel_bith, flag_sel_bitl)] = id_fmt.format(mod.id)
 
-                reg = _LUT_REG
                 d = mod.config[k]
             else:
                 print(f'Unkown PE config option {k}')
@@ -212,7 +215,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                     d.bit_length()
                     ))
 
-            idx = (tile_addr, feature_address, reg)
+            idx = (tile_addr, feature_address, alu_reg)
             b_dict[idx] |= d
             c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
             d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
@@ -250,8 +253,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             else:
                 mode = 'BYPASS'
 
-            reg = _ALU_REG
-            idx = (tile_addr, feature_address, reg)
+            idx = (tile_addr, feature_address, alu_reg)
             offset =  _port_offsets[port]
 
             b_dict[idx] |=  _reg_mode[mode] << offset
