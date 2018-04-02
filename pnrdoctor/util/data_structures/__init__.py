@@ -5,3 +5,4 @@ from .multidict import *
 from .selectdict import *
 from .setlist import *
 from .sorteddict import *
+from .sortedset import *

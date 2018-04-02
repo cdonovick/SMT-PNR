@@ -2,7 +2,7 @@
     Classes for represtenting designs and various constructors
 '''
 from collections import defaultdict
-from pnrdoctor.util import NamedIDObject, SortedDict, MultiDict
+from pnrdoctor.util import NamedIDObject, SortedDict, MultiDict, SetList, FrozenSetList
 from .module import Module, Resource, Layer
 from .net import Net, Tie
 from functools import lru_cache
@@ -36,25 +36,25 @@ class Design(NamedIDObject):
         # ties: {tuple: Tie} --> set of final ties
         modules, ties = _fuse_regs(modules, ties)
 
-        self._modules = frozenset(modules)
-        self._ties = frozenset(ties)
+        self._modules = FrozenSetList(modules)
+        self._ties = FrozenSetList(ties)
 
-        layers = set()
+        layers = SetList()
         for tie in ties:
             layers.add(tie.width)
 
-        self._layers = frozenset(layers)
+        self._layers = FrozenSetList(layers)
 
 
         nets = MultiDict()
         for tie in ties:
             nets[(tie.src, tie.src_port, tie.width)] = tie
 
-        _nets = set()
-        for n in nets:
+        _nets = SetList()
+        for n in sorted(nets, key=lambda t : (t[0].name, t[1],t[2])):
             _nets.add(Net(nets[n]))
 
-        self._nets = frozenset(_nets)
+        self._nets = FrozenSetList(_nets)
 
         # assertions
         for module in self.modules:
@@ -199,7 +199,7 @@ def _split_registers(mods, ties):
         if dst_name in m_delete:
             t_delete.add(tie)
 
-    ties = ties.union(ties2add)
+    ties |= ties2add
 
     for mod in m_delete:
         del mods[mod]
@@ -228,7 +228,7 @@ def _build_modules(mods, ties):
 
 def _build_ties(mods, ties):
 
-    _ties = dict()
+    _ties = SortedDict()
     for src_name, src_port, dst_name, dst_port, width in ties:
 
         src = mods[src_name]
@@ -261,9 +261,9 @@ def _fuse_regs(mods, ties):
             # mark the port as registered
             output_tie.dst.add_registered_input(output_tie.dst_port)
 
-    _p_modules = set([mod for mod in mods.values() if mod.resource != Resource.Fused])
+    _p_modules = SetList(mod for mod in mods.values() if mod.resource != Resource.Fused)
 
-    _p_ties = set()
+    _p_ties = SetList()
     for m in _p_modules:
         for tie in m.inputs.values():
             if tie.src.resource != Resource.Fused:

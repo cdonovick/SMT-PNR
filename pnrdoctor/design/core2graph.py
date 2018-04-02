@@ -1,6 +1,6 @@
 import coreir
 from .module import Resource, Layer
-from pnrdoctor.util import SortedDict, IdentDict
+from pnrdoctor.util import SortedDict, IdentDict, SortedSet
 
 def load_core(file, *libs):
     context = coreir.Context()
@@ -88,7 +88,7 @@ def load_core(file, *libs):
             raise ValueError("Unknown namespace {} or module {} in {}".format(namespace, inst_type, file))
 
 
-    ties = set()
+    ties = SortedSet()
     for con in top_module.directed_module.connections:
         src = con.source
         dst = con.sink
