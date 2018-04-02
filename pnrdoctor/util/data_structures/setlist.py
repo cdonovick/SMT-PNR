@@ -5,11 +5,11 @@ __all__ = ['SetList']
 class SetList(MutableSet, Sequence):
     __slots__ = '_s', '_l'
 
-    def __init__(self, iter=()):
+    def __init__(self, it=()):
         self._s = set()
         self._l = list()
 
-        for i in iter:
+        for i in it:
             self.add(i)
 
     def __contains__(self, val):
