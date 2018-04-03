@@ -403,11 +403,16 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         c_dict = defaultdict(lambda : defaultdict(str))
         d_dict = defaultdict(lambda : defaultdict(str))
 
-        # Process modules other than registers
+        # Process modules other than registers and memories
+        mems = []
         for mod,pos in pos_map.items():
-            tile_addr = config_engine[pos].tile_addr
-            row, col = pos
-            res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
+            if mod.resource == Resource.Mem:
+                #HACK HACK HACK
+                mems.append((mod,pos))
+            else:
+                tile_addr = config_engine[pos].tile_addr
+                row, col = pos
+                res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
 
         # for each position and layer, process all the tracks and registers
         for pos, layer in sorted(processed_r_state):
@@ -416,14 +421,40 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             t_indices = processed_r_state[(pos, layer)]
             _proc_sb(t_indices, tile_addr, b_dict, c_dict, d_dict)
 
-            #_write(data, tile_addr, feature_address, bs, comment)
             for mod in pos_map.I[pos]:
                 if mod.resource != Resource.IO:
                     for port in fabric.port_names[(mod.resource, layer)].sinks:
                         _proc_cb(port, tile_addr, b_dict, c_dict, d_dict)
-                        #_write(data, tile_addr, feature_address, bs, comment)
 
-            #_write(data, tile_addr, feature_address, bs, comment)
+        assert b_dict.keys() >= c_dict.keys()
+        assert c_dict.keys() == d_dict.keys(), c_dict
+
+        #HACK `reset` unused dictionarys
+        if not annotate:
+            c_dict = defaultdict(lambda : defaultdict(str))
+        if not debug:
+            d_dict = defaultdict(lambda : defaultdict(str))
+
+        #Merge comment and debug dict
+        comments = defaultdict(lambda : defaultdict(str))
+        for idx in b_dict:
+            for bits in (c_dict[idx].keys() | d_dict[idx].keys()):
+                comments[idx][bits] = c_dict[idx][bits] + d_dict[idx][bits]
+
+        for idx in sorted(b_dict.keys()):
+            _write(bs, idx, b_dict[idx], comments[idx])
+        
+        #HACK HACK HACK do everything again for memories
+        #(tile_addr, feature_addres, reg) -> data
+        b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
+
+        #(tile_addr, feature_addres, reg) -> (bith, bitl) -> comment
+        c_dict = defaultdict(lambda : defaultdict(str))
+        d_dict = defaultdict(lambda : defaultdict(str))
+        for mod,pos in mems:
+            tile_addr = config_engine[pos].tile_addr
+            row, col = pos
+            res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
 
         assert b_dict.keys() >= c_dict.keys()
         assert c_dict.keys() == d_dict.keys(), c_dict
