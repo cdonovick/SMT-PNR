@@ -163,6 +163,11 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 c_dict[idx][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
                 d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
 
+            bitl = c.configl // 32
+            bith = c.configh // 32
+
+            assert bith//32 == bitl//32, 'Cross boundary register detected in SB'
+
             reg = c.configl // 32
             idx = (tile_addr, feature_address, reg)
 
@@ -181,6 +186,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         flag_sel_reg = fs.reg_address
         flag_sel_bith = fs.bith
         flag_sel_bitl = fs.bitl
+        assert flag_sel_bith//32 == flag_sel_bitl//32, 'Cross boundary register detected in PE'
         flag_sel_lut = config.mux[_ONE_BIT_PORT]['lut code'].sel
 
         # Reg Address currently the same for all ops
@@ -195,10 +201,8 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             if k == 'alu_op':
                 d = _op_translate[mod.config[k]]
             elif k == 'lut_value':
-                idx = (tile_addr, feature_address, alu_reg)
-
                 idx = (tile_addr, feature_address, flag_sel_reg)
-                # HACK FLAG_SEL_* should come from cgra info / coreir
+
                 b_dict[idx] |= flag_sel_lut << flag_sel_bitl
                 c_dict[idx][(flag_sel_bith, flag_sel_bitl)] = "Select LUT"
                 d_dict[idx][(flag_sel_bith, flag_sel_bitl)] = id_fmt.format(mod.id)
@@ -284,7 +288,10 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             assert c.io_group == group
             val = c.direction[mod.config]
             bitl = c.bitl
-            sel_w = c.bith - bitl + 1
+            bith = c.bith
+
+            assert bith//32 == bitl//32, 'Cross boundary register detected in IO'
+            sel_w = bith - bitl + 1
             reg =  c.reg_address + bitl//32
             offset = bitl % 32
 
@@ -314,7 +321,9 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             c = config_engine[ci]
 
             bitl = c[opt].bitl
-            sel_w = c[opt].bith - bitl + 1
+            bith = c[opt].bith
+            assert bith//32 == bitl//32, 'Cross boundary register detected in MEM'
+            sel_w = bith - bitl + 1
             reg = bitl // 32
             offset = bitl % 32
 
@@ -454,6 +463,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         for mod,pos in mems:
             tile_addr = config_engine[pos].tile_addr
             row, col = pos
+            assert mod.resource == Resource.Mem
             res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
 
         assert b_dict.keys() >= c_dict.keys()
