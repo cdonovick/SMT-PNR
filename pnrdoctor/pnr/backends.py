@@ -286,17 +286,17 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
             #handle tri
             assert c.io_group == group
-            val = c.direction[mod.config]
-            bitl = c.bitl
-            bith = c.bith
+            val = c.tri.direction[mod.config]
+            bitl = c.tri.bitl
+            bith = c.tri.bith
 
             assert bith//32 == bitl//32, 'Cross boundary register detected in IO'
             sel_w = bith - bitl + 1
-            reg =  c.reg_address + bitl//32
+            reg =  c.tri.reg_address + bitl//32
             offset = bitl % 32
 
             assert val.bit_length() <= sel_w
-            idx = (t, c.feature_address, reg)
+            idx = (t, c.tri.feature_address, reg)
             b_dict[idx] |= val << offset
             c_dict[idx][(sel_w + offset - 1, offset)] = f'@ tile ({rx}, {cx}) IO Mode = {mod.config}'
             d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)

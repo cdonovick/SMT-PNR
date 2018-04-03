@@ -142,20 +142,35 @@ def _scan_ports(root, params):
         ig = int(tile.find("io_group").text, 0)
         io_groups[(ig, layer)].append(_ps)
         tri = tile.find("tri")
-        fa = int(tri.get("feature_address"))
-        ra = int(tri.get("reg_address"))
-        bith = int(tri.get("bith"))
-        bitl = int(tri.get("bitl"))
+        tri_dict = {"feature_address": int(tri.get("feature_address"), 0),
+                    "reg_address": int(tri.get("reg_address"), 0),
+                    "bith": int(tri.get("bith"), 0),
+                    "bitl": int(tri.get("bitl"), 0)}
         directions = {}
         for d in tri.findall("direction"):
             sel = int(d.get("sel"))
             directions[d.text] = sel
+        tri_dict["direction"] = config(directions)
 
-        # add to config engine
+        # create config index
         ci = configindex(ps=_ps, resource=Resource.IO)
-        config_engine[ci] = config(io_group=ig, feature_address=fa,
-                                   reg_address=ra, bith=bith, bitl=bitl,
-                                   direction=config(directions))
+
+        # get mux info from 1 bit
+        if layer == Layer.Bit:
+            mux = tile.find("mux")
+            mux_dict = {"feature_address": int(mux.get("feature_address"), 0),
+                        "reg_address": int(mux.get("reg_address"), 0),
+                        "bith": int(mux.get('bith'), 0),
+                        "bitl": int(mux.get('bitl'), 0)}
+            srcs = {}
+            for s in mux.findall('src'):
+                srcs[Layer.width_to_layer(int(s.text))] = int(s.get('sel'), 0)
+            mux_dict['sel'] = srcs
+
+            config_engine[ci] = config(io_group=ig, tri=config(tri_dict),
+                                       mux=config(mux_dict))
+        else:
+            config_engine[ci] = config(io_group=ig, tri=config(tri_dict))
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
