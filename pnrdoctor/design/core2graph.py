@@ -29,11 +29,11 @@ def load_core(file, *libs):
             op_kind = inst.module.generator_args['op_kind'].value
 
             if op_kind in ('alu', 'combined'):
-                modules[inst_name]['layer'] |= Layer.Combined
+                modules[inst_name]['layer'] |= Layer.Data
                 modules[inst_name]['conf']['alu_op'] = inst.config['alu_op'].value
 
             if op_kind in ('bit', 'combined'):
-                modules[inst_name]['layer'] |= Layer.Combined
+                modules[inst_name]['layer'] |= Layer.Bit
                 modules[inst_name]['conf']['lut_value'] = inst.config['lut_value'].value.val
 
             if op_kind not in ('bit', 'alu', 'combined'):

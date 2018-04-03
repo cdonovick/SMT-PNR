@@ -89,6 +89,7 @@ def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
 
 def distinct(region, fabric, design, state, vars, solver):
     constraints = []
+    layers_dim = fabric.layers_dim
     for m1 in design.modules:
         v1 = vars[m1]
         for m2 in design.modules:
@@ -97,6 +98,8 @@ def distinct(region, fabric, design, state, vars, solver):
                 s = v1.keys() & v2.keys()
                 c = []
                 for d in s:
+                    if d == layers_dim:
+                        continue
                     c.append(v1[d].distinct(v2[d]))
 
                 constraints.append(solver.Or(c))
