@@ -25,6 +25,7 @@ _bit_widths = {
 }
 
 _ONE_BIT_PORT = "res_p"
+_LUT_REG = 0x00
 
 _op_translate = {
     'add'       : 0x00,
@@ -199,6 +200,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
         for k in mod.config:
             if k == 'alu_op':
+                reg = alu_reg
                 d = _op_translate[mod.config[k]]
             elif k == 'lut_value':
                 idx = (tile_addr, feature_address, flag_sel_reg)
@@ -207,6 +209,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 c_dict[idx][(flag_sel_bith, flag_sel_bitl)] = "Select LUT"
                 d_dict[idx][(flag_sel_bith, flag_sel_bitl)] = id_fmt.format(mod.id)
 
+                reg = _LUT_REG
                 d = mod.config[k]
             else:
                 print(f'Unkown PE config option {k}')
@@ -219,7 +222,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                     d.bit_length()
                     ))
 
-            idx = (tile_addr, feature_address, alu_reg)
+            idx = (tile_addr, feature_address, reg)
             b_dict[idx] |= d
             c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
             d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
