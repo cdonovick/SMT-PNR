@@ -27,7 +27,6 @@ addons:
             - zlib1g
             - zlib1g-dev
             - git
-            - gcc-4.9
             - g++-4.9
             - build-essential
             - swig2.0
