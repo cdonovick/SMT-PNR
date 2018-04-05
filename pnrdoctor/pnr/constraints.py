@@ -239,7 +239,13 @@ def HPWL(n_max, g_max):
 def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
     constraints = []
     total = None
-    for net in list(design.nets):
+    #HACK HACK HACK
+    if solver.solver_name == "CVC4":
+        net_iter = list(design.nets)
+    else:
+        net_iter = design.nets
+    
+    for net in net_iter:
         max = {
             d : reduce(partial(su.max_ite, solver), (vars[t][d].lit for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
         }
