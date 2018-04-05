@@ -38,7 +38,7 @@ before_install:
     - export COREIRCONFIG="g++-4.9"
     - export COREIR_b=dev
     - export PYCORE_b=dev
-    - export SWITCH_b=master
+    - export SWITCH_b=new-cvc4
 
 install:
     # install pip packages
