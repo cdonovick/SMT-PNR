@@ -1,11 +1,11 @@
 from collections import defaultdict
-from collections.abc import  MutableMapping, Set
+from collections.abc import  MutableMapping, ItemsView, KeysView, ValuesView, Set
 from .setlist import SetList
 
 __all__ = ['MultiDict']
 
 #view objects for BiMultiDict as the default ones can't handle the the whole multimap thing
-class MultiDict_keys(Set):
+class MultiDict_keys(KeysView):
     __slots__ = '_view'
     def __init__(self, md):
         self._view = md._d.keys()
@@ -28,7 +28,7 @@ class MultiDict_keys(Set):
         return s
 
 
-class MultiDict_items(Set):
+class MultiDict_items(ItemsView):
     __slots__ = '_d'
     def __init__(self, md):
         self._d = md._d
@@ -56,7 +56,7 @@ class MultiDict_items(Set):
         return s
 
 
-class MultiDict_values(Set):
+class MultiDict_values(ValuesView, Set):
     __slots__ = '_view'
     def __init__(self, md):
         self._view = md._d.values()

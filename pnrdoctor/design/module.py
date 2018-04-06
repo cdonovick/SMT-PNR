@@ -66,7 +66,7 @@ class Module(NamedIDObject):
             raise TypeError('Expected Layer not {}'.format(type(layer)))
 
     def __str__(self):
-        return '{}: {} {} {}'.format(self.name, self.inputs, self.outputs, self.resource)
+        return '{}<{}>'.format(self.name, self.resource)
 
     def fuse_reg(self, port):
         '''
@@ -109,13 +109,14 @@ class Resource(Enum):
     UNSET = 0
     PE    = 1
     Mem   = 2
-    IO    = 1 #HACK: IO uses PE
+    IO    = 3
     Reg   = 4
     Fused = 5
     # For fabric actually
     # Eventually we should move this
     SB    = 6
     CB    = 7
+    EMPTY = 8
 
 class Layer(Flag):
     UNSET    = 0

@@ -26,6 +26,10 @@ def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
             it = design.modules
 
 
+
+        #HACK HACK HACK assume each dimension is associated with a single sort
+        sorts = dict()
+
         for module in it:
             if module not in vars:
                 vars[module] = dict()
@@ -45,10 +49,13 @@ def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
                     var = scalar_type(module.name + '_' + d.name, solver, d.size, p)
                 vars[module][d] = var
 
-            for d,c in r.category.items():
-                if d == fabric.tracks_dim and module.resource != Resource.Reg:
-                    continue
+                # hack
+                if d in sorts:
+                    assert sorts[d] == var.lit.sort
+                else:
+                    sorts[d] = var.lit.sort
 
+            for d,c in r.category.items():
                 if d.is_one_hot:
                     T = one_hot_type
                 else:
@@ -67,6 +74,15 @@ def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
                     var = T(module.name + '_' + d.name, solver, d.size, c)
 
                 vars[module][d] = var
+
+                # hack
+                if d in sorts:
+                    assert sorts[d] == var.lit.sort
+                else:
+                    sorts[d] = var.lit.sort
+
+        # HACK HACK HACK store sorts in region
+        region.sorts = sorts
         return solver.And(constraints)
     return initializer
 
@@ -74,9 +90,10 @@ def init_regions(one_hot_type, category_type, scalar_type, r_init=False):
 def distinct(region, fabric, design, state, vars, solver):
     constraints = []
     for m1 in design.modules:
+        v1 = vars[m1]
         for m2 in design.modules:
             if state[m1].parent == state[m2].parent and m1.resource == m2.resource and m1 != m2:
-                v1,v2 = vars[m1],vars[m2]
+                v2 = vars[m2]
                 s = v1.keys() & v2.keys()
                 c = []
                 for d in s:
@@ -121,10 +138,10 @@ def uf_distinct(region, fabric, design, state, vars, solver):
         res2numids[_get_idx(m)] += 1
 
         if m.resource in res2sorts:
-            assert res2sorts[m.resource] == [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort], \
+            assert res2sorts[m.resource] == [vars[m][fabric.rows_dim].lit.sort, vars[m][fabric.cols_dim].lit.sort], \
               "Module variables for a given resource should all have same sort"
         else:
-            res2sorts[m.resource] = [vars[m][fabric.rows_dim].var.sort, vars[m][fabric.cols_dim].var.sort]
+            res2sorts[m.resource] = [vars[m][fabric.rows_dim].lit.sort, vars[m][fabric.cols_dim].lit.sort]
 
     # convert num ids to a bitwidth
     # and make a function for each resource
@@ -143,7 +160,7 @@ def uf_distinct(region, fabric, design, state, vars, solver):
     for m in design.modules:
         UF = res2fun[_get_idx(m)]
         pos = vars[m]
-        rowv, colv = pos[fabric.rows_dim].var, pos[fabric.cols_dim].var
+        rowv, colv = pos[fabric.rows_dim].lit, pos[fabric.cols_dim].lit
         c.append(UF(rowv, colv) == mod2id[m])
 
     return solver.And(c)
@@ -222,13 +239,19 @@ def HPWL(n_max, g_max):
 def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
     constraints = []
     total = None
-    for net in design.nets:
+    #HACK HACK HACK
+    if solver.solver_name == "CVC4":
+        net_iter = list(design.nets)
+    else:
+        net_iter = design.nets
+    
+    for net in net_iter:
         max = {
-            d : reduce(partial(su.max_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+            d : reduce(partial(su.max_ite, solver), (vars[t][d].lit for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
         }
 
         min = {
-            d : reduce(partial(su.min_ite, solver), (vars[t][d].var for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
+            d : reduce(partial(su.min_ite, solver), (vars[t][d].lit for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
         }
 
         total_i = None
@@ -252,48 +275,88 @@ def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
     return solver.And(constraints)
 
 def register_colors(region, fabric, design, state, vars, solver):
+    tracks_dim = fabric.tracks_dim
     constraints = []
     for tie in design.ties:
         src = tie.src
         dst = tie.dst
         if src.resource == dst.resource == Resource.Reg:
-            constraints.append(vars[src][fabric.tracks_dim] == vars[dst][fabric.tracks_dim])
+            constraints.append(vars[src][tracks_dim] == vars[dst][tracks_dim])
     return solver.And(constraints)
 
 def pin_IO(region, fabric, design, state, vars, solver):
+    '''
+        Asserts:
+            the association between r,c,layer and group_numbers
+            cross layer distinctness between members of the same IO group
+    '''
+    rows_dim, cols_dim, layers_dim, io_groups_dim = fabric.rows_dim, fabric.cols_dim, fabric.layers_dim, fabric.io_groups_dim
     constraints = []
-    seen_i = False
-    seen_o = False
-    for module in design.modules_with_attr_val('type_', 'IO'):
+    group_map = fabric.group_map
+    ios = list(design.modules_with_attr_val('resource', Resource.IO))
+
+    r_sort, c_sort, l_sort, g_sort = [region.sorts[d] for d in (rows_dim, cols_dim, layers_dim, io_groups_dim)]
+    # Build UF
+    f = solver.DeclareFun('GroupUF',
+            (r_sort, c_sort, l_sort),
+            g_sort
+            )
+
+    for (group, layer), positions in fabric.io_groups.items():
+        for row,col in positions:
+            constraints.append(f(
+                solver.TheoryConst(r_sort, row),
+                solver.TheoryConst(c_sort, col),
+                solver.TheoryConst(l_sort, layer.value)
+                ) == solver.TheoryConst(g_sort, group_map[group]))
+
+
+    #assert group association
+    for module in ios:
         v = vars[module]
-        r,c = v[fabric.rows_dim], v[fabric.cols_dim]
-        if module.config == 'i':
-            assert not seen_i, 'Current IO hack requires single input'
-            seen_i = True
-            constraints.append(solver.And([r == 2, c == 2]))
-        else:
-            assert not seen_o, 'Current iO hack requires single output'
-            seen_o = True
-            constraints.append(solver.And([r == 3, c == 2]))
+        constraints.append(f(v[rows_dim].lit, v[cols_dim].lit, v[layers_dim].lit) == v[io_groups_dim].lit)
+
+    #assert cross layer distinctness
+    for m1 in ios:
+        v1 = vars[m1]
+        l1,g1 = v1[layers_dim], v1[io_groups_dim]
+        for m2 in ios:
+            v2 = vars[m2]
+            l2,g2 = v2[layers_dim], v2[io_groups_dim]
+            constraints.append(solver.Or([l1 == l2, g1.distinct(g2)]))
 
     return solver.And(constraints)
 
+def board_constraint(region, fabric, design, state, vars, solver):
+    io_groups_dim = fabric.io_groups_dim
+    board = fabric.board.I
+    group_map = fabric.group_map
+    constraints = []
+    for module in design.modules_with_attr_val('resource', Resource.IO):
+        cc = []
+        g = vars[module][io_groups_dim]
+        for n in board[module.config]:
+            cc.append(g == group_map[n])
+        constraints.append(solver.Or(cc))
+    return solver.And(constraints)
 
 def pin_resource(region, fabric, design, state, vars, solver):
+    rows_dim, cols_dim, tracks_dim = fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim
     constraints = []
     for module in design.modules:
         v = vars[module]
-        r,c = v[fabric.rows_dim], v[fabric.cols_dim],
+        r,c = v[rows_dim], v[cols_dim],
 
         cx = []
-        for p in fabric.locations[module.resource]:
+        for p in fabric.locations[module.resource, module.layer]:
             if len(p) > 3 or len(p) < 2:
                 raise NotImplementedError("Can't haldle dimension other than 2 / 3")
 
             cc = [r == p[0], c == p[1]]
             if len(p) == 3:
-                cc.append(v[fabric.tracks_dim].var == p[2])
+                cc.append(v[tracks_dim].lit == p[2])
             cx.append(solver.And(cc))
+        assert len(cx) > 0, "Expecting at least one possible location"
         constraints.append(solver.Or(cx))
     return solver.And(constraints)
 
@@ -305,25 +368,25 @@ def pin_resource_structured(region, fabric, design, state, vars, solver):
         if module.resource == Resource.Mem:
             cc = []
             for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
-                cc.append(c.var == col)
+                cc.append(c.lit == col)
             constraints.append(solver.Or(cc))
 
             cr = []
             for row in fabric.resdimvals(Resource.Mem, fabric.rows_dim):
-                cr.append(r.var == row)
+                cr.append(r.lit == row)
             constraints.append(solver.Or(cr))
 
         elif module.resource == Resource.Reg:
             cc = []
             for col in fabric.resdimvals(Resource.Reg, fabric.cols_dim):
-                cc.append(c.var == col)
+                cc.append(c.lit == col)
             constraints.append(solver.Or(cc))
 
         else:
             cc = []
             # Not placed in a memory column
             for col in fabric.resdimvals(Resource.Mem, fabric.cols_dim):
-                cc.append(c.var != col)
+                cc.append(c.lit != col)
             constraints.append(solver.And(cc))
 
     return solver.And(constraints)
@@ -392,21 +455,30 @@ def _get_nonreg_input(reg):
 
 ################################ Graph Building/Modifying Functions #############################
 def build_msgraph(fabric, design, p_state, r_state, vars, solver):
+
     node_inedges = defaultdict(list)
 
+    # create a graph for each layer
     for layer in design.layers:
-        graph = solver.add_graph(layer)
-        # add nodes for modules
-        for mod in design.modules:
-            if mod.resource == Resource.Reg:
-                continue
-            for _type in {'sources', 'sinks'}:
-                for port_name in getattr(fabric.port_names[(mod.resource, layer)], _type):
-                    index = get_muxindex(fabric, mod, p_state, layer, port_name)
+        solver.add_graph(layer)
+
+    # add nodes for modules
+    for mod in design.modules:
+        # get widths that are used in design and needed for this module
+        widths = layer2widths[mod.layer] & design.layers
+
+        if mod.resource != Resource.Reg:
+            for _type, width in itertools.product({'sources', 'sinks'}, widths):
+                graph = solver.graphs[width]
+                for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
+                    index = get_muxindex(fabric, mod, p_state, width, port_name)
                     p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
                     vars[p] = graph.addNode(p.name)
                     vars[(mod, port_name)] = vars[p]
 
+    # add constraints per layer -- routing is completely decomposable between layers
+    for layer in design.layers:
+        graph = solver.graphs[layer]
         tindex = trackindex(src=STAR, snk=STAR, bw=layer)
         for track in fabric[tindex]:
             src = track.src
@@ -477,12 +549,19 @@ def build_spnr(region=0):
             # register locations include the track, so remove track using map
             pos = p_state[mod].position
             orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
-            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource])):
+            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource, mod.layer])):
                 if mod.resource != Resource.Reg:
                     eqedges = list()
                     for _type, width in itertools.product({'sources', 'sinks'}, widths):
                         for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
-                            mindex = muxindex(resource=mod.resource, ps=loc, bw=width, port=port_name)
+                            d = {'resource': mod.resource, 'ps': loc, 'bw': width, 'port': port_name}
+                            if mod.resource == Resource.IO:
+                                # HACK Assuming all IO tracks are 0
+                                # Need to talk to hardware guys about whether track should be None
+                                # even though it's included in cgra_info.txt
+                                d['track'] = 0
+
+                            mindex = muxindex(**d)
                             e = solver.graphs[width].addUndirectedEdge(vars[(mod, port_name)],
                                                             vars[getattr(fabric[mindex], _type[:-1])])
                                                             # source/sink instead of sources/sinks

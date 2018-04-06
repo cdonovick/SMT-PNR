@@ -22,10 +22,12 @@ parser.add_argument('--time', action='store_true', help='Print timing informatio
 parser.add_argument('--target', metavar='<TARGET_ARCH>',  help='target specific arch', default='CGRA')
 parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
 parser.add_argument('--dump-smt2', dest='smt_dir' , metavar='<SMT DIR>', help='Dump placement constraints to directory')
+parser.add_argument('--board-info', dest='board_info', metavar='<BOARD INFO FILE>', help='Board info file with additional constraints on IOs')
 args = parser.parse_args()
 
 design_file = args.design
 fabric_file = args.fabric
+board_info_file = args.board_info
 
 def ice_flow():
     from pnrdoctor.ice import design, blif2graph, fabric, constraints
@@ -81,6 +83,12 @@ def cgra_flow():
     modules, ties = design.core2graph.load_core(design_file, *args.libs)
     des = design.Design(modules, ties)
 
+    print("Loading fabric: {}".format(fabric_file))
+    fab = pnr.parse_xml(fabric_file, ce)
+    if board_info_file:
+        with open(board_info_file, 'r') as f:
+            pnr.parse_board_info(f, fab)
+
     if args.solver in ilp_solvers.keys():
         # ILP solvers use scalar handlers for scalar and category type
         PLACE_CONSTRAINTS = ilp.ilp_init_regions(ILPScalarHandler, ILPScalarHandler), ilp.ilp_distinct, ilp.ilp_pin_IO, ilp.ilp_register_colors, ilp.ilp_pin_resource_structured, ilp.ilp_neighborhood(4)
@@ -89,45 +97,50 @@ def cgra_flow():
         fac = sum(len(n.terminals) - 1 for n in des.nets) / len(des.nets)
         nmods = len(des.modules)
         rmods = math.ceil(fac*nmods**.5)
+        slack = math.ceil((fab.rows + fab.cols) / ((nmods-1)**(1/2)))
+
+        n_max = rmods + math.ceil(slack/((nmods-1)**(1/2)))
+        g_slack = rmods + slack
 
         PLACE_CONSTRAINTS = [
-            pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
+            pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, False),
             pnr.distinct,
             pnr.register_colors,
-            pnr.pin_IO,
             pnr.pin_resource,
-            pnr.HPWL(rmods, nmods + rmods)
+            pnr.pin_IO,
+            pnr.HPWL(n_max, nmods + g_slack)
         ]
         PLACE_RELAXED     = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
             pnr.distinct,
             pnr.register_colors,
-            pnr.pin_IO,
             pnr.pin_resource,
-            pnr.HPWL(rmods, 2*nmods + rmods)
+            pnr.pin_IO,
+            pnr.HPWL(n_max + 1, 2*nmods + g_slack)
         ]
         PLACE_EXTRA_RELAXED = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, True),
             pnr.distinct,
             pnr.register_colors,
-            pnr.pin_IO,
             pnr.pin_resource,
-            pnr.HPWL(rmods, 4*nmods + rmods)
+            pnr.pin_IO,
+            pnr.HPWL(n_max + 3, 4*nmods + g_slack)
         ]
+        if board_info_file:
+            for c in (PLACE_CONSTRAINTS, PLACE_RELAXED, PLACE_EXTRA_RELAXED):
+                c.append(pnr.board_constraint)
+
     simultaneous, split_regs, ROUTE_CONSTRAINTS = pnr.recommended_route_settings(relaxed=False)
     simultaneous, split_regs, ROUTE_RELAXED = pnr.recommended_route_settings(relaxed=True)
 
-    print("Loading fabric: {}".format(fabric_file))
 
     tight = True
     relaxed = True
 
-    seed = args.seed - 1
+    seed = int(args.seed) - 1
     for iterations in range(10):
         seed += 1
         random.seed(seed)
-        fab = pnr.parse_xml(fabric_file, ce)
-
         try:
             p = pnr.PNR(fab, des, args.solver, seed)
         except RuntimeError:
@@ -152,7 +165,7 @@ def cgra_flow():
             end = timer()
             if args.time:
                 print("Unsat after {}s".format(end - start))
-                
+
             print('relaxing...', end=' ')
 
             sys.stdout.flush()
@@ -161,7 +174,7 @@ def cgra_flow():
                 end_2 = timer()
                 print("success!")
                 if args.time:
-                    print("Sat after {}s".format(end_2 - end)) 
+                    print("Sat after {}s".format(end_2 - end))
                     print("placement took {}s".format(end_2 - start))
                 sys.stdout.flush()
             else:
@@ -175,11 +188,11 @@ def cgra_flow():
                     end_3 = timer()
                     print("success!")
                     if args.time:
-                        print("Sat after {}s".format(end_3 - end_2)) 
+                        print("Sat after {}s".format(end_3 - end_2))
                         print("placement took {}s".format(end_3 - start))
                 else:
                     end_3 = timer()
-                    if args.timer():
+                    if args.time:
                         print("Unsat after {}s".format(end_3 - end_2))
                     print("!!!failure!!!")
                     sys.exit(1)
@@ -189,6 +202,11 @@ def cgra_flow():
                 tight = False
             elif relaxed:
                 relaxed = False
+
+        if args.print or args.print_place:
+            print("\nplacement info:")
+            p.write_design(pnr.write_debug(des))
+
 
         if not args.noroute:
     #        pnr.process_regs(des, p._place_state, fab, split_regs=split_regs)
@@ -202,7 +220,8 @@ def cgra_flow():
                     print("routing took {}s".format(end-start))
                 break
             else:
-                print("\nfailed with dist_factor=1, relaxing...", end=' ')
+                print("\nfailed with dist_factor=1", end=' ')
+                raise RuntimeError("Routing failed -- most likely due to IO track 0 issue.")
                 if p.route_design(ROUTE_RELAXED, pnr.route_model_reader(simultaneous)):
                     end = timer()
                     print("success!")
@@ -213,6 +232,11 @@ def cgra_flow():
                     print("!!!failure!!!")
         else:
             break
+
+        fab = pnr.parse_xml(fabric_file, ce)
+        if board_info_file:
+            with open(board_info_file, 'r') as f:
+                pnr.parse_board_info(f, fab)
     else:
         print('Failed to place and route in 10 iterations')
         sys.exit(1)
@@ -222,10 +246,6 @@ def cgra_flow():
     print('Loading configuration engine with placement and route info\n')
 
     ce.load_state(p._place_state, p._route_state)
-
-    if args.print or args.print_place:
-        print("\nplacement info:")
-        p.write_design(pnr.write_debug(des))
 
     if (args.print or args.print_route) and not args.noroute:
         print("\nRouting info:")

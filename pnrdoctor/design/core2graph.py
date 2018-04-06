@@ -1,6 +1,6 @@
 import coreir
 from .module import Resource, Layer
-from pnrdoctor.util import SortedDict, IdentDict
+from pnrdoctor.util import SortedDict, IdentDict, SortedSet
 
 def load_core(file, *libs):
     context = coreir.Context()
@@ -14,6 +14,7 @@ def load_core(file, *libs):
     for inst in top_def.instances:
         inst_name = inst.selectpath[0]
         inst_type = inst.module.name
+        namespace = inst.module.namespace.name
         modules[inst_name] = {
             'type'  : None,
             'res'   : Resource.UNSET,
@@ -21,7 +22,7 @@ def load_core(file, *libs):
             'conf'  : None,
         }
 
-        if inst_type == 'PE':
+        if namespace == 'cgralib' and inst_type == 'PE':
             modules[inst_name]['type'] = 'PE'
             modules[inst_name]['res']  = Resource.PE
             modules[inst_name]['conf'] = dict()
@@ -38,56 +39,56 @@ def load_core(file, *libs):
             if op_kind not in ('bit', 'alu', 'combined'):
                 raise ValueError("Unkown op_kind `{}' in `{}' expected <`bit', `alu', `combined'>".format(file, op_kind))
 
-        elif inst_type == 'Mem':
+        elif namespace == 'cgralib' and  inst_type == 'Mem':
             modules[inst_name]['type']  = 'Mem'
             modules[inst_name]['res']   = Resource.Mem
             modules[inst_name]['layer'] = Layer.Combined
             modules[inst_name]['conf']  = {
-                    'mode'              : inst.config['mode'].value,
-                    'fifo_depth'        : inst.config['fifo_depth'].value,
-                    'almost_full_count' : inst.config['almost_full_cnt'].value,
-                    'chain_enable'      : '0', #HACK
-                    'tile_en'           : '1', #HACK
-            }
+                        'mode'         : inst.config['mode'].value,
+                        'depth'        : inst.config['depth'].value,
+                        'almost_count' : inst.config['almost_count'].value,
+                        'tile_en'      : inst.config['tile_en'].value,
+                        'chain_enable' : inst.config['chain_enable'].value,
+           }
 
-        elif inst_type == 'reg':
+        elif namespace == 'coreir' and inst_type == 'reg':
             modules[inst_name]['type']  = 'Reg'
             modules[inst_name]['res']   = Resource.Reg
             modules[inst_name]['layer'] = Layer.Data
             modules[inst_name]['conf']  = None
-        elif inst_type == 'bitreg':
+        elif namespace == 'corebit' and inst_type == 'reg':
             modules[inst_name]['type']  = 'BitReg'
             modules[inst_name]['res']   = Resource.Reg
             modules[inst_name]['layer'] = Layer.Bit
             modules[inst_name]['conf']  = None
 
-        elif inst_type == 'const':
+        elif namespace == 'coreir' and inst_type == 'const':
             modules[inst_name]['type']  = 'Const'
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
             modules[inst_name]['layer'] = Layer.Data
             modules[inst_name]['conf']  = inst.config['value'].value.val
-        elif inst_type == 'bitconst':
+        elif namespace == 'corebit' and inst_type == 'const':
             modules[inst_name]['type']  = 'Const'
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
             modules[inst_name]['layer'] = Layer.Bit
             modules[inst_name]['conf']  = inst.config['value'].value
 
-        elif inst_type == 'IO':
+        elif namespace == 'cgralib' and inst_type == 'IO':
             modules[inst_name]['type']  = 'IO'
             modules[inst_name]['res']   = Resource.IO
-            modules[inst_name]['layer'] = Layer.Combined
+            modules[inst_name]['layer'] = Layer.Data
             modules[inst_name]['conf']  = inst.config['mode'].value
-        elif inst_type == 'BitIO':
+        elif namespace == 'cgralib' and inst_type == 'BitIO':
             modules[inst_name]['type']  = 'BitIO'
             modules[inst_name]['res']   = Resource.IO
-            modules[inst_name]['layer'] = Layer.Combined
+            modules[inst_name]['layer'] = Layer.Bit
             modules[inst_name]['conf']  = inst.config['mode'].value
 
         else:
-            raise ValueError("Unknown module_name `{}' in `{}' expected <`PE', `[bit]const', `[Bit]IO',  `[bit]reg', `Mem'>".format(inst_type, file))
+            raise ValueError("Unknown namespace {} or module {} in {}".format(namespace, inst_type, file))
 
 
-    ties = set()
+    ties = SortedSet()
     for con in top_module.directed_module.connections:
         src = con.source
         dst = con.sink
@@ -128,8 +129,8 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'data0',
-        'out' : 'pe_out_res',
+        'in'  : 'out',
+        'out' : 'in',
     },
 
     'BitIO' : {
@@ -149,4 +150,5 @@ _PORT_TRANSLATION = {
 
     'Mem' : IdentDict(),
 }
+
 

@@ -14,7 +14,7 @@ def _is_set(*vals): return all(v not in _NO_VAL for v in vals)
 class Region(NamedIDObject):
     @classmethod
     def from_frabic(cls, name, fabric):
-        return cls(name, (fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim, fabric.layers_dim), from_space=True)
+        return cls(name, (fabric.rows_dim, fabric.cols_dim, fabric.tracks_dim, fabric.layers_dim, fabric.io_groups_dim), from_space=True)
 
 
     def __init__(self,

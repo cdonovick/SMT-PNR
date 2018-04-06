@@ -1,5 +1,5 @@
 from pnrdoctor.design.module import Resource, Layer
-from pnrdoctor.util import IDObject
+from pnrdoctor.util import IDObject, BiDict
 from pnrdoctor.smt.region import Scalar, Category
 from .fabricutils import Side, pos_to_side
 
@@ -143,7 +143,8 @@ class Fabric:
     def __init__(self, parsed_params):
         self._rows = parsed_params['numrows']
         self._cols = parsed_params['numcols']
-        self._num_tracks = min(parsed_params['num_tracks'].values())
+        # assuming a uniform fabric
+        self._num_tracks = max(parsed_params['num_tracks'].values())
         self._layers = frozenset(parsed_params['layers'])
         self._locations = parsed_params['locations']
         # temporarily limiting register locations
@@ -154,19 +155,31 @@ class Fabric:
         self._config = parsed_params['config_engine']
         self._fab = parsed_params['fabric']
         self._port_names = parsed_params['port_names']
+        self._io_groups = parsed_params['io_groups']
+
+        # create mapping group number <-> 1-hot
+        group_numbers = {g for g, _ in self._io_groups.keys()}
+        self._group_map = BiDict({g : 1 << k for k,g in enumerate(group_numbers)})
 
         # Hacky hardcoding register port names
         # because they're not provided by cgra_info
         self._port_names[(Resource.Reg, Layer.Data.width)].sources.add('out')
         self._port_names[(Resource.Reg, Layer.Data.width)].sinks.add('in')
-
         self._port_names[(Resource.Reg, Layer.Bit.width)].sources.add('out')
         self._port_names[(Resource.Reg, Layer.Bit.width)].sinks.add('in')
+
+        self._port_names[(Resource.IO, Layer.Data.width)].sources.add('in')
+        self._port_names[(Resource.IO, Layer.Data.width)].sinks.add('out')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sources.add('in')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sinks.add('out')
+
         # Dimensions for region building
         self._rows_dim = Scalar('row', self.rows)
         self._cols_dim = Scalar('col', self.cols)
         self._tracks_dim = Category('track', self.num_tracks, one_hot=True)
         self._layers_dim = Category('layer', len(self.layers))
+        self._io_groups_dim = Category('io_group', len(group_numbers), one_hot=True)
+
 
     @property
     def rows(self):
@@ -216,6 +229,21 @@ class Fabric:
     @property
     def port_names(self):
         return self._port_names
+
+    @property
+    def io_groups(self):
+        '''
+        Returns a dictionary (io_group:int, layer:Layer) --> list( pos:tuple(int, int))
+        '''
+        return self._io_groups
+
+    @property
+    def io_groups_dim(self):
+        return self._io_groups_dim
+
+    @property
+    def group_map(self):
+        return self._group_map
 
     @property
     def locations(self):

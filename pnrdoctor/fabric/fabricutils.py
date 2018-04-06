@@ -28,12 +28,20 @@ ftindex = namedtuple_with_defaults('ftindex', 'snk src bw')
 #    bw:       int           :: the bus width -- Note this is redundant information, but is useful
 #                                                for situations where you want to select all tracks
 #                                                at a given layer, because you can set bw=STAR
-# PE/Mem/IO use muxindex with
+# PE/Mem use muxindex with
 #                        resource: the resource type
 #                        ps:       the position of this resource
 #                        bw:       the layer i.e. 16 bit, 1 bit, etc...
 #                        port:     the port name
 #                        po and track set to None
+#
+# IO use muxindex with
+#                        resource: the resource type
+#                        ps:       the position of this resource
+#                        bw:       the layer i.e. 16 bit, 1 bit, etc...
+#                        track:    the track
+#                        port:     the port name
+#                        po:       None
 #
 # SB mux use muxindex with
 #                        resource: Resource.SB
@@ -109,7 +117,7 @@ class Side(Enum):
 
 
 # maps to opposite side
-SideMap = {'0': Side.W, '1': Side.N, '2': Side.E, '3': Side.S}
+SideMap = {Side.E: Side.W, Side.S: Side.N, Side.W: Side.E, Side.N: Side.S}
 
 
 def pos_to_side(ps, po, direc='o'):
@@ -200,7 +208,7 @@ def parse_name(text):
     return s[0], s[1], Side(int(s[2][1])), int(s[3][1])
 
 
-def parse_mem_sb_wire(text, direc='o'):
+def parse_mem_sb_wire(signal_direc, side, track, bus, direc='o'):
     '''
        Takes an internal memory tile wire, with prefix sb_wire and parses it
        Returns direc, bus_width, side, track
@@ -212,9 +220,8 @@ def parse_mem_sb_wire(text, direc='o'):
     else:
         dselect = {'out': False, 'in': True}
 
-    s = text.split('_')
-    if dselect[s[2]]:
-        return s[2], s[4], Side(int(s[5])), int(s[6])
+    if dselect[signal_direc]:
+        return bus, side, track
     else:
         # side is backwards
-        return s[2], s[4], SideMap[s[5]], int(s[6])
+        return bus, SideMap[side], track
