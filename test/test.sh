@@ -6,7 +6,7 @@ BOARDS=$PREFIX/boards/*
 
 LIBS="cgralib"
 ANNOTATED="${PREFIX}/annotated"
-COMMANDS="--time --annotate $ANNOTATED"
+COMMANDS="--time --annotate $ANNOTATED --dump-smt2 $PREFIX/smt2"
 LIMIT=600
 
 if [[ "$SOLVER" != "" ]]; then

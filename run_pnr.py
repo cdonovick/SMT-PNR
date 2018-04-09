@@ -77,11 +77,12 @@ def cgra_flow():
     from timeit import default_timer as timer
     import copy
     import math
+    import os
 
     print("Loading design: {}".format(design_file))
     ce = ConfigEngine()
     modules, ties = design.core2graph.load_core(design_file, *args.libs)
-    des = design.Design(modules, ties)
+    des = design.Design(modules, ties, os.path.splitext(os.path.basename(design_file))[0])
 
     print("Loading fabric: {}".format(fabric_file))
     fab = pnr.parse_xml(fabric_file, ce)
@@ -104,7 +105,7 @@ def cgra_flow():
 
         PLACE_CONSTRAINTS = [
             pnr.init_regions(OneHotHandler, CategoryHandler, ScalarHandler, False),
-            pnr.distinct,
+            pnr.distinct_pred,
             pnr.register_colors,
             pnr.pin_resource,
             pnr.pin_IO,

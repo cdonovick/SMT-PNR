@@ -99,11 +99,7 @@ class PNR:
             self._place_solver.Assert(c)
 
         if smt_dir is not None:
-            c = 0
-            fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
-            while os.path.isfile(fname):
-                c += 1
-                fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, c))
+            fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, self.design.name))
             self._place_solver.ToSmt2(fname)
 
         if not self._place_solver.CheckSat():

@@ -11,7 +11,7 @@ from collections import defaultdict
 from pnrdoctor.design.module import Resource, Layer, layer2widths
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
 from pnrdoctor.smt.region import SYMBOLIC, Scalar, Category
-from pnrdoctor.util import STAR
+from pnrdoctor.util import STAR, MultiDict
 
 from .pnrutils import get_muxindex
 from pnrdoctor.smt import smt_util as su
@@ -100,6 +100,41 @@ def distinct(region, fabric, design, state, vars, solver):
                     c.append(v1[d].distinct(v2[d]))
 
                 constraints.append(solver.Or(c))
+    return solver.And(constraints)
+
+def distinct_pred(region, fabric, design, state, vars, solver):
+    constraints = []
+    lr_m = MultiDict()
+
+    for m in design.modules:
+        if m.layer & Layer.Bit:
+            assert m.layer is Layer.Bit or m.layer is Layer.Combined
+            lr_m[Layer.Bit , m.resource] = m
+        if m.layer & Layer.Data:
+            assert m.layer is Layer.Data or m.layer is Layer.Combined
+            lr_m[Layer.Data, m.resource] = m
+
+
+    lr_v = defaultdict(list)
+    concat = solver.Concat
+
+    #Sort of hack to ensure same variable order
+    iter_order = dict()
+    for (l, r), m in lr_m.items():
+        v1 = vars[m]
+        if (l,r) not in iter_order:
+            iter_order[l,r] = [d for d in v1.keys() if d is not fabric.layers_dim]
+
+        vs = [v1[d].lit for d in iter_order[l,r]]
+        v = reduce(concat, vs)
+        lr_v[l, r].append(v)
+
+
+    for k in lr_v:
+        if len(lr_v[k]) > 1:
+            constraints.append(solver.Distinct(lr_v[k]))
+
+    
     return solver.And(constraints)
 
 def uf_distinct(region, fabric, design, state, vars, solver):
