@@ -124,6 +124,9 @@ def _scan_ports(root, params):
         tile_type = tile.get("type")
         config_engine[_ps] = config(tile_addr=tile_addr,
                                     tile_type=tile_type)
+
+        name = io_tile.get("name")
+
         if tile_type == "io1bit":
             layer = Layer.Bit
         else:
@@ -168,9 +171,9 @@ def _scan_ports(root, params):
             mux_dict['sel'] = srcs
 
             config_engine[ci] = config(io_group=ig, tri=config(tri_dict),
-                                       mux=config(mux_dict))
+                                       mux=config(mux_dict), name=name)
         else:
-            config_engine[ci] = config(io_group=ig, tri=config(tri_dict))
+            config_engine[ci] = config(io_group=ig, tri=config(tri_dict), name=name)
 
     def _scan_sb(sb):
         # memory tiles have multiple rows of switch boxes
