@@ -62,7 +62,7 @@ class Net(NamedIDObject):
 
     @property
     def is_ctrl(self):
-        return self._is_clock
+        return self._is_ctrl
 
     @property
     def is_sig(self):

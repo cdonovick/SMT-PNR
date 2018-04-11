@@ -1,4 +1,5 @@
 import itertools as it
+import os
 import sys
 
 from smt_switch import smt
@@ -23,6 +24,7 @@ class PNR:
         self._place_vars = dict()
         self._route_vars = BiDict()
 
+        self._solver_str = solver_str
         self._smt_solver = True
 
         if solver_str in ilp_solvers:
@@ -65,22 +67,35 @@ class PNR:
     def pin_tie(self, tie, placement):
         raise NotImplementedError()
 
-    def place_design(self, funcs, model_reader):
+    def place_design(self, funcs, model_reader, smt_dir=None):
         constraints = []
         print('Builing contstraints...')
         for f in funcs:
+            print(f"Starting {f.__name__ if hasattr(f, '__name__') else f}")
+            sys.stdout.flush()
             c = f(self._region, self.fabric, self.design, self._place_state, self._place_vars, self._place_solver)
             self._place_solver.Assert(c)
 
         print('end...')
         sys.stdout.flush()
 
+        if smt_dir is not None:
+            fname = os.path.join(smt_dir, '{}_{}.smt2'.format(self._solver_str, self.design.name))
+            print(f'Dumping smt2 to {fname}...', end='')
+            sys.stdout.flush()
+            self._place_solver.ToSmt2(fname)
+            print('done')
+            sys.stdout.flush()
+
         if not self._place_solver.CheckSat():
             self._place_solver.Reset()
             # set options for smt solver
             if self._smt_solver:
                 self._place_solver.SetOption('produce-models', 'true')
-                self._place_solver.SetLogic('QF_BV')
+                self._place_solver.SetLogic('QF_UFBV')
+                if self._solver_str == 'CVC4':
+                    self._place_solver.SetOption('bitblast', 'eager')
+                    self._place_solver.SetOption('bv-sat-solver', 'cryptominisat')
                 self._place_vars = BiDict()
             return False
 
