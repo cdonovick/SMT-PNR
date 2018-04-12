@@ -127,8 +127,10 @@ def _scan_ports(root, params):
 
         name = io_tile.get("name")
 
+        io_bit = None
         if tile_type == "io1bit":
             layer = Layer.Bit
+            io_bit = int(io_tile.find("io_bit").text, 0)
         else:
             layer = Layer.Data
 
@@ -171,7 +173,7 @@ def _scan_ports(root, params):
             mux_dict['sel'] = srcs
 
             config_engine[ci] = config(io_group=ig, tri=config(tri_dict),
-                                       mux=config(mux_dict), name=name)
+                                       mux=config(mux_dict), name=name, io_bit=io_bit)
         else:
             config_engine[ci] = config(io_group=ig, tri=config(tri_dict), name=name)
 
