@@ -2,6 +2,7 @@ from collections import defaultdict
 from functools import partial
 import sys
 import itertools
+import json
 
 from pnrdoctor.design.module import Resource, Layer
 from pnrdoctor.fabric.fabricutils import muxindex, trackindex
@@ -9,7 +10,7 @@ from pnrdoctor.config import Annotations
 from pnrdoctor.util import smart_open, Mask, IdentDict, STAR, SetList, BiMultiDict, SortedDict
 from .pnrutils import configindex
 
-__all__ = ['write_debug', 'write_route_debug', 'write_bitstream']
+__all__ = ['write_debug', 'write_route_debug', 'write_bitstream', 'write_io_collateral']
 
 # -------------------------------------------------
 # write_bitsream consants
@@ -455,7 +456,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
 
         for idx in sorted(b_dict.keys()):
             _write(bs, idx, b_dict[idx], comments[idx])
-        
+
         #HACK HACK HACK do everything again for memories
         #(tile_addr, feature_addres, reg) -> data
         b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
@@ -487,6 +488,38 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         for idx in sorted(b_dict.keys()):
             _write(bs, idx, b_dict[idx], comments[idx])
 
+
+def write_io_collateral(collateral_file, fabric, config_engine):
+    p_state = config_engine.p_state
+    rows_dim, cols_dim, io_groups_dim =  fabric.rows_dim, fabric.cols_dim, fabric.io_groups_dim,
+
+    io_dict = dict()
+
+    for module,region in p_state.items():
+        if module.resource == Resource.IO:
+            m_state = p_state[module]
+            group = m_state.category[io_groups_dim]
+            row, col = m_state.position[rows_dim], m_state.position[cols_dim]
+
+            if module.layer == Layer.Bit:
+                rcs = [(row, col)]
+            else:
+                rcs = list(fabric.io_groups[group, Layer.Bit])
+
+            io_dict[module.name] = {
+                    'width' : module.layer.width,
+                    'mode'  : module.config,
+                    'bits'  : dict()
+            }
+
+            for rx,cx in rcs:
+                c = config_engine[configindex(resource=Resource.IO, ps=(rx,cx))]
+                t = config_engine[rx, cx].tile_addr
+
+                io_dict[module.name]['bits'][c.io_bit] = c.name
+
+    with open(collateral_file, 'w') as f:
+        json.dump(io_dict, f, sort_keys=True, indent=4)
 
 
 
