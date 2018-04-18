@@ -568,7 +568,11 @@ def build_spnr(region=0):
             # register locations include the track, so remove track using map
             pos = p_state[mod].position
             orig_placement = pos[fabric.rows_dim], pos[fabric.cols_dim]
-            for loc in _resource_region(orig_placement, 0) & set(map(lambda x: x[:2], fabric.locations[mod.resource, mod.layer])):
+            region_around_placement = _resource_region(orig_placement, 0)
+            valid_locations = set(map(lambda x: x[:2], fabric.locations[mod.resource, mod.layer]))
+            locs = region_around_placement & valid_locations
+            assert len(locs) > 0, "Everything should have at least one location"
+            for loc in locs:
                 if mod.resource != Resource.Reg:
                     eqedges = list()
                     for _type, width in itertools.product({'sources', 'sinks'}, widths):
@@ -630,6 +634,12 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         graph = solver.graphs[tie.width]
         reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
                                      vars[(tie.dst, tie.dst_port)]))
+
+        # if not solver.solve(reaches[-1]):
+        #     print("Failed with tie={}".format(tie))
+        # else:
+        #     assert tie.src.layer != Layer.Combined
+        #     assert tie.dst.layer != Layer.Combined
     return solver.And(reaches)
 
 

@@ -339,9 +339,15 @@ def _scan_ports(root, params):
             if count > 0:
                 bus_widths.add(bw)
 
+        # HACK
         if _resource == Resource.PE:
             for w in bus_widths:
                 locations[_resource, Layer.width_to_layer(w)].add((row, col))
+            # HACK
+            if len(bus_widths) == 2:
+                locations[_resource, Layer.Combined].add((row, col))
+            else:
+                assert False
         else:
             locations[_resource, widths2layer(bus_widths)].add((row, col))
 
