@@ -348,32 +348,14 @@ def pin_resource(region, fabric, design, state, vars, solver):
         r,c = v[rows_dim], v[cols_dim],
 
         cx = []
-        if (module.resource == Resource.PE and module.layer == Layer.Combined):
-            for p in fabric.locations[module.resource, Layer.Bit]:
-                if len(p) > 3 or len(p) < 2:
-                    raise NotImplementedError("Can't haldle dimension other than 2 / 3")
+        for p in fabric.locations[module.resource, module.layer]:
+            if len(p) > 3 or len(p) < 2:
+                raise NotImplementedError("Can't haldle dimension other than 2 / 3")
 
-                cc = [r == p[0], c == p[1]]
-                if len(p) == 3:
-                    cc.append(v[tracks_dim].lit == p[2])
-                cx.append(solver.And(cc))
-            for p in fabric.locations[module.resource, Layer.Data]:
-                if len(p) > 3 or len(p) < 2:
-                    raise NotImplementedError("Can't haldle dimension other than 2 / 3")
-
-                cc = [r == p[0], c == p[1]]
-                if len(p) == 3:
-                    cc.append(v[tracks_dim].lit == p[2])
-                cx.append(solver.And(cc))
-        else:
-            for p in fabric.locations[module.resource, module.layer]:
-                if len(p) > 3 or len(p) < 2:
-                    raise NotImplementedError("Can't haldle dimension other than 2 / 3")
-
-                cc = [r == p[0], c == p[1]]
-                if len(p) == 3:
-                    cc.append(v[tracks_dim].lit == p[2])
-                cx.append(solver.And(cc))
+            cc = [r == p[0], c == p[1]]
+            if len(p) == 3:
+                cc.append(v[tracks_dim].lit == p[2])
+            cx.append(solver.And(cc))
 
         assert len(cx) > 0, f'Expecting at least one possible location. None for {module.resource}, {module.layer}'
         constraints.append(solver.Or(cx))
