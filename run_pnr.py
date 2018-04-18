@@ -23,6 +23,8 @@ parser.add_argument('--target', metavar='<TARGET_ARCH>',  help='target specific 
 parser.add_argument('--info', action='store_true', help='Print information about design and fabric.')
 parser.add_argument('--dump-smt2', dest='smt_dir' , metavar='<SMT DIR>', help='Dump placement constraints to directory')
 parser.add_argument('--board-info', dest='board_info', metavar='<BOARD INFO FILE>', help='Board info file with additional constraints on IOs')
+parser.add_argument('--io-collateral', dest='io_collateral', metavar='<IO COLLATERAL FILE>', help='Output IO collateral')
+
 args = parser.parse_args()
 
 design_file = args.design
@@ -261,6 +263,8 @@ def cgra_flow():
         print("Writing bitsream to: {}".format(bit_file))
         pnr.write_bitstream(fab, bit_file, ce, True, args.debug)
 
+    if args.io_collateral:
+        pnr.write_io_collateral(args.io_collateral, fab, ce)
 
 
 FLOWS = {
