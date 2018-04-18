@@ -305,6 +305,22 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             c_dict[idx][(sel_w + offset - 1, offset)] = f'@ tile ({rx}, {cx}) IO Mode = {mod.config}'
             d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
 
+
+            val = c.mux.sel[layer]
+            bitl = c.mux.bitl
+            bith = c.mux.bith
+            assert bith//32 == bitl//32, 'Cross boundary register detected in IO'
+            sel_w = bith - bitl + 1
+            reg =  c.mux.reg_address + bitl//32
+            offset = bitl % 32
+            assert val.bit_length() <= sel_w
+
+            idx = (t, c.mux.feature_address, reg)
+            b_dict[idx] |= val << offset
+            c_dict[idx][(sel_w + offset - 1, offset)] = f'@ tile ({rx}, {cx}) IO Width = {mod.layer.width}'
+            d_dict[idx][(sel_w + offset - 1, offset)] = id_fmt.format(mod.id)
+
+
             #handle mux
             if layer == Layer.Bit:
                 assert True
