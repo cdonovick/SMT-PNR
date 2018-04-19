@@ -184,49 +184,64 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         assert mod.resource == Resource.PE
         config = config_engine[configindex(resource=Resource.PE, ps=(row, col))]
         feature_address = config.feature_address
-        fs = config.opcode.flag_sel
-        flag_sel_reg = fs.reg_address
-        flag_sel_bith = fs.bith
-        flag_sel_bitl = fs.bitl
-        assert flag_sel_bith//32 == flag_sel_bitl//32, 'Cross boundary register detected in PE'
-        flag_sel_lut = config.mux[_ONE_BIT_PORT]['lut code'].sel
-
-        # Reg Address currently the same for all ops
-        # Might change when using signed, acc_en, irq_en or flag_sel
-        # See cgra_info
-        alu_reg = config.opcode.op.reg_address
+        flag_sel_config = config.opcode.flag_sel
+        alu_op_config   = config.opcode.op
+        signed_config   = config.opcode.signed
 
         if mod.type_ != 'PE':
             raise ValueError("Unkown mod.type_ : `{}'".format(mod.type_))
 
         for k in mod.config:
+            bith = None
+            bitl = None
             if k == 'alu_op':
-                reg = alu_reg
-                d = _op_translate[mod.config[k]]
+                bith    = alu_op_config.bith
+                bitl    = alu_op_config.bitl
+                reg     = alu_op_config.reg_address + bitl//32
+                offset  = bitl % 32
+                val     = mod.config[k]
+            elif k == 'signed':
+                bith    = signed_config.bith
+                bitl    = signed_config.bitl
+                reg     = signed_config.reg_address + bitl//32
+                offset  = bitl % 32
+                val     = mod.config[k] 
+            elif k == 'alu_op_debug':
+                continue
             elif k == 'lut_value':
-                idx = (tile_addr, feature_address, flag_sel_reg)
-
-                b_dict[idx] |= flag_sel_lut << flag_sel_bitl
-                c_dict[idx][(flag_sel_bith, flag_sel_bitl)] = "Select LUT"
-                d_dict[idx][(flag_sel_bith, flag_sel_bitl)] = id_fmt.format(mod.id)
-
                 reg = _LUT_REG
-                d = mod.config[k]
-            else:
+                offset = 0
+                val = mod.config[k]
+            elif k == 'flag_sel':
+                bith    = flag_sel_config.bith
+                bitl    = flag_sel_config.bitl
+                reg     = flag_sel_config.reg_address + bitl//32
+                offset  = bitl % 32
+                val     = mod.config[k] 
+            elif k == 'flag_sel_debug':
+                continue
+            else: 
                 print(f'Unkown PE config option {k}')
 
-            if d.bit_length() > _bit_widths[k]:
-                raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
-                    k,
-                    _bit_widths[k],
-                    d,
-                    d.bit_length()
-                    ))
+            if bith is not None:
+                assert bith//32 == bitl//32, 'Cross boundary register detected in PE'
+                if val.bit_length() > bith-bitl+1:
+                    raise ValueError("Config field `{}' is {} bits. Given value `{}' requires {} bits".format(
+                        k,
+                        bith-bitl+1,
+                        val,
+                        val.bit_length()
+                        ))
 
             idx = (tile_addr, feature_address, reg)
-            b_dict[idx] |= d
-            c_dict[idx][(_bit_widths[k]-1, 0)] = '{} = {}'.format(k, mod.config[k])
-            d_dict[idx][(_bit_widths[k]-1, 0)] = id_fmt.format(mod.id)
+            b_dict[idx] |= val << offset
+            if bith is not None:
+                c_dict[idx][(bith, bitl)] = '{} = {}'.format(k, mod.config[k])
+                d_dict[idx][(bith, bitl)] = id_fmt.format(mod.id)
+            else:
+                c_dict[idx][(val.bit_length(), 0)] = '{} = {}'.format(k, mod.config[k])
+                d_dict[idx][(val.bit_length(), 0)] = id_fmt.format(mod.id)
+
 
         for port in mod.inputs:
             tie = mod.inputs[port]
@@ -261,7 +276,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             else:
                 mode = 'BYPASS'
 
-            idx = (tile_addr, feature_address, alu_reg)
+            idx = (tile_addr, feature_address, reg)
             offset =  _port_offsets[port]
 
             b_dict[idx] |=  _reg_mode[mode] << offset
