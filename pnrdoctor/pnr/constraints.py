@@ -244,7 +244,7 @@ def _HPWL(n_max, g_max, region, fabric, design, state, vars, solver):
         net_iter = list(design.nets)
     else:
         net_iter = design.nets
-    
+
     for net in net_iter:
         max = {
             d : reduce(partial(su.max_ite, solver), (vars[t][d].lit for t in net.terminals)) for d in (fabric.rows_dim, fabric.cols_dim)
@@ -473,9 +473,12 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
                 graph = solver.graphs[width]
                 for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
                     index = get_muxindex(fabric, mod, p_state, width, port_name)
-                    p = getattr(fabric[index], _type[:-1])  # source/sink instead of sources/sinks
-                    vars[p] = graph.addNode(p.name)
-                    vars[(mod, port_name)] = vars[p]
+
+
+                    for p in fabric[index]:
+                        s = getattr(p, _type[:-1])
+                        vars[s] = graph.addNode(s.name)
+                        vars[(mod, port_name)] = vars[s]
 
     # add constraints per layer -- routing is completely decomposable between layers
     for layer in design.layers:
@@ -525,26 +528,22 @@ def build_spnr(region=0):
 
         # add virtual nodes for modules
         for mod in design.modules:
+            if mod.resource != Resource.Reg:
+                continue
+
             # get widths that are used in design and needed for this module
             widths = layer2widths[mod.layer] & design.layers
 
-            if mod.resource != Resource.Reg:
-                for _type, width in itertools.product({'sources', 'sinks'}, widths):
-                    for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
-                        n = solver.graphs[width].addNode('{}_{}'.format(mod.name, port_name))
-                        vars[(mod, port_name)] = n
-                        node_dict[(n, width)] = list()
-            else:
-                # registers are not split
-                # i.e. both port names point to same node
-                assert len(widths) == 1, "Registers should only exist on one layer"
-                width = next(iter(widths))
-                regnode = solver.graphs[width].addNode(mod.name)
-                vars[mod] = regnode  # have one index just for mod
-                node_dict[(regnode, width)] = list()
-                for _type, width in itertools.product({'sources', 'sinks'}, widths):
-                    for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
-                        vars[(mod, port_name)] = regnode  # convenient to also index the same as other modules
+            # registers are not split
+            # i.e. both port names point to same node
+            assert len(widths) == 1, "Registers should only exist on one layer"
+            width = next(iter(widths))
+            regnode = solver.graphs[width].addNode(mod.name)
+            vars[mod] = regnode  # have one index just for mod
+            node_dict[(regnode, width)] = list()
+            for _type, width in itertools.product({'sources', 'sinks'}, widths):
+                for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
+                    vars[(mod, port_name)] = regnode  # convenient to also index the same as other modules
 
             # take intersection with possible locations
             # register locations include the track, so remove track using map
@@ -553,49 +552,26 @@ def build_spnr(region=0):
             region_around_placement = _resource_region(orig_placement, 0)
             valid_locations = set(map(lambda x: x[:2], fabric.locations[mod.resource, mod.layer]))
             locs = region_around_placement & valid_locations
-            assert len(locs) > 0, "Everything should have at least one location"
+            assert len(locs) > 0, "Should have at least one location"
             for loc in locs:
-                if mod.resource != Resource.Reg:
-                    eqedges = list()
-                    for _type, width in itertools.product({'sources', 'sinks'}, widths):
-                        for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
-                            d = {'resource': mod.resource, 'ps': loc, 'bw': width, 'port': port_name}
-                            if mod.resource == Resource.IO:
-                                # HACK Assuming all IO tracks are 0
-                                # Need to talk to hardware guys about whether track should be None
-                                # even though it's included in cgra_info.txt
-                                d['track'] = 0
+                # this is a register
+                assert len(widths) == 1, "Register should only exist on one layer"
+                width = next(iter(widths))
+                # get all of the switch box muxes at the current location
+                mindices_pattern = muxindex(resource=Resource.SB, ps=loc,
+                                            po=STAR, bw=width, track=STAR)
 
-                            mindex = muxindex(**d)
-                            e = solver.graphs[width].addUndirectedEdge(vars[(mod, port_name)],
-                                                            vars[getattr(fabric[mindex], _type[:-1])])
-                                                            # source/sink instead of sources/sinks
-                            eqedges.append(e)
-                            node_dict[(vars[(mod, port_name)], width)].append(e)
+                # take only the ones with registers
+                mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
 
-                    # assert that a placement places all ports of a given module in the same location
-                    for e1, e2 in zip(eqedges, eqedges[1:]):
-                        edge_constraints.append(solver.Eq(e1, e2))
+                for mindex in mindices:
+                    assert fabric[mindex][0].source == fabric[mindex][0].sink, \
+                        'Cannot split registers and use build_spnr'
+                    e = solver.graphs[width].addUndirectedEdge(vars[mod],
+                                                        vars[fabric[mindex][0].source])
+                    node_dict[(vars[mod], width)].append(e)
 
-                else:
-                    # this is a register
-                    assert len(widths) == 1, "Register should only exist on one layer"
-                    width = next(iter(widths))
-                    # get all of the switch box muxes at the current location
-                    mindices_pattern = muxindex(resource=Resource.SB, ps=loc,
-                                                po=STAR, bw=width, track=STAR)
-
-                    # take only the ones with registers
-                    mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
-
-                    for mindex in mindices:
-                        assert fabric[mindex].source == fabric[mindex].sink, \
-                          'Cannot split registers and use build_spnr'
-                        e = solver.graphs[width].addUndirectedEdge(vars[mod],
-                                                        vars[fabric[mindex].source])
-                        node_dict[(vars[mod], width)].append(e)
-
-            # assert that modules are only placed in one location
+            # assert that registers are only placed in one location
             for edges in node_dict.values():
                 if len(edges) > 1:
                     solver.AtMostOne(edges)

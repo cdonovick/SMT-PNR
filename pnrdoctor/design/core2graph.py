@@ -137,8 +137,8 @@ _PORT_TRANSLATION = {
     },
 
     'BitIO' : {
-        'in'  : 'bit0',
-        'out' : 'pe_out_res_p',
+        'in'  : 'out',
+        'out' : 'in',
     },
 
     'Reg' : {

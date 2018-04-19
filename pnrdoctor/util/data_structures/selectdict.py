@@ -56,6 +56,7 @@ class SelectDict(MutableMapping):
         return any(v is cls.STAR for v in key)
 
     def __getitem__(self, key):
+        return SetList(self._d[k] for k in self.matching_keys(key))
         if not self._checkstar(key):
             return self._d[key]
         else:
