@@ -33,9 +33,9 @@
           }
         },
         "connections":[
+          ["io16in_in_arg_1_0_0.out","and_315_316_317$binop.data.in.0"],
           ["const5__316.out","and_315_316_317$binop.data.in.1"],
-          ["io16_out_0_0.in","and_315_316_317$binop.data.out"],
-          ["io16in_in_arg_1_0_0.out","and_315_316_317$binop.data.in.0"]
+          ["io16_out_0_0.in","and_315_316_317$binop.data.out"]
         ]
       }
     }

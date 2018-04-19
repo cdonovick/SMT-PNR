@@ -63,17 +63,17 @@
           }
         },
         "connections":[
-          ["and_351_356_357$binop.data.out","add_355_357_358$binop.data.in.1"],
           ["ashr_351_354_355$binop.data.out","add_355_357_358$binop.data.in.0"],
-          ["sub_353_358_359$binop.data.in.0","mul_351_352_353$binop.data.out"],
-          ["sub_353_358_359$binop.data.out","io16_out_0_0.in"],
+          ["and_351_356_357$binop.data.out","add_355_357_358$binop.data.in.1"],
+          ["sub_353_358_359$binop.data.in.1","add_355_357_358$binop.data.out"],
           ["io16in_in_arg_1_0_0.out","and_351_356_357$binop.data.in.0"],
           ["const15__356.out","and_351_356_357$binop.data.in.1"],
           ["io16in_in_arg_1_0_0.out","ashr_351_354_355$binop.data.in.0"],
           ["const2__354.out","ashr_351_354_355$binop.data.in.1"],
-          ["mul_351_352_353$binop.data.in.0","io16in_in_arg_1_0_0.out"],
           ["mul_351_352_353$binop.data.in.1","const13__352.out"],
-          ["sub_353_358_359$binop.data.in.1","add_355_357_358$binop.data.out"]
+          ["sub_353_358_359$binop.data.out","io16_out_0_0.in"],
+          ["mul_351_352_353$binop.data.in.0","io16in_in_arg_1_0_0.out"],
+          ["sub_353_358_359$binop.data.in.0","mul_351_352_353$binop.data.out"]
         ]
       }
     }

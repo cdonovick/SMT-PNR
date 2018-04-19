@@ -48,12 +48,12 @@
           }
         },
         "connections":[
-          ["const4__352.out","ashr_351_352_353$binop.data.in.1"],
-          ["mul_351_354_355$binop.data.in.1","const8__354.out"],
-          ["io16_out_0_0.in","add_353_355_356$binop.data.out"],
           ["ashr_351_352_353$binop.data.out","add_353_355_356$binop.data.in.0"],
           ["mul_351_354_355$binop.data.out","add_353_355_356$binop.data.in.1"],
+          ["io16_out_0_0.in","add_353_355_356$binop.data.out"],
           ["io16in_in_arg_1_0_0.out","ashr_351_352_353$binop.data.in.0"],
+          ["const4__352.out","ashr_351_352_353$binop.data.in.1"],
+          ["mul_351_354_355$binop.data.in.1","const8__354.out"],
           ["mul_351_354_355$binop.data.in.0","io16in_in_arg_1_0_0.out"]
         ]
       }

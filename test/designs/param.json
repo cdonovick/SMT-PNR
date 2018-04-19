@@ -34,9 +34,9 @@
           }
         },
         "connections":[
+          ["io16in_in_arg_0_0_0.out","add_277_offset_278$binop.data.in.0"],
           ["tap_offset.out","add_277_offset_278$binop.data.in.1"],
-          ["io16_out_0_0.in","add_277_offset_278$binop.data.out"],
-          ["io16in_in_arg_0_0_0.out","add_277_offset_278$binop.data.in.0"]
+          ["io16_out_0_0.in","add_277_offset_278$binop.data.out"]
         ]
       }
     }

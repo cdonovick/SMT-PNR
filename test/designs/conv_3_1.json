@@ -95,27 +95,27 @@
           }
         },
         "connections":[
-          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.ren","lb_p4_clamped_stencil_update_stream$mem_1$c1.out"],
-          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.cg_en","lb_p4_clamped_stencil_update_stream$mem_1$c1.out"],
-          ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.wdata","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata"],
-          ["mul_3475_348$binop.data.in.0","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata"],
-          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata","io16in_in_arg_1_0_0.out"],
-          ["lb_p4_clamped_stencil_update_stream_wen.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wen"],
-          ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.cg_en","lb_p4_clamped_stencil_update_stream$mem_2$c1.out"],
-          ["mul_3423_343$binop.data.in.0","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.rdata"],
-          ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.ren","lb_p4_clamped_stencil_update_stream$mem_2$c1.out"],
-          ["lb_p4_clamped_stencil_update_stream_wen.out","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.wen"],
-          ["add_345_348_349$binop.data.in.0","add_340_343_344$binop.data.out"],
-          ["io16_out_0_0.in","add_350_353_354$binop.data.out"],
-          ["mul_3475_348$binop.data.out","add_345_348_349$binop.data.in.1"],
           ["const0_0.out","add_340_343_344$binop.data.in.0"],
           ["mul_3423_343$binop.data.out","add_340_343_344$binop.data.in.1"],
+          ["add_345_348_349$binop.data.in.0","add_340_343_344$binop.data.out"],
+          ["mul_3475_348$binop.data.out","add_345_348_349$binop.data.in.1"],
           ["add_350_353_354$binop.data.in.0","add_345_348_349$binop.data.out"],
           ["mul_3527_353$binop.data.out","add_350_353_354$binop.data.in.1"],
+          ["io16_out_0_0.in","add_350_353_354$binop.data.out"],
           ["mul_3423_343$binop.data.in.1","const3_3.out"],
           ["mul_3475_348$binop.data.in.1","const5_5.out"],
+          ["mul_3527_353$binop.data.in.1","const7_7.out"],
+          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wdata","io16in_in_arg_1_0_0.out"],
           ["mul_3527_353$binop.data.in.0","io16in_in_arg_1_0_0.out"],
-          ["mul_3527_353$binop.data.in.1","const7_7.out"]
+          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.cg_en","lb_p4_clamped_stencil_update_stream$mem_1$c1.out"],
+          ["lb_p4_clamped_stencil_update_stream$mem_1$cgramem.ren","lb_p4_clamped_stencil_update_stream$mem_1$c1.out"],
+          ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.wdata","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata"],
+          ["mul_3475_348$binop.data.in.0","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.rdata"],
+          ["lb_p4_clamped_stencil_update_stream_wen.out","lb_p4_clamped_stencil_update_stream$mem_1$cgramem.wen"],
+          ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.cg_en","lb_p4_clamped_stencil_update_stream$mem_2$c1.out"],
+          ["lb_p4_clamped_stencil_update_stream$mem_2$cgramem.ren","lb_p4_clamped_stencil_update_stream$mem_2$c1.out"],
+          ["mul_3423_343$binop.data.in.0","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.rdata"],
+          ["lb_p4_clamped_stencil_update_stream_wen.out","lb_p4_clamped_stencil_update_stream$mem_2$cgramem.wen"]
         ]
       }
     }

@@ -68,15 +68,15 @@
         },
         "connections":[
           ["const0__304.out","add_305_309_310$binop.data.in.0"],
-          ["mul_307_308_309$binop.data.in.1","const5__308.out"],
-          ["lb_p4_clamped_stencil_update_stream$reg_0_1.in","io16in_in_arg_1_0_0.out"],
-          ["io16_out_0_0.in","add_311_315_316$binop.data.out"],
-          ["mul_313_314_315$binop.data.out","add_311_315_316$binop.data.in.1"],
           ["mul_307_308_309$binop.data.out","add_305_309_310$binop.data.in.1"],
           ["add_311_315_316$binop.data.in.0","add_305_309_310$binop.data.out"],
-          ["mul_307_308_309$binop.data.in.0","lb_p4_clamped_stencil_update_stream$reg_0_1.out"],
+          ["mul_313_314_315$binop.data.out","add_311_315_316$binop.data.in.1"],
+          ["io16_out_0_0.in","add_311_315_316$binop.data.out"],
+          ["mul_307_308_309$binop.data.in.1","const5__308.out"],
+          ["mul_313_314_315$binop.data.in.1","const5__314.out"],
+          ["lb_p4_clamped_stencil_update_stream$reg_0_1.in","io16in_in_arg_1_0_0.out"],
           ["mul_313_314_315$binop.data.in.0","io16in_in_arg_1_0_0.out"],
-          ["mul_313_314_315$binop.data.in.1","const5__314.out"]
+          ["mul_307_308_309$binop.data.in.0","lb_p4_clamped_stencil_update_stream$reg_0_1.out"]
         ]
       }
     }

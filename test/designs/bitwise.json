@@ -53,14 +53,14 @@
           }
         },
         "connections":[
-          ["const-21__354.out","and_353_354_355$binop.data.in.1"],
-          ["xor_356_358_359$binop.data.in.1","or_353_357_358$binop.data.out"],
-          ["xor_356_358_359$binop.data.out","io16_out_0_0.in"],
           ["io16in_in_arg_1_0_0.out","and_353_354_355$binop.data.in.0"],
+          ["const-21__354.out","and_353_354_355$binop.data.in.1"],
           ["not_355$binop.data.in.0","and_353_354_355$binop.data.out"],
-          ["or_353_357_358$binop.data.in.0","io16in_in_arg_1_0_0.out"],
           ["or_353_357_358$binop.data.in.1","const63__357.out"],
-          ["xor_356_358_359$binop.data.in.0","not_355$binop.data.out"]
+          ["xor_356_358_359$binop.data.out","io16_out_0_0.in"],
+          ["or_353_357_358$binop.data.in.0","io16in_in_arg_1_0_0.out"],
+          ["xor_356_358_359$binop.data.in.0","not_355$binop.data.out"],
+          ["xor_356_358_359$binop.data.in.1","or_353_357_358$binop.data.out"]
         ]
       }
     }

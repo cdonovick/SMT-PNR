@@ -44,10 +44,10 @@
         },
         "connections":[
           ["const0__284.out","add_285_289_290$binop.data.in.0"],
-          ["io16_out_0_0.in","add_285_289_290$binop.data.out"],
           ["mul_287_288_289$binop.data.out","add_285_289_290$binop.data.in.1"],
-          ["mul_287_288_289$binop.data.in.0","io16in_in_arg_1_0_0.out"],
-          ["mul_287_288_289$binop.data.in.1","const3__288.out"]
+          ["io16_out_0_0.in","add_285_289_290$binop.data.out"],
+          ["mul_287_288_289$binop.data.in.1","const3__288.out"],
+          ["mul_287_288_289$binop.data.in.0","io16in_in_arg_1_0_0.out"]
         ]
       }
     }
