@@ -28,15 +28,15 @@ def route_model_reader(simultaneous=False):
             reaches = graph.reaches(src_node, dst_node)
             l = graph.getPath(reaches)
             assert l is not None, tie
-            path = tuple(graph.names[node] for node in l)
-            # record for debug printing
-            r_state[(tie, 'debug')] = path
-
             # when simultaneous, the registers have extra nodes on end
             if simultaneous and tie.src.resource == Resource.Reg:
                 l = l[1:]
             if simultaneous and tie.dst.resource == Resource.Reg:
                 l = l[:-1]
+
+            path = tuple(graph.names[node] for node in l)
+            # record for debug printing
+            r_state[(tie, 'debug')] = path
 
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
