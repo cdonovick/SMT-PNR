@@ -142,7 +142,6 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         feature_address = None
 
         for tindex in t_indices:
-            print(tindex)
             if tindex.snk.port:
                 # this is a connection box, because it has a port
                 # ignore it
