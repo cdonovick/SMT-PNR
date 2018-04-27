@@ -276,7 +276,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             else:
                 mode = 'BYPASS'
 
-            idx = (tile_addr, feature_address, reg)
+            idx = (tile_addr, feature_address, alu_op_config.reg_address + bitl//32)
             offset =  _port_offsets[port]
 
             b_dict[idx] |=  _reg_mode[mode] << offset
