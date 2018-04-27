@@ -11,6 +11,7 @@ from pnrdoctor.fabric.fabricutils import muxindex, trackindex, port_wrapper, por
 from pnrdoctor.fabric import Port, Track, Fabric
 from pnrdoctor.util import SelectDict, STAR, BiMultiDict
 from .pnrutils import configindex
+from pnrdoctor.design.core2graph import _PORT_TRANSLATION
 
 __all__ = ['parse_xml', 'parse_board_info']
 
@@ -24,15 +25,6 @@ resourcedict = {'pe_tile_new': Resource.PE,
                 'io1bit': Resource.IO,
                 'io16bit': Resource.IO,
                 'empty': Resource.EMPTY}
-
-# HACK
-# Fabric is asymmetrical in the sense that inputs to CB from
-# the East or North sides are from the switch boxes own outputs
-# and from the West or South sides are from the switch boxes inputs
-# Thus inputs on the West or South sides need special treatment
-# Note: This was a change we requested to make measuring distance easier
-# But it requires special handling of IOs on those sides
-input_special_case_sides = {Side.S, Side.W}
 
 # The only types of tiles which can be bypassed
 # i.e. 1 bit IO tile tracks can skip over these
@@ -93,7 +85,6 @@ def _scan_ports(root, params):
     # but intermediate ports in a feedthrough path are never added to the fabric
     ftdata.terminals = dict()
 
-
     params['ftdata'] = ftdata
 
     fabric = params['fabric']
@@ -135,16 +126,12 @@ def _scan_ports(root, params):
             layer = Layer.Data
 
         input_name = tile.find('input').text
-        _direc, _bus, _side, _ = _match_io_name(input_name)
-        # input to IO tile is a sink/output
-        input_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='snk')
+        input_index = _get_index((row, col), input_name, Resource.IO)
         fabric[input_index]  = port_wrapper(Port(input_index))
 
         for o in tile.findall('output'):
             output_name = o.text
-            _direc, _bus, _side, _ = _match_io_name(output_name)
-            # output of IO tile is a source/input
-            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='src')
+            output_index = _get_index((row, col), output_name, Resource.IO)
             fabric[output_index] = port_wrapper(Port(output_index, 'i'))
 
         ig = int(tile.find("io_group").text, 0)
@@ -562,7 +549,7 @@ def _connect_ports(root, params):
         for out in io_tile.findall('input'):
             output_name = out.text
             _, out_bus, out_side, out_track = _match_io_name(output_name)
-            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=out_bus, track=None, port='snk')
+            output_index = _get_index((row, col), output_name, Resource.IO)
             rown, coln, _ = mapSide(row, col, out_side)
             src_ps = (rown, coln)
 
@@ -648,8 +635,6 @@ def _get_index_regular(ps, name, resource, bw):
 
         rown, coln, _ = mapSide(row, col, _side)
 
-        # Handle the edges and IOs
-
         if signal_direc == 'out':
             return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
         elif signal_direc == 'in':
@@ -663,18 +648,22 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
 
     # io tiles have all the necessary information in the name and ps (position)
     assert direc is None, "direc unused for io tiles"
-    assert bw is None, "bw is not needed for io tiles"
+    assert bw is None, "Don't need bw for IO tile -- it's in name"
     assert tile_row is None, "tile_row is not needed"
-
     assert resource == Resource.IO, "Expecting an io tile"
 
+    if bw == 1:
+        direc_map = _PORT_TRANSLATION['BitIO']
+    else:
+        direc_map = _PORT_TRANSLATION['IO']
+
     row, col = ps
-    _direc, _bus, _side, _track = _match_io_name(input_name)
+    _direc, _bus, _side, _track = _match_io_name(name)
 
     # retrieve neighbor location
     rown, coln, _ = mapSide(row, col, _side)
 
-    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=None, port=_direc)
+    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=None, port=direc_map[_direc])
 
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
