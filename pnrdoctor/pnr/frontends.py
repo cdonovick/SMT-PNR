@@ -137,14 +137,14 @@ def _scan_ports(root, params):
         input_name = tile.find('input').text
         _direc, _bus, _side, _ = _match_io_name(input_name)
         # input to IO tile is a sink/output
-        input_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='out')
+        input_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='snk')
         fabric[input_index]  = port_wrapper(Port(input_index))
 
         for o in tile.findall('output'):
             output_name = o.text
             _direc, _bus, _side, _ = _match_io_name(output_name)
             # output of IO tile is a source/input
-            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='in')
+            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='src')
             fabric[output_index] = port_wrapper(Port(output_index, 'i'))
 
         ig = int(tile.find("io_group").text, 0)
@@ -410,7 +410,6 @@ def _connect_ports(root, params):
         fa = int(sb.get('feature_address'), 0)
         sel_w = int(sb.find('sel_width').text, 0)
 
-
         for mux in sb.findall("mux"):
             snk_name = mux.get('snk')
             snkindex = _get_index(_ps, snk_name, _resource)
@@ -558,27 +557,12 @@ def _connect_ports(root, params):
         # then just query fabric for that index to make a trackindex/track
         # inputs were already connected in _connect_sb
 
-        # parse name
-        def _match_name(name):
-            p = re.compile(r'(?P<direc>in|out)_'
-                        '(?P<bus>\d+)BIT_'
-                        'S?(?P<side>\d+)_'
-                        'T?(?P<track>\d+)')
-            m = p.search(name)
-            _bus = int(m.group('bus'), 0)
-            _side = Side(int(m.group('side')))
-            _track = int(m.group('track'), 0)
-            index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='out')
-            rown, coln, _ = mapSide(row, col, _side)
-
-            return index, _bus, _side, _track, (rown, coln)
-
         # attach output tiles
         # these are INPUTs to the IO tile
         for out in io_tile.findall('input'):
             output_name = out.text
             _, out_bus, out_side, out_track = _match_io_name(output_name)
-            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=out_bus, track=None, port='out')
+            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=out_bus, track=None, port='snk')
             rown, coln, _ = mapSide(row, col, out_side)
             src_ps = (rown, coln)
 
@@ -788,7 +772,7 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
                             resource=Resource.IO,
                             bw=srcindex.bw,
                             track=None,
-                            port="in")
+                            port="src")
         # If the IO exists
         # Counting on IOs being added correctly in proc_io
         if io_index in fabric:

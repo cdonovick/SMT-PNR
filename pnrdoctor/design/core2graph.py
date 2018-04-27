@@ -132,13 +132,13 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'out',
-        'out' : 'in',
+        'in'  : 'snk',
+        'out' : 'src',
     },
 
     'BitIO' : {
-        'in'  : 'out',
-        'out' : 'in',
+        'in'  : 'snk',
+        'out' : 'src',
     },
 
     'Reg' : {

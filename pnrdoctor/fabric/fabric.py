@@ -168,10 +168,10 @@ class Fabric:
         self._port_names[(Resource.Reg, Layer.Bit.width)].sources.add('out')
         self._port_names[(Resource.Reg, Layer.Bit.width)].sinks.add('in')
 
-        self._port_names[(Resource.IO, Layer.Data.width)].sources.add('in')
-        self._port_names[(Resource.IO, Layer.Data.width)].sinks.add('out')
-        self._port_names[(Resource.IO, Layer.Bit.width)].sources.add('in')
-        self._port_names[(Resource.IO, Layer.Bit.width)].sinks.add('out')
+        self._port_names[(Resource.IO, Layer.Data.width)].sources.add('src')
+        self._port_names[(Resource.IO, Layer.Data.width)].sinks.add('snk')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sources.add('src')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sinks.add('snk')
 
         # Dimensions for region building
         self._rows_dim = Scalar('row', self.rows)
