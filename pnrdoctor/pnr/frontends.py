@@ -135,25 +135,15 @@ def _scan_ports(root, params):
             layer = Layer.Data
 
         input_name = tile.find('input').text
-        p = re.compile(r'(?P<direc>in|out)_'
-                       '(?P<bus>\d+)BIT_'
-                       'S?(?P<side>\d+)_'
-                       'T?(?P<track>\d+)')
-        m = p.search(input_name)
-        _direc = m.group('direc')
-        _bus = int(m.group('bus'))
-        _side = Side(int(m.group('side'), 0))
-        _track = int(m.group('track'))
+        _direc, _bus, _side, _ = _match_io_name(input_name)
+        # input to IO tile is a sink/output
         input_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='out')
         fabric[input_index]  = port_wrapper(Port(input_index))
 
         for o in tile.findall('output'):
             output_name = o.text
-            m = p.search(output_name)
-            _direc = m.group('direc')
-            _bus = int(m.group('bus'))
-            _side = Side(int(m.group('side'), 0))
-            _track = int(m.group('track'))
+            _direc, _bus, _side, _ = _match_io_name(output_name)
+            # output of IO tile is a source/input
             output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='in')
             fabric[output_index] = port_wrapper(Port(output_index, 'i'))
 
@@ -459,15 +449,10 @@ def _connect_ports(root, params):
                 # track connecting endpoints of feedthrough path
 
                 # see fabric.fabricutils for trackindex documentation
-                tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-
-                if tindex not in processed_tracks:
-                    processed_tracks.add(tindex)
-                    track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
-                    fabric[tindex] = track
-                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
-                                                   configl=cl, configr=cr, sel=sel,
-                                                   src_name=src_name, snk_name=snk_name)
+                tindex = _create_track(srcindex, snkindex, fabric, processed_tracks)
+                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
+                                               configl=cl, configr=cr, sel=sel,
+                                               src_name=src_name, snk_name=snk_name)
 
         # connect feed throughs
         for ft in sb.findall('ft'):
@@ -537,8 +522,7 @@ def _connect_ports(root, params):
         for path, terminals in ftdata.terminals:
             # make path from beginning of feedthrough to end
             tindex = trackindex(src=terminals['H'], snk=terminals['T'], bw=next(iter(path)).bw)
-            track = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
-            fabric[tindex] = track
+            _create_track(tindex.src, tindex.snk, fabric, processed_tracks)
 
     def _connect_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''), 0)
@@ -565,14 +549,9 @@ def _connect_ports(root, params):
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
 
-                tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                if tindex not in processed_tracks:
-                    processed_tracks.add(tindex)
-                    track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
-                    fabric[tindex] = track
-                    #                track_names = (src_name, _port)
-                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
-                                                   src_name=src_name, snk_name=_port)
+                tindex = _create_track(srcindex, snkindex, fabric, processed_tracks)
+                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
+                                               src_name=src_name, snk_name=_port)
 
     def _connect_io(io_tile):
         # location to connect to should be embedded in it's index,
@@ -594,21 +573,14 @@ def _connect_ports(root, params):
 
             return index, _bus, _side, _track, (rown, coln)
 
-        def _create_track(srcindex, snkindex):
-            assert snkindex.bw == srcindex.bw, "Bus Widths should match"
-            tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-
-            if tindex not in processed_tracks:
-                processed_tracks.add(tindex)
-                track = Track(fabric[srcindex].source,
-                              fabric[snkindex].sink,
-                              srcindex.bw)
-                fabric[tindex] = track
-
         # attach output tiles
+        # these are INPUTs to the IO tile
         for out in io_tile.findall('input'):
             output_name = out.text
-            output_index, out_bus, out_side, out_track, src_ps = _match_name(output_name)
+            _, out_bus, out_side, out_track = _match_io_name(output_name)
+            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=out_bus, track=None, port='out')
+            rown, coln, _ = mapSide(row, col, out_side)
+            src_ps = (rown, coln)
 
             dst_ps = (row, col)
             if out_bus == 1:
@@ -626,7 +598,7 @@ def _connect_ports(root, params):
                                 port=None)
 
             assert srcindex in fabric, "Expecting valid port, got {}".format(srcindex)
-            _create_track(srcindex, output_index)
+            _create_track(srcindex, output_index, fabric, processed_tracks)
 
         # TODO: Figure out what to put in config engine
 
@@ -713,17 +685,7 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
     assert resource == Resource.IO, "Expecting an io tile"
 
     row, col = ps
-    p = re.compile('(?P<direc>in|out)'
-                   '_(?P<bus>\d+)BIT_'
-                   'S?(?P<side>\d+)_'
-                   'T?(?P<track>\d+)')
-
-    m = p.search(name)
-
-    _direc = m.group('direc')
-    _bus = int(m.group('bus'))
-    _side = Side(int(m.group('side'), 0))
-    _track = int(m.group('track'))
+    _direc, _bus, _side, _track = _match_io_name(input_name)
 
     # retrieve neighbor location
     rown, coln, _ = mapSide(row, col, _side)
@@ -844,6 +806,32 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
 
     return srcindex
 
+def _match_io_name(name):
+    p = re.compile(r'(?P<direc>in|out)_'
+                   '(?P<bus>\d+)BIT_'
+                   'S?(?P<side>\d+)_'
+                   'T?(?P<track>\d+)')
+    m = p.search(name)
+    _direc = m.group('direc')
+    _bus = int(m.group('bus'))
+    _side = Side(int(m.group('side'), 0))
+    _track = int(m.group('track'))
+
+    return _direc, _bus, _side, _track
+
+def _create_track(srcindex, snkindex, fabric, processed_tracks):
+    assert snkindex.bw == srcindex.bw, "Bus Widths should match"
+    tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+
+    if tindex not in processed_tracks:
+        processed_tracks.add(tindex)
+        track = Track(fabric[srcindex].source,
+                      fabric[snkindex].sink,
+                      srcindex.bw)
+        fabric[tindex] = track
+
+    return tindex
+
 def parse_board_info(f, fabric):
     '''
     Parses the board info file and adds to the fabric
@@ -852,4 +840,3 @@ def parse_board_info(f, fabric):
 
     board = json.load(f)
     fabric.board = BiMultiDict({int(k) : v for k, v in board.items() if k != 'C'})
-
