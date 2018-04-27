@@ -474,7 +474,6 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
                 for port_name in getattr(fabric.port_names[(mod.resource, width)], _type):
                     index = get_muxindex(fabric, mod, p_state, width, port_name)
 
-
                     for p in fabric[index]:
                         s = getattr(p, _type[:-1])
                         vars[s] = graph.addNode(s.name)
@@ -487,6 +486,7 @@ def build_msgraph(fabric, design, p_state, r_state, vars, solver):
         for track in fabric[tindex]:
             src = track.src
             dst = track.dst
+
             # naming scheme is (x, y)Side_direction[track]
             # checking port resources
 
@@ -593,11 +593,6 @@ def reachability(fabric, design, p_state, r_state, vars, solver):
         reaches.append(graph.reaches(vars[(tie.src, tie.src_port)],
                                      vars[(tie.dst, tie.dst_port)]))
 
-        # if not solver.solve(reaches[-1]):
-        #     print("Failed with tie={}".format(tie))
-        # else:
-        #     assert tie.src.layer != Layer.Combined
-        #     assert tie.dst.layer != Layer.Combined
     return solver.And(reaches)
 
 

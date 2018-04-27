@@ -135,14 +135,27 @@ def _scan_ports(root, params):
             layer = Layer.Data
 
         input_name = tile.find('input').text
-        input_index = _get_index(_ps, input_name, Resource.IO)
-        fabric[input_index]  = port_wrapper(Port(input_index, 'i'))
+        p = re.compile(r'(?P<direc>in|out)_'
+                       '(?P<bus>\d+)BIT_'
+                       'S?(?P<side>\d+)_'
+                       'T?(?P<track>\d+)')
+        m = p.search(input_name)
+        _direc = m.group('direc')
+        _bus = int(m.group('bus'))
+        _side = Side(int(m.group('side'), 0))
+        _track = int(m.group('track'))
+        input_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='out')
+        fabric[input_index]  = port_wrapper(Port(input_index))
 
         for o in tile.findall('output'):
             output_name = o.text
-            output_index = _get_index(_ps, output_name, Resource.IO)
-
-            fabric[output_index] = port_wrapper(Port(output_index))
+            m = p.search(output_name)
+            _direc = m.group('direc')
+            _bus = int(m.group('bus'))
+            _side = Side(int(m.group('side'), 0))
+            _track = int(m.group('track'))
+            output_index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='in')
+            fabric[output_index] = port_wrapper(Port(output_index, 'i'))
 
         ig = int(tile.find("io_group").text, 0)
         io_groups[(ig, layer)].append(_ps)
@@ -524,9 +537,8 @@ def _connect_ports(root, params):
         for path, terminals in ftdata.terminals:
             # make path from beginning of feedthrough to end
             tindex = trackindex(src=terminals['H'], snk=terminals['T'], bw=next(iter(path)).bw)
-
-            fabric[tindex] = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
-
+            track = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
+            fabric[tindex] = track
 
     def _connect_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''), 0)
@@ -554,14 +566,13 @@ def _connect_ports(root, params):
                     'Attempting to connect ports with different bus widths'
 
                 tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in processed_tracks, tindex
-                processed_tracks.add(tindex)
-
-                track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
-                fabric[tindex] = track
-#                track_names = (src_name, _port)
-                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
-                                               src_name=src_name, snk_name=_port)
+                if tindex not in processed_tracks:
+                    processed_tracks.add(tindex)
+                    track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
+                    fabric[tindex] = track
+                    #                track_names = (src_name, _port)
+                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
+                                                   src_name=src_name, snk_name=_port)
 
     def _connect_io(io_tile):
         # location to connect to should be embedded in it's index,
@@ -570,17 +581,15 @@ def _connect_ports(root, params):
 
         # parse name
         def _match_name(name):
-            index = _get_index((row, col), name, _resource)
             p = re.compile(r'(?P<direc>in|out)_'
                         '(?P<bus>\d+)BIT_'
                         'S?(?P<side>\d+)_'
                         'T?(?P<track>\d+)')
             m = p.search(name)
-
             _bus = int(m.group('bus'), 0)
             _side = Side(int(m.group('side')))
             _track = int(m.group('track'), 0)
-
+            index = muxindex(resource=Resource.IO, ps=(row, col), po=None, bw=_bus, track=None, port='out')
             rown, coln, _ = mapSide(row, col, _side)
 
             return index, _bus, _side, _track, (rown, coln)
@@ -588,6 +597,7 @@ def _connect_ports(root, params):
         def _create_track(srcindex, snkindex):
             assert snkindex.bw == srcindex.bw, "Bus Widths should match"
             tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+
             if tindex not in processed_tracks:
                 processed_tracks.add(tindex)
                 track = Track(fabric[srcindex].source,
@@ -596,7 +606,7 @@ def _connect_ports(root, params):
                 fabric[tindex] = track
 
         # attach output tiles
-        for out in io_tile.findall('output'):
+        for out in io_tile.findall('input'):
             output_name = out.text
             output_index, out_bus, out_side, out_track, src_ps = _match_name(output_name)
 
@@ -715,11 +725,10 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
     _side = Side(int(m.group('side'), 0))
     _track = int(m.group('track'))
 
-
     # retrieve neighbor location
     rown, coln, _ = mapSide(row, col, _side)
 
-    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=_track, port=_direc)
+    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=None, port=_direc)
 
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
@@ -816,7 +825,7 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
         io_index = muxindex(ps=io_ps, po=None,
                             resource=Resource.IO,
                             bw=srcindex.bw,
-                            track=srcindex.track,
+                            track=None,
                             port="in")
         # If the IO exists
         # Counting on IOs being added correctly in proc_io
