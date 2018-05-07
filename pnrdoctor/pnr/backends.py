@@ -291,7 +291,7 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         io_groups_dim = fabric.io_groups_dim
         group = p_state[mod].category[io_groups_dim]
 
-        assert row,col in fabric.io_groups[group, layer]
+        assert (row,col) in fabric.io_groups[group, mod.layer]
 
         layer = mod.layer
         if layer == Layer.Bit:
