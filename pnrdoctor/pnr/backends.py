@@ -447,11 +447,16 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         c_dict = defaultdict(lambda : defaultdict(str))
         d_dict = defaultdict(lambda : defaultdict(str))
 
-        # Delay configuring tiles
+        # Delay configuring all tiles except IO
         mods = []
         for mod,pos in pos_map.items():
-            #HACK HACK HACK
-            mods.append((mod,pos))
+            if mod.resource != Resource.IO:
+                #HACK HACK HACK
+                mods.append((mod,pos))
+            else:
+                tile_addr = config_engine[pos].tile_addr
+                row, col = pos
+                res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
 
         # for each position and layer, process all the tracks and registers
         for pos, layer in sorted(processed_r_state):
