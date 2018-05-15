@@ -447,16 +447,11 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         c_dict = defaultdict(lambda : defaultdict(str))
         d_dict = defaultdict(lambda : defaultdict(str))
 
-        # Process modules other than registers and memories
-        mems = []
+        # Delay configuring tiles
+        mods = []
         for mod,pos in pos_map.items():
-            if mod.resource == Resource.Mem:
-                #HACK HACK HACK
-                mems.append((mod,pos))
-            else:
-                tile_addr = config_engine[pos].tile_addr
-                row, col = pos
-                res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
+            #HACK HACK HACK
+            mods.append((mod,pos))
 
         # for each position and layer, process all the tracks and registers
         for pos, layer in sorted(processed_r_state):
@@ -488,17 +483,16 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
         for idx in sorted(b_dict.keys()):
             _write(bs, idx, b_dict[idx], comments[idx])
 
-        #HACK HACK HACK do everything again for memories
+        #HACK HACK HACK do everything again for configuration
         #(tile_addr, feature_addres, reg) -> data
         b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
 
         #(tile_addr, feature_addres, reg) -> (bith, bitl) -> comment
         c_dict = defaultdict(lambda : defaultdict(str))
         d_dict = defaultdict(lambda : defaultdict(str))
-        for mod,pos in mems:
+        for mod,pos in mods:
             tile_addr = config_engine[pos].tile_addr
             row, col = pos
-            assert mod.resource == Resource.Mem
             res2fun[mod.resource](mod, tile_addr, b_dict, c_dict, d_dict)
 
         assert b_dict.keys() >= c_dict.keys()
