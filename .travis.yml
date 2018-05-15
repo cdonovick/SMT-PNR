@@ -38,6 +38,7 @@ before_install:
     - export COREIRCONFIG="g++-4.9"
     - export COREIR_b=dev
     - export PYCORE_b=dev
+    - export MAPPER_b=dev
     - export SWITCH_b=master
 
 install:
@@ -49,17 +50,23 @@ install:
     - git clone -b $SWITCH_b -- https://github.com/makaimann/smt-switch.git
     - git clone -b $COREIR_b -- https://github.com/rdaly525/coreir.git
     - git clone -b $PYCORE_b -- https://github.com/leonardt/pycoreir.git
+    - git clone -b $MAPPER_b -- https://github.com/StanfordAHA/CGRAMapper.git
     # Setup smt-switch 
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     # Build coreir
     - cd $TRAVIS_BUILD_DIR
     - cd coreir;
-    - make -j2 all
+    - make -j4 all
     - sudo make -j2 install
     # install pycoreir
     - cd $TRAVIS_BUILD_DIR
     - pip install -e pycoreir
+    #
+    - cd CGRAMapper
+    - make -j4
+    - sudo make -j4 install
     # install pnrdoctor
+    - cd $TRAVIS_BUILD_DIR
     - pip install -e package
 
 script:
