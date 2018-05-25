@@ -262,8 +262,8 @@ def _fuse_regs(mods, ties):
             output_tie.dst.add_registered_input(output_tie.dst_port)
 
         if m.resource == Resource.Fused and 'Const' in m.type_:
-            for mod in m.outputs:
-                assert mod.resource == Resource.PE, f'Can only fuse constants with {Resource.PE}, {m.name} is trying to fuse with {mod.resource}'
+            for tie in m.outputs.values():
+                assert tie.dst.resource == Resource.PE, f'Can only fuse constants with {Resource.PE}, {m.name} is trying to fuse with {mod.resource}'
 
 
     _p_modules = SetList(mod for mod in mods.values() if mod.resource != Resource.Fused)

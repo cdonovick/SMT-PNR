@@ -440,6 +440,24 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             if module.resource != Resource.Reg:
                 pos_map[module] = region.position[fabric.rows_dim], region.position[fabric.cols_dim]
 
+        #HACK HACK HACK
+        #(tile_addr, feature_addres, reg) -> data
+        b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
+
+        #(tile_addr, feature_addres, reg) -> (bith, bitl) -> comment
+        c_dict = defaultdict(lambda : defaultdict(str))
+
+        # Set default configuration for memory switchboxes
+        for pos in fabric.locations[(Resource.Mem, Layer.Combined)]:
+            tile_addr = config_engine[pos].tile_addr
+            offset = 60
+            b_dict[(tile_addr, 0, 1)] |= 1 << offset
+            c_dict[(tile_addr, 0, 1)][(offset, offset)] = 'Set memory out_0_S0_T0 to passthrough by default'
+
+        for idx in sorted(b_dict.keys()):
+            _write(bs, idx, b_dict[idx], c_dict[idx])
+
+        # Now start again
         #(tile_addr, feature_addres, reg) -> data
         b_dict = defaultdict(lambda : Mask(size=_bit_widths['data'], MSB0=False))
 
