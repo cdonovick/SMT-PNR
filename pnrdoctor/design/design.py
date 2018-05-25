@@ -263,7 +263,8 @@ def _fuse_regs(mods, ties):
 
         if m.resource == Resource.Fused and 'Const' in m.type_:
             for tie in m.outputs.values():
-                assert tie.dst.resource == Resource.PE, f'Can only fuse constants with {Resource.PE}, {m.name} is trying to fuse with {mod.resource}'
+                mod = tie.dst
+                assert mod.resource == Resource.PE, f'Can only fuse constants with {Resource.PE}, {m.name} is trying to fuse with {mod.resource}'
 
 
     _p_modules = SetList(mod for mod in mods.values() if mod.resource != Resource.Fused)
