@@ -406,8 +406,16 @@ def _connect_ports(root, params):
             snk_name = mux.get('snk')
             snkindex = _get_index(_ps, snk_name, _resource)
 
-            ch = int(mux.get('configh'), 0)
-            cl = int(mux.get('configl'), 0)
+            bh = mux.get('bith')
+            bl = mux.get('bitl')
+            if bh is None and bl is None:
+                bh = mux.get('configh')
+                bl = mux.get('configl')
+            elif bh is None:
+                assert False, "Expecting either config or bit notation"
+
+            bh = int(bh, 0)
+            bl = int(bl, 0)
 
             if mux.get('reg') == '1':
                 locations[Resource.Reg, Layer.width_to_layer(_bw)].add(_ps + (snkindex.track,))
@@ -446,8 +454,8 @@ def _connect_ports(root, params):
                     processed_tracks.add(tindex)
                     track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
                     fabric[tindex] = track
-                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, configh=ch,
-                                                   configl=cl, configr=cr, sel=sel,
+                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, bith=bh,
+                                                   bitl=bl, configr=cr, sel=sel,
                                                    src_name=src_name, snk_name=snk_name)
 
         # connect feed throughs

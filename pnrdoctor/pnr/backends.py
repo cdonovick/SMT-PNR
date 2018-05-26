@@ -165,15 +165,15 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 c_dict[idx][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
                 d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
 
-            bitl = c.configl // 32
-            bith = c.configh // 32
+            bitl = c.bitl // 32
+            bith = c.bith // 32
 
             assert bith//32 == bitl//32, 'Cross boundary register detected in SB'
 
-            reg = c.configl // 32
+            reg = c.bitl // 32
             idx = (tile_addr, feature_address, reg)
 
-            offset = c.configl % 32
+            offset = c.bitl % 32
             b_dict[idx] |= c.sel << offset
             c_dict[idx][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col)
             d_dict[idx][(c.sel_w + offset - 1, offset)] = id_fmt.format(vtie.id)
