@@ -189,10 +189,6 @@ def _scan_ports(root, params):
             mindex = _get_index(_ps, mux.get('snk'), _resource)
 
             if mindex not in processed_muxes:
-                if mux.get('reg') == '1':
-                    # add to register muxindex_locations
-                    muxindex_locations[Resource.Reg].add(mindex)
-
                 processed_muxes.add(mindex)
                 fabric[mindex] = port_wrapper(Port(mindex))
 
@@ -401,28 +397,27 @@ def _connect_ports(root, params):
         fa = int(sb.get('feature_address'), 0)
         sel_w = int(sb.find('sel_width').text, 0)
 
+        for reg in sb.findall('reg'):
+            name = reg.get('src')
+            index = _get_index(_ps, name, _resource)
+
+            bh = int(reg.get('bith'), 0)
+            bl = int(reg.get('bitl'), 0)
+            reg_address = int(reg.get('reg_address'), 0)
+            default = int(reg.get('default'), 0)
+
+            locations[Resource.Reg, Layer.width_to_layer(_bw)].add(_ps + (index.track,))
+            # add to register muxindex_locations
+            muxindex_locations[Resource.Reg].add(index)
+
+            config_engine[index] = config(reg_address=reg_address, bith=bh, bitl=bl, default=default, name=name)
 
         for mux in sb.findall("mux"):
             snk_name = mux.get('snk')
             snkindex = _get_index(_ps, snk_name, _resource)
-
-            bh = mux.get('bith')
-            bl = mux.get('bitl')
-            if bh is None and bl is None:
-                bh = mux.get('configh')
-                bl = mux.get('configl')
-            elif bh is None:
-                assert False, "Expecting either config or bit notation"
-
-            bh = int(bh, 0)
-            bl = int(bl, 0)
-
-            if mux.get('reg') == '1':
-                locations[Resource.Reg, Layer.width_to_layer(_bw)].add(_ps + (snkindex.track,))
-                assert int(mux.get('configr'), 0) is not None, mux.get('configr')
-                cr = int(mux.get('configr'), 0)
-            else:
-                cr = None
+            bh = int(mux.get('bith'), 0)
+            bl = int(mux.get('bitl'), 0)
+            ra = int(mux.get('reg_address'), 0)
 
             for src in mux.findall('src'):
                 src_name = src.text
@@ -455,7 +450,7 @@ def _connect_ports(root, params):
                     track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
                     fabric[tindex] = track
                     config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, bith=bh,
-                                                   bitl=bl, configr=cr, sel=sel,
+                                                   bitl=bl, reg_address=ra, sel=sel,
                                                    src_name=src_name, snk_name=snk_name)
 
         # connect feed throughs

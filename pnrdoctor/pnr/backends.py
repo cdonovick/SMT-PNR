@@ -155,12 +155,14 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             # and if the current track is the last track in the path
             # i.e. the one that should be registered
             if vtie.dst.resource == Resource.Reg and tindex == r_state[vtie][-1]:
-                assert hasattr(c, 'configr')
-                assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
-                reg = c.configr // 32
-                idx = (tile_addr, feature_address, reg)
+                snkindex = tindex.snk
+                assert snkindex in config_engine._config, "Expecting {} to be in config_engine".format(snkindex)
+                reg_config = config_engine[snkindex]
 
-                offset = c.configr % 32
+                assert reg_config.bith == reg_config.bitl, "Expecting to only need to set one bit."
+                idx = (tile_addr, feature_address, reg_config.reg_address)
+
+                offset = reg_config.bith
                 b_dict[idx] |= 1 << offset
                 c_dict[idx][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
                 d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
