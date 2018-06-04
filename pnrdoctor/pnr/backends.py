@@ -166,6 +166,19 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
                 b_dict[idx] |= 1 << offset
                 c_dict[idx][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
                 d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
+            # set the default if needed
+            else:
+                snkindex = tindex.snk
+                assert snkindex in config_engine._config, "Expecting {} to be in config_engine".format(snkindex)
+                reg_config = config_engine[snkindex]
+                assert reg_config.bith == reg_config.bitl, "Expecting to only need to set one bit."
+                if reg_config.default != 0:
+                    assert reg_config.default == 1, "Default should be 0 or 1 got {}".format(reg_config.default)
+                    idx = (tile_addr, feature_address, reg_config.reg_address)
+                    offset = reg_config.bith
+                    b_dict[idx] &= ~(1 << offset)
+                    c_dict[idx][(offset, offset)] = "Disabling register"
+                    d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
 
             bitl = c.bitl // 32
             bith = c.bith // 32
