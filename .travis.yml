@@ -44,12 +44,14 @@ install:
     # install pip packages
     - pip install pytest
     # get solvers
-    - . ./util/get_smt_solvers.sh
+    - ./util/get_smt_solvers.sh
+    - pip install smt_solvers/monosat/python
+    - source ./util/set_env_for_solvers.sh
     # Clone repos
     - git clone -b $SWITCH_b -- https://github.com/makaimann/smt-switch.git
     - git clone -b $COREIR_b -- https://github.com/rdaly525/coreir.git
     - git clone -b $PYCORE_b -- https://github.com/leonardt/pycoreir.git
-    # Setup smt-switch 
+    # Setup smt-switch
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     # Build coreir
     - cd $TRAVIS_BUILD_DIR

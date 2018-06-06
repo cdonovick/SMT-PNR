@@ -356,7 +356,7 @@ def pin_resource(region, fabric, design, state, vars, solver):
             if len(p) == 3:
                 cc.append(v[tracks_dim].lit == p[2])
             cx.append(solver.And(cc))
-        assert len(cx) > 0, "Expecting at least one possible location"
+        assert len(cx) > 0, "Expecting at least one possible location:\n{}, {}".format(module.resource, module.layer)
         constraints.append(solver.Or(cx))
     return solver.And(constraints)
 
@@ -582,6 +582,8 @@ def build_spnr(region=0):
 
                     # take only the ones with registers
                     mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
+
+                    assert len(mindices) > 0, "Expecting at least one possible location for register"
 
                     for mindex in mindices:
                         assert fabric[mindex].source == fabric[mindex].sink, \
