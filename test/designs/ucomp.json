@@ -102,6 +102,10 @@
             "modref":"corebit.const",
             "modargs":{"value":["Bool",false]}
           },
+          "ult_359_360_361$not$c01":{
+            "modref":"corebit.const",
+            "modargs":{"value":["Bool",false]}
+          },
           "ult_359_360_361$not$lut$lut":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
@@ -113,6 +117,10 @@
             "modargs":{"alu_op":[["BitVector",6],"6'h04"], "alu_op_debug":["String","uge"], "bit0_mode":["String","BYPASS"], "bit0_value":["Bool",false], "bit1_mode":["String","BYPASS"], "bit1_value":["Bool",false], "bit2_mode":["String","BYPASS"], "bit2_value":["Bool",false], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "flag_sel":[["BitVector",4],"4'hf"], "flag_sel_debug":["String","F_PRED"], "lut_value":[["BitVector",8],"8'h00"], "signed":[["BitVector",1],"1'h0"]}
           },
           "ult_362_359_363$not$c0":{
+            "modref":"corebit.const",
+            "modargs":{"value":["Bool",false]}
+          },
+          "ult_362_359_363$not$c01":{
             "modref":"corebit.const",
             "modargs":{"value":["Bool",false]}
           },
@@ -145,11 +153,11 @@
           ["ult_359_360_361$comp$compop.data.in.0","io16in_in_arg_1_0_0.out"],
           ["ult_362_359_363$comp$compop.data.in.1","io16in_in_arg_1_0_0.out"],
           ["ult_359_360_361$not$lut$lut.bit.in.0","ult_359_360_361$comp$compop.bit.out"],
-          ["ult_359_360_361$not$lut$lut.bit.in.1","ult_359_360_361$not$c0.out"],
           ["ult_359_360_361$not$lut$lut.bit.in.2","ult_359_360_361$not$c0.out"],
+          ["ult_359_360_361$not$lut$lut.bit.in.1","ult_359_360_361$not$c01.out"],
           ["ult_362_359_363$not$lut$lut.bit.in.0","ult_362_359_363$comp$compop.bit.out"],
-          ["ult_362_359_363$not$lut$lut.bit.in.1","ult_362_359_363$not$c0.out"],
-          ["ult_362_359_363$not$lut$lut.bit.in.2","ult_362_359_363$not$c0.out"]
+          ["ult_362_359_363$not$lut$lut.bit.in.2","ult_362_359_363$not$c0.out"],
+          ["ult_362_359_363$not$lut$lut.bit.in.1","ult_362_359_363$not$c01.out"]
         ]
       }
     }

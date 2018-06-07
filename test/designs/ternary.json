@@ -70,6 +70,10 @@
             "modref":"corebit.const",
             "modargs":{"value":["Bool",false]}
           },
+          "ult_353_358_359$not$c01":{
+            "modref":"corebit.const",
+            "modargs":{"value":["Bool",false]}
+          },
           "ult_353_358_359$not$lut$lut":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","bit"], "width":["Int",16]},
@@ -89,7 +93,7 @@
           ["ult_353_358_359$not$lut$lut.bit.out","mux_359397$mux.bit.in.0"],
           ["ult_353_358_359$not$lut$lut.bit.in.0","ult_353_358_359$comp$compop.bit.out"],
           ["ult_353_358_359$not$lut$lut.bit.in.1","ult_353_358_359$not$c0.out"],
-          ["ult_353_358_359$not$lut$lut.bit.in.2","ult_353_358_359$not$c0.out"]
+          ["ult_353_358_359$not$lut$lut.bit.in.2","ult_353_358_359$not$c01.out"]
         ]
       }
     }
