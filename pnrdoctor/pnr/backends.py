@@ -155,25 +155,40 @@ def write_bitstream(fabric, bitstream, config_engine, annotate, debug=False):
             # and if the current track is the last track in the path
             # i.e. the one that should be registered
             if vtie.dst.resource == Resource.Reg and tindex == r_state[vtie][-1]:
-                assert hasattr(c, 'configr')
-                assert c.configr is not None, 'Expecting a register at {} but has config={}'.format(tindex, c.__dict__)
-                reg = c.configr // 32
-                idx = (tile_addr, feature_address, reg)
+                snkindex = tindex.snk
+                assert snkindex in config_engine._config, "Expecting {} to be in config_engine".format(snkindex)
+                reg_config = config_engine[snkindex]
 
-                offset = c.configr % 32
+                assert reg_config.bith == reg_config.bitl, "Expecting to only need to set one bit."
+                idx = (tile_addr, feature_address, reg_config.reg_address)
+
+                offset = reg_config.bith
                 b_dict[idx] |= 1 << offset
                 c_dict[idx][(offset, offset)] = Annotations.latch_wire(c.snk_name, row=row, col=col)
                 d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
+            # set the default if needed
+            else:
+                snkindex = tindex.snk
+                assert snkindex in config_engine._config, "Expecting {} to be in config_engine".format(snkindex)
+                reg_config = config_engine[snkindex]
+                assert reg_config.bith == reg_config.bitl, "Expecting to only need to set one bit."
+                if reg_config.default != 0:
+                    assert reg_config.default == 1, "Default should be 0 or 1 got {}".format(reg_config.default)
+                    idx = (tile_addr, feature_address, reg_config.reg_address)
+                    offset = reg_config.bith
+                    b_dict[idx] &= ~(1 << offset)
+                    c_dict[idx][(offset, offset)] = "Disabling register"
+                    d_dict[idx][(offset, offset)] = id_fmt.format(vtie.id)
 
-            bitl = c.configl // 32
-            bith = c.configh // 32
+            bitl = c.bitl // 32
+            bith = c.bith // 32
 
             assert bith//32 == bitl//32, 'Cross boundary register detected in SB'
 
-            reg = c.configl // 32
+            reg = c.bitl // 32
             idx = (tile_addr, feature_address, reg)
 
-            offset = c.configl % 32
+            offset = c.bitl % 32
             b_dict[idx] |= c.sel << offset
             c_dict[idx][(c.sel_w + offset - 1, offset)] = Annotations.connect_wire(c.sel, c.src_name, c.snk_name, row=row, col=col)
             d_dict[idx][(c.sel_w + offset - 1, offset)] = id_fmt.format(vtie.id)

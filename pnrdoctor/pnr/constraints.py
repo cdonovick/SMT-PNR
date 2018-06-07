@@ -563,7 +563,7 @@ def build_spnr(region=0):
 
                 # take only the ones with registers
                 mindices = set(fabric.matching_keys(mindices_pattern)) & fabric.muxindex_locations[Resource.Reg]
-
+                assert len(mindices) > 0, "Expecting at least one possible location for register"
                 for mindex in mindices:
                     assert fabric[mindex][0].source == fabric[mindex][0].sink, \
                         'Cannot split registers and use build_spnr'
