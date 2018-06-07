@@ -7,7 +7,7 @@ setup(
         author_email='donovick@cs.stanford.edu',
         license='MIT',
         packages=['pnrdoctor'],
-        install_requires=['coreir', 'monosat>=1.4',], #should inculde smt-switch
+        # install_requires=['monosat>=1.4',], #should inculde smt-switch, coreir
         python_requires='>=3.6'
 )
 

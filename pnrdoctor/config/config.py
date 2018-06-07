@@ -23,7 +23,7 @@ class ConfigEngine:
         try:
             return self._config[k]
         except KeyError:
-            raise KeyError("Missing IO info for: {}".format(k))
+            raise KeyError("Missing configuration info for: {}".format(k))
 
     def load_state(self, p_state, r_state):
         self._p_state = p_state
