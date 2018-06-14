@@ -53,7 +53,7 @@ install:
     - git clone -b $COREIR_b -- https://github.com/rdaly525/coreir.git
     - git clone -b $PYCORE_b -- https://github.com/leonardt/pycoreir.git
     - git clone -b $MAPPER_b -- https://github.com/StanfordAHA/CGRAMapper.git
-    # Setup smt-switch 
+    # Setup smt-switch
     - export PYTHONPATH=$PYTHONPATH:$PWD/smt-switch
     # Build coreir
     - cd $TRAVIS_BUILD_DIR
