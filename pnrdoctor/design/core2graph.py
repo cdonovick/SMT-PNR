@@ -30,11 +30,14 @@ def load_core(file, *libs):
 
             if op_kind in ('alu', 'combined'):
                 modules[inst_name]['layer'] |= Layer.Data
-                modules[inst_name]['conf']['alu_op'] = inst.config['alu_op'].value
+                modules[inst_name]['conf']['alu_op']       = inst.config['alu_op'].value.unsigned_value
+                modules[inst_name]['conf']['alu_op_debug'] = inst.config['alu_op_debug'].value
+                modules[inst_name]['conf']['signed']       = inst.config['signed'].value.unsigned_value
 
             if op_kind in ('bit', 'combined'):
                 modules[inst_name]['layer'] |= Layer.Bit
-                modules[inst_name]['conf']['lut_value'] = inst.config['lut_value'].value.val
+                modules[inst_name]['conf']['lut_value'] = inst.config['lut_value'].value.unsigned_value
+                modules[inst_name]['conf']['flag_sel']  = inst.config['flag_sel'].value.unsigned_value
 
             if op_kind not in ('bit', 'alu', 'combined'):
                 raise ValueError("Unkown op_kind `{}' in `{}' expected <`bit', `alu', `combined'>".format(file, op_kind))
@@ -66,7 +69,7 @@ def load_core(file, *libs):
             modules[inst_name]['type']  = 'Const'
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
             modules[inst_name]['layer'] = Layer.Data
-            modules[inst_name]['conf']  = inst.config['value'].value.val
+            modules[inst_name]['conf']  = inst.config['value'].value.unsigned_value
         elif namespace == 'corebit' and inst_type == 'const':
             modules[inst_name]['type']  = 'Const'
             modules[inst_name]['res']   = Resource.Fused # always fuse constants
@@ -129,13 +132,13 @@ _PORT_TRANSLATION = {
     },
 
     'IO' : {
-        'in'  : 'out',
-        'out' : 'in',
+        'in'  : 'snk',
+        'out' : 'src',
     },
 
     'BitIO' : {
-        'in'  : 'bit0',
-        'out' : 'pe_out_res_p',
+        'in'  : 'snk',
+        'out' : 'src',
     },
 
     'Reg' : {

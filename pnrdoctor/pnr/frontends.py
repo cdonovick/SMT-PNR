@@ -11,6 +11,7 @@ from pnrdoctor.fabric.fabricutils import muxindex, trackindex, port_wrapper, por
 from pnrdoctor.fabric import Port, Track, Fabric
 from pnrdoctor.util import SelectDict, STAR, BiMultiDict
 from .pnrutils import configindex
+from pnrdoctor.design.core2graph import _PORT_TRANSLATION
 
 __all__ = ['parse_xml', 'parse_board_info']
 
@@ -24,15 +25,6 @@ resourcedict = {'pe_tile_new': Resource.PE,
                 'io1bit': Resource.IO,
                 'io16bit': Resource.IO,
                 'empty': Resource.EMPTY}
-
-# HACK
-# Fabric is asymmetrical in the sense that inputs to CB from
-# the East or North sides are from the switch boxes own outputs
-# and from the West or South sides are from the switch boxes inputs
-# Thus inputs on the West or South sides need special treatment
-# Note: This was a change we requested to make measuring distance easier
-# But it requires special handling of IOs on those sides
-input_special_case_sides = {Side.S, Side.W}
 
 # The only types of tiles which can be bypassed
 # i.e. 1 bit IO tile tracks can skip over these
@@ -93,7 +85,6 @@ def _scan_ports(root, params):
     # but intermediate ports in a feedthrough path are never added to the fabric
     ftdata.terminals = dict()
 
-
     params['ftdata'] = ftdata
 
     fabric = params['fabric']
@@ -135,14 +126,13 @@ def _scan_ports(root, params):
             layer = Layer.Data
 
         input_name = tile.find('input').text
-        input_index = _get_index(_ps, input_name, Resource.IO)
-        fabric[input_index]  = port_wrapper(Port(input_index, 'i'))
+        input_index = _get_index((row, col), input_name, Resource.IO)
+        fabric[input_index]  = port_wrapper(Port(input_index))
 
         for o in tile.findall('output'):
             output_name = o.text
-            output_index = _get_index(_ps, output_name, Resource.IO)
-
-            fabric[output_index] = port_wrapper(Port(output_index))
+            output_index = _get_index((row, col), output_name, Resource.IO)
+            fabric[output_index] = port_wrapper(Port(output_index, 'i'))
 
         ig = int(tile.find("io_group").text, 0)
         io_groups[(ig, layer)].append(_ps)
@@ -335,9 +325,15 @@ def _scan_ports(root, params):
             if count > 0:
                 bus_widths.add(bw)
 
+        # HACK
         if _resource == Resource.PE:
             for w in bus_widths:
                 locations[_resource, Layer.width_to_layer(w)].add((row, col))
+            # HACK
+            if len(bus_widths) == 2:
+                locations[_resource, Layer.Combined].add((row, col))
+            else:
+                assert False
         else:
             locations[_resource, widths2layer(bus_widths)].add((row, col))
 
@@ -443,15 +439,10 @@ def _connect_ports(root, params):
                 # track connecting endpoints of feedthrough path
 
                 # see fabric.fabricutils for trackindex documentation
-                tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-
-                if tindex not in processed_tracks:
-                    processed_tracks.add(tindex)
-                    track = Track(fabric[srcindex].source, fabric[snkindex].sink, srcindex.bw)
-                    fabric[tindex] = track
-                    config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, bith=bh,
-                                                   bitl=bl, reg_address=ra, sel=sel,
-                                                   src_name=src_name, snk_name=snk_name)
+                tindex = _create_track(srcindex, snkindex, fabric, processed_tracks)
+                config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, bith=bh,
+                                               bitl=bl, reg_address=ra, sel=sel,
+                                               src_name=src_name, snk_name=snk_name)
 
         # connect feed throughs
         for ft in sb.findall('ft'):
@@ -521,9 +512,7 @@ def _connect_ports(root, params):
         for path, terminals in ftdata.terminals:
             # make path from beginning of feedthrough to end
             tindex = trackindex(src=terminals['H'], snk=terminals['T'], bw=next(iter(path)).bw)
-
-            fabric[tindex] = Track(fabric[tindex.src].source, fabric[tindex.snk].sink, tindex.bw)
-
+            _create_track(tindex.src, tindex.snk, fabric, processed_tracks)
 
     def _connect_cb(cb):
         _bw = int(cb.get('bus').replace('BUS', ''), 0)
@@ -550,13 +539,7 @@ def _connect_ports(root, params):
                 assert srcindex.bw == snkindex.bw, \
                     'Attempting to connect ports with different bus widths'
 
-                tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-                assert tindex not in processed_tracks, tindex
-                processed_tracks.add(tindex)
-
-                track = Track(fabric[srcindex].source, fabric[snkindex].sink, _bw)
-                fabric[tindex] = track
-#                track_names = (src_name, _port)
+                tindex = _create_track(srcindex, snkindex, fabric, processed_tracks)
                 config_engine[tindex] = config(feature_address=fa, sel_w=sel_w, sel=sel,
                                                src_name=src_name, snk_name=_port)
 
@@ -565,37 +548,14 @@ def _connect_ports(root, params):
         # then just query fabric for that index to make a trackindex/track
         # inputs were already connected in _connect_sb
 
-        # parse name
-        def _match_name(name):
-            index = _get_index((row, col), name, _resource)
-            p = re.compile(r'(?P<direc>in|out)_'
-                        '(?P<bus>\d+)BIT_'
-                        'S?(?P<side>\d+)_'
-                        'T?(?P<track>\d+)')
-            m = p.search(name)
-
-            _bus = int(m.group('bus'), 0)
-            _side = Side(int(m.group('side')))
-            _track = int(m.group('track'), 0)
-
-            rown, coln, _ = mapSide(row, col, _side)
-
-            return index, _bus, _side, _track, (rown, coln)
-
-        def _create_track(srcindex, snkindex):
-            assert snkindex.bw == srcindex.bw, "Bus Widths should match"
-            tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
-            if tindex not in processed_tracks:
-                processed_tracks.add(tindex)
-                track = Track(fabric[srcindex].source,
-                              fabric[snkindex].sink,
-                              srcindex.bw)
-                fabric[tindex] = track
-
         # attach output tiles
-        for out in io_tile.findall('output'):
+        # these are INPUTs to the IO tile
+        for out in io_tile.findall('input'):
             output_name = out.text
-            output_index, out_bus, out_side, out_track, src_ps = _match_name(output_name)
+            _, out_bus, out_side, out_track = _match_io_name(output_name)
+            output_index = _get_index((row, col), output_name, Resource.IO)
+            rown, coln, _ = mapSide(row, col, out_side)
+            src_ps = (rown, coln)
 
             dst_ps = (row, col)
             if out_bus == 1:
@@ -613,7 +573,7 @@ def _connect_ports(root, params):
                                 port=None)
 
             assert srcindex in fabric, "Expecting valid port, got {}".format(srcindex)
-            _create_track(srcindex, output_index)
+            _create_track(srcindex, output_index, fabric, processed_tracks)
 
         # TODO: Figure out what to put in config engine
 
@@ -679,8 +639,6 @@ def _get_index_regular(ps, name, resource, bw):
 
         rown, coln, _ = mapSide(row, col, _side)
 
-        # Handle the edges and IOs
-
         if signal_direc == 'out':
             return muxindex(resource=Resource.SB, ps=ps, po=(rown, coln), bw=_bus, track=_track)
         elif signal_direc == 'in':
@@ -694,29 +652,22 @@ def _get_index_io(ps, name, resource, direc, bw, tile_row):
 
     # io tiles have all the necessary information in the name and ps (position)
     assert direc is None, "direc unused for io tiles"
-    assert bw is None, "bw is not needed for io tiles"
+    assert bw is None, "Don't need bw for IO tile -- it's in name"
     assert tile_row is None, "tile_row is not needed"
-
     assert resource == Resource.IO, "Expecting an io tile"
 
+    if bw == 1:
+        direc_map = _PORT_TRANSLATION['BitIO']
+    else:
+        direc_map = _PORT_TRANSLATION['IO']
+
     row, col = ps
-    p = re.compile('(?P<direc>in|out)'
-                   '_(?P<bus>\d+)BIT_'
-                   'S?(?P<side>\d+)_'
-                   'T?(?P<track>\d+)')
-
-    m = p.search(name)
-
-    _direc = m.group('direc')
-    _bus = int(m.group('bus'))
-    _side = Side(int(m.group('side'), 0))
-    _track = int(m.group('track'))
-
+    _direc, _bus, _side, _track = _match_io_name(name)
 
     # retrieve neighbor location
     rown, coln, _ = mapSide(row, col, _side)
 
-    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=_track, port=_direc)
+    return muxindex(resource=Resource.IO, ps=ps, po=None, bw=_bus, track=None, port=direc_map[_direc])
 
 def _get_index_mem(ps, name, resource, direc, bw, tile_row):
 
@@ -813,8 +764,8 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
         io_index = muxindex(ps=io_ps, po=None,
                             resource=Resource.IO,
                             bw=srcindex.bw,
-                            track=srcindex.track,
-                            port="in")
+                            track=None,
+                            port="src")
         # If the IO exists
         # Counting on IOs being added correctly in proc_io
         if io_index in fabric:
@@ -832,6 +783,32 @@ def _infer_src(ps, srcindex, ftdata, fabric, io16_positions):
 
     return srcindex
 
+def _match_io_name(name):
+    p = re.compile(r'(?P<direc>in|out)_'
+                   '(?P<bus>\d+)BIT_'
+                   'S?(?P<side>\d+)_'
+                   'T?(?P<track>\d+)')
+    m = p.search(name)
+    _direc = m.group('direc')
+    _bus = int(m.group('bus'))
+    _side = Side(int(m.group('side'), 0))
+    _track = int(m.group('track'))
+
+    return _direc, _bus, _side, _track
+
+def _create_track(srcindex, snkindex, fabric, processed_tracks):
+    assert snkindex.bw == srcindex.bw, "Bus Widths should match"
+    tindex = trackindex(snk=snkindex, src=srcindex, bw=srcindex.bw)
+
+    if tindex not in processed_tracks:
+        processed_tracks.add(tindex)
+        track = Track(fabric[srcindex].source,
+                      fabric[snkindex].sink,
+                      srcindex.bw)
+        fabric[tindex] = track
+
+    return tindex
+
 def parse_board_info(f, fabric):
     '''
     Parses the board info file and adds to the fabric
@@ -840,4 +817,3 @@ def parse_board_info(f, fabric):
 
     board = json.load(f)
     fabric.board = BiMultiDict({int(k) : v for k, v in board.items() if k != 'C'})
-

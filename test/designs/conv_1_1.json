@@ -11,10 +11,10 @@
           ["out",["Array",1,["Array",1,["Array",16,"Bit"]]]]
         ]],
         "instances":{
-          "add_285_289_290_PE":{
+          "add_285_289_290$binop":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
-            "modargs":{"alu_op":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"]}
+            "modargs":{"alu_op":[["BitVector",6],"6'h00"], "alu_op_debug":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
           },
           "const0__284":{
             "genref":"coreir.const",
@@ -36,18 +36,18 @@
             "genargs":{"width":["Int",16]},
             "modargs":{"mode":["String","in"]}
           },
-          "mul_287_288_289_PE":{
+          "mul_287_288_289$binop":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
-            "modargs":{"alu_op":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"]}
+            "modargs":{"alu_op":[["BitVector",6],"6'h0b"], "alu_op_debug":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
           }
         },
         "connections":[
-          ["const0__284.out","add_285_289_290_PE.data.in.0"],
-          ["const3__288.out","mul_287_288_289_PE.data.in.1"],
-          ["io16_out_0_0.in","add_285_289_290_PE.data.out"],
-          ["io16in_in_arg_1_0_0.out","mul_287_288_289_PE.data.in.0"],
-          ["mul_287_288_289_PE.data.out","add_285_289_290_PE.data.in.1"]
+          ["const0__284.out","add_285_289_290$binop.data.in.0"],
+          ["mul_287_288_289$binop.data.out","add_285_289_290$binop.data.in.1"],
+          ["io16_out_0_0.in","add_285_289_290$binop.data.out"],
+          ["mul_287_288_289$binop.data.in.1","const3__288.out"],
+          ["mul_287_288_289$binop.data.in.0","io16in_in_arg_1_0_0.out"]
         ]
       }
     }

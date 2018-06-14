@@ -18,8 +18,8 @@ trap 'exit' INT
 code=0
 for d in $TESTS; do
     for f in $FABRICS; do
-		for b in $BOARDS; do
-			cmd="${PREFIX}/../run_pnr.py $d $f --coreir-libs $LIBS $COMMANDS --board-info $b"
+#		for b in $BOARDS; do
+			cmd="${PREFIX}/../run_pnr.py $d $f --coreir-libs $LIBS $COMMANDS" #--board-info $b"
 			echo $cmd
 			timeout --foreground $LIMIT $cmd
 			r=$?
@@ -34,7 +34,7 @@ for d in $TESTS; do
 			fi
 			echo
 			echo
-		done
+#		done
     done
 done
 
