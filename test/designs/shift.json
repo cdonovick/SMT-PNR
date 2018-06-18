@@ -11,20 +11,25 @@
           ["out",["Array",1,["Array",1,["Array",16,"Bit"]]]]
         ]],
         "instances":{
-          "add_285_289_290$binop":{
+          "add_353_355_356$binop":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
             "modargs":{"alu_op":[["BitVector",6],"6'h00"], "alu_op_debug":["String","add"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
           },
-          "const0__284":{
-            "genref":"coreir.const",
-            "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],"16'h0000"]}
+          "ashr_351_352_353$binop":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+            "modargs":{"alu_op":[["BitVector",6],"6'h0f"], "alu_op_debug":["String","ashr"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
           },
-          "const3__288":{
+          "const4__352":{
             "genref":"coreir.const",
             "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],"16'h0003"]}
+            "modargs":{"value":[["BitVector",16],"16'h0004"]}
+          },
+          "const8__354":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector",16],"16'h0008"]}
           },
           "io16_out_0_0":{
             "genref":"cgralib.IO",
@@ -36,18 +41,20 @@
             "genargs":{"width":["Int",16]},
             "modargs":{"mode":["String","in"]}
           },
-          "mul_287_288_289$binop":{
+          "mul_351_354_355$binop":{
             "genref":"cgralib.PE",
             "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
             "modargs":{"alu_op":[["BitVector",6],"6'h0b"], "alu_op_debug":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
           }
         },
         "connections":[
-          ["const0__284.out","add_285_289_290$binop.data.in.0"],
-          ["mul_287_288_289$binop.data.out","add_285_289_290$binop.data.in.1"],
-          ["io16_out_0_0.in","add_285_289_290$binop.data.out"],
-          ["mul_287_288_289$binop.data.in.1","const3__288.out"],
-          ["mul_287_288_289$binop.data.in.0","io16in_in_arg_1_0_0.out"]
+          ["ashr_351_352_353$binop.data.out","add_353_355_356$binop.data.in.0"],
+          ["mul_351_354_355$binop.data.out","add_353_355_356$binop.data.in.1"],
+          ["io16_out_0_0.in","add_353_355_356$binop.data.out"],
+          ["io16in_in_arg_1_0_0.out","ashr_351_352_353$binop.data.in.0"],
+          ["const4__352.out","ashr_351_352_353$binop.data.in.1"],
+          ["mul_351_354_355$binop.data.in.1","const8__354.out"],
+          ["mul_351_354_355$binop.data.in.0","io16in_in_arg_1_0_0.out"]
         ]
       }
     }

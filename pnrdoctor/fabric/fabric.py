@@ -147,10 +147,6 @@ class Fabric:
         self._num_tracks = max(parsed_params['num_tracks'].values())
         self._layers = frozenset(parsed_params['layers'])
         self._locations = parsed_params['locations']
-        # temporarily limiting register locations
-        if Resource.Reg in self._locations:
-            self._locations[Resource.Reg] = self._locations[Resource.Reg] - \
-                                            self._locations[Resource.Mem]
         self._muxindex_locations = parsed_params['muxindex_locations']
         self._config = parsed_params['config_engine']
         self._fab = parsed_params['fabric']
@@ -168,10 +164,10 @@ class Fabric:
         self._port_names[(Resource.Reg, Layer.Bit.width)].sources.add('out')
         self._port_names[(Resource.Reg, Layer.Bit.width)].sinks.add('in')
 
-        self._port_names[(Resource.IO, Layer.Data.width)].sources.add('in')
-        self._port_names[(Resource.IO, Layer.Data.width)].sinks.add('out')
-        self._port_names[(Resource.IO, Layer.Bit.width)].sources.add('in')
-        self._port_names[(Resource.IO, Layer.Bit.width)].sinks.add('out')
+        self._port_names[(Resource.IO, Layer.Data.width)].sources.add('src')
+        self._port_names[(Resource.IO, Layer.Data.width)].sinks.add('snk')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sources.add('src')
+        self._port_names[(Resource.IO, Layer.Bit.width)].sinks.add('snk')
 
         # Dimensions for region building
         self._rows_dim = Scalar('row', self.rows)
@@ -248,7 +244,7 @@ class Fabric:
     @property
     def locations(self):
         '''
-            Returns a dictionary of resource type --> set of (x, y, [track]) locations
+            Returns a dictionary of (resource type, layer) --> set of (x, y, [track]) locations
         '''
         return self._locations
 

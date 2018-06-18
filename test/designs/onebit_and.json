@@ -11,10 +11,15 @@
           ["out",["Array",1,["Array",1,["Array",16,"Bit"]]]]
         ]],
         "instances":{
-          "const2__348":{
+          "and_315_316_317$binop":{
+            "genref":"cgralib.PE",
+            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
+            "modargs":{"alu_op":[["BitVector",6],"6'h13"], "alu_op_debug":["String","and"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
+          },
+          "const5__316":{
             "genref":"coreir.const",
             "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector",16],"16'h0002"]}
+            "modargs":{"value":[["BitVector",16],"16'h0005"]}
           },
           "io16_out_0_0":{
             "genref":"cgralib.IO",
@@ -25,17 +30,12 @@
             "genref":"cgralib.IO",
             "genargs":{"width":["Int",16]},
             "modargs":{"mode":["String","in"]}
-          },
-          "mul_347_348_349$binop":{
-            "genref":"cgralib.PE",
-            "genargs":{"numbitports":["Int",3], "numdataports":["Int",2], "op_kind":["String","alu"], "width":["Int",16]},
-            "modargs":{"alu_op":[["BitVector",6],"6'h0b"], "alu_op_debug":["String","mul"], "data0_mode":["String","BYPASS"], "data0_value":[["BitVector",16],"16'h0000"], "data1_mode":["String","BYPASS"], "data1_value":[["BitVector",16],"16'h0000"], "signed":[["BitVector",1],"1'h0"]}
           }
         },
         "connections":[
-          ["mul_347_348_349$binop.data.in.1","const2__348.out"],
-          ["mul_347_348_349$binop.data.out","io16_out_0_0.in"],
-          ["mul_347_348_349$binop.data.in.0","io16in_in_arg_1_0_0.out"]
+          ["io16in_in_arg_1_0_0.out","and_315_316_317$binop.data.in.0"],
+          ["const5__316.out","and_315_316_317$binop.data.in.1"],
+          ["io16_out_0_0.in","and_315_316_317$binop.data.out"]
         ]
       }
     }

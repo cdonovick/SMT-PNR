@@ -2,6 +2,7 @@ from collections import namedtuple
 
 from pnrdoctor.fabric.fabricutils import muxindex
 from pnrdoctor.design.module import Resource
+from pnrdoctor.util import STAR
 
 # see fabric.fabricutils for muxindex documentation
 
@@ -16,14 +17,9 @@ def get_muxindex(fabric, mod, p_state, layer, port=None):
 
     pos = p_state[mod].position
     _ps = pos[fabric.rows_dim], pos[fabric.cols_dim]
-    d = {'ps': _ps, 'bw': layer}
+    d = {'ps': _ps, 'bw': layer, 'track': STAR}
 
-    if mod.resource == Resource.IO:
-        # HACK Assuming IO's are always on track 0
-        # Need to discuss with hardware team to see if we should just set track=None for
-        # IOs even though it's provided in cgra_info.txt
-        return muxindex(resource=mod.resource, port=port, track=0, **d)
-    elif mod.resource != Resource.Reg:
+    if mod.resource != Resource.Reg:
         assert port is not None
         return muxindex(resource=mod.resource, port=port, **d)
     else:

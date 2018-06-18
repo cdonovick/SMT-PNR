@@ -28,35 +28,15 @@ def route_model_reader(simultaneous=False):
             reaches = graph.reaches(src_node, dst_node)
             l = graph.getPath(reaches)
             assert l is not None, tie
+            # when simultaneous, the registers have extra nodes on end
+            if simultaneous and tie.src.resource == Resource.Reg:
+                l = l[1:]
+            if simultaneous and tie.dst.resource == Resource.Reg:
+                l = l[:-1]
+
             path = tuple(graph.names[node] for node in l)
             # record for debug printing
             r_state[(tie, 'debug')] = path
-
-            # when simultaneous, the edges on the end are virtual
-            if simultaneous:
-                l = l[1:-1]
-
-                # TODO: Re-enable this -- update place state with monosat's adjustments
-                # ftrack = vars[graph.getEdge(l[0], l[1])]
-                # ltrack = vars[graph.getEdge(l[-2], l[-1])]
-
-                # newsrcpos = ftrack.src.loc + ((ftrack.src.track,) if ftrack.src.track is not None else tuple())
-                # newdstpos = ltrack.dst.loc + ((ltrack.dst.track,) if ltrack.dst.track is not None else tuple())
-
-                # # make sure modules were not placed in more than one location
-                # if tie.src in processed_mods:
-                #     assert p_state[tie.src][0] == newsrcpos, "Module {} appears to be placed in multiple locations".format(tie.src)
-                # else:
-                #     del p_state[tie.src]
-                #     p_state[tie.src] = newsrcpos
-                #     processed_mods.add(tie.src)
-
-                # if tie.dst in processed_mods:
-                #     assert p_state[tie.dst][0] == newdstpos, "Module {} appears to be placed in multiple locations".format(tie.dst)
-                # else:
-                #     del p_state[tie.dst]
-                #     p_state[tie.dst] = newdstpos
-                #     processed_mods.add(tie.dst)
 
             for n1, n2 in zip(l, l[1:]):
                 edge = graph.getEdge(n1, n2)
